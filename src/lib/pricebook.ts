@@ -10,6 +10,11 @@
  * network. The customer sees a number in under a second and the owner can
  * defend every dollar of it.
  *
+ * PRICING POSITION: every tier sits under a named local comparable — see
+ * PRICEBOOK.md for the benchmarks and their sources. Undercut, don't race to
+ * the bottom: the cheapest bid in a trade nobody licenses reads as the least
+ * reliable one.
+ *
  * TO RE-PRICE: edit the tables below. Nothing else reads raw numbers.
  */
 
@@ -17,7 +22,7 @@ export const DEPOSIT = 50;
 export const EARLY_BIRD_DISCOUNT = 50;
 
 /** Never below this after discounts — a truck roll costs money. */
-const FLOOR = 65;
+const FLOOR = 55;
 
 export type Range = { low: number; high: number };
 
@@ -45,25 +50,25 @@ const LEAF_SIZES: SizeOption[] = [
     value: "small",
     label: "Small city lot",
     hint: "One or two trees, light cover",
-    range: { low: 145, high: 225 },
+    range: { low: 95, high: 155 },
   },
   {
     value: "medium",
     label: "Standard lot",
     hint: "Full cover, front and back",
-    range: { low: 225, high: 375 },
+    range: { low: 145, high: 245 },
   },
   {
     value: "large",
     label: "Large / corner lot",
     hint: "Heavy cover, mature trees",
-    range: { low: 375, high: 575 },
+    range: { low: 245, high: 395 },
   },
   {
     value: "acreage",
     label: "Acreage or tree-heavy",
     hint: "We walk it first, then quote",
-    range: { low: 575, high: 900 },
+    range: { low: 395, high: 650 },
   },
 ];
 
@@ -76,30 +81,30 @@ const LOAD_SIZES: SizeOption[] = [
     value: "single",
     label: "One item",
     hint: "Couch, mattress, treadmill",
-    range: { low: 75, high: 135 },
+    range: { low: 59, high: 95 },
   },
   {
     value: "quarter",
     label: "Quarter load",
     hint: "A pickup corner — a few pieces",
-    range: { low: 135, high: 210 },
+    range: { low: 85, high: 130 },
   },
   {
     value: "half",
     label: "Half load",
     hint: "Half the bed, heaped",
-    range: { low: 210, high: 320 },
+    range: { low: 125, high: 195 },
   },
   {
     value: "full",
     label: "Full load",
     hint: "Bed full and strapped",
-    range: { low: 320, high: 480 },
+    range: { low: 175, high: 265 },
   },
 ];
 
 /** Cleanouts price like haul work plus sort-and-carry labor. */
-const CLEANOUT_LABOR: Range = { low: 60, high: 120 };
+const CLEANOUT_LABOR: Range = { low: 50, high: 100 };
 
 export function sizeOptionsFor(service: ServiceKey): SizeOption[] {
   if (service === "leaf-cleanup") return LEAF_SIZES;
@@ -127,7 +132,7 @@ export const ADD_ONS: {
     key: "bagging",
     label: "Leaves aren't curb-ready",
     hint: "We rake and bag from scratch",
-    range: { low: 40, high: 80 },
+    range: { low: 35, high: 70 },
     appliesTo: ["leaf-cleanup"],
   },
   {
@@ -141,14 +146,14 @@ export const ADD_ONS: {
     key: "stairs",
     label: "Stairs or basement carry",
     hint: "Anything not at ground level",
-    range: { low: 35, high: 70 },
+    range: { low: 30, high: 60 },
     appliesTo: ["junk-removal", "garage-basement", "furniture-appliances", "single-item"],
   },
   {
     key: "long-carry",
     label: "Long carry",
     hint: "More than about 75 ft to the truck",
-    range: { low: 25, high: 50 },
+    range: { low: 20, high: 40 },
     appliesTo: "all",
   },
   {

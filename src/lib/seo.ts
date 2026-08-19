@@ -88,7 +88,7 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "What does leaf cleanup cost in Grand Forks?",
-    a: "Most city lots land between $145 and $375 depending on yard size and how heavy the cover is. You get a range on this page before you book, and we confirm the number before any work starts.",
+    a: "Most city lots land between $95 and $245 depending on yard size and how heavy the cover is — under what the national services quote for the same yard. You get a range on this page before you book, and we confirm the number before any work starts.",
   },
   {
     q: "What can't you haul away?",
