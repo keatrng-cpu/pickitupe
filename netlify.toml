@@ -1,0 +1,18 @@
+# Netlify build. Nitro's netlify preset writes the static site to dist/ and the
+# SSR handler to .netlify/functions-internal/server — Netlify picks both up.
+#
+# The booking form, the early-bird counter, and /jobs are server functions. A
+# static-only deploy publishes the marketing page but silently breaks all three.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
