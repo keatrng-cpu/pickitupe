@@ -1,10 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
+import {
+  isPromoActive,
+  PROMO_CAP,
+  PROMO_DEADLINE_LABEL,
+  PROMO_PERCENT,
+} from "@/lib/pricebook";
 import { z } from "zod";
-
-export const EARLY_BIRD_CAP = 25;
-export const EARLY_BIRD_OFF = 50;
 
 const bookingInput = z.object({
   name: z.string().trim().min(2).max(80),
@@ -59,34 +62,19 @@ export type BookingRow = {
 };
 
 /**
- * The home page loads through this, so a database that is down, unmigrated, or
- * simply unconfigured must not blank the site — the phone number is the most
- * valuable thing on the page and it needs no database at all. Degrade to the
- * full offer instead and let the form report the real failure on submit.
+ * The promo is now a fixed calendar deadline (see `isPromoActive` in
+ * pricebook.ts), not a count against the database — so this needs no
+ * database at all and cannot fail. The home page loads through this; the
+ * phone number and the offer badge must render even if Postgres is down.
  */
 export const getOfferStatus = createServerFn({ method: "GET" }).handler(
   async () => {
-    try {
-      const sql = await getSql();
-      const rows = await sql<{ n: number }>`
-        select count(*)::int as n from bookings where early_bird = true
-      `;
-      const used = rows[0]?.n ?? 0;
-      return {
-        remaining: Math.max(0, EARLY_BIRD_CAP - used),
-        cap: EARLY_BIRD_CAP,
-        amount: EARLY_BIRD_OFF,
-        degraded: false,
-      };
-    } catch (error) {
-      console.error("[bookings] offer status unavailable:", error);
-      return {
-        remaining: EARLY_BIRD_CAP,
-        cap: EARLY_BIRD_CAP,
-        amount: EARLY_BIRD_OFF,
-        degraded: true,
-      };
-    }
+    return {
+      active: isPromoActive(),
+      percent: PROMO_PERCENT,
+      cap: PROMO_CAP,
+      deadlineLabel: PROMO_DEADLINE_LABEL,
+    };
   },
 );
 
@@ -94,11 +82,9 @@ export const submitBooking = createServerFn({ method: "POST" })
   .validator((input: unknown) => bookingInput.parse(input))
   .handler(async ({ data }) => {
     const sql = await getSql();
-    const usedRows = await sql<{ n: number }>`
-      select count(*)::int as n from bookings where early_bird = true
-    `;
-    const used = usedRows[0]?.n ?? 0;
-    const earlyBird = used < EARLY_BIRD_CAP;
+    // Recomputed server-side from the server clock — never trust a
+    // client-supplied flag for something that changes the price.
+    const earlyBird = isPromoActive();
 
     const inserted = await sql<{ id: number }>`
       insert into bookings
@@ -132,7 +118,6 @@ export const submitBooking = createServerFn({ method: "POST" })
       ok: true as const,
       id: inserted[0]?.id ?? 0,
       earlyBird,
-      remaining: Math.max(0, EARLY_BIRD_CAP - used - (earlyBird ? 1 : 0)),
     };
   });
 

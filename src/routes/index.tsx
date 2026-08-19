@@ -20,7 +20,7 @@ import { FAQ, faqJsonLd, localBusinessJsonLd, SITE_URL } from "@/lib/seo";
 const TITLE =
   "Leaf Cleanup & Junk Removal in Grand Forks, ND | Pick It Up E";
 const DESCRIPTION =
-  "Fall leaf cleanup and junk hauling in Grand Forks and East Grand Forks. We rake, blow, and haul it — you never touch a bag. $50 off the first 25 cleanups. 218-779-2553.";
+  "Fall leaf cleanup and junk hauling in Grand Forks and East Grand Forks. We rake, blow, and haul it — you never touch a bag. Book by September 20 for 20% off, up to $75. 218-779-2553.";
 
 export const Route = createFileRoute("/")({
   loader: () => getOfferStatus(),
@@ -109,7 +109,7 @@ function Home() {
             >
               <Button asChild variant="cream" size="lg">
                 <Link to="/book">
-                  Grab $50 off
+                  Grab {Math.round(offer.percent * 100)}% off
                   <ArrowRight className="size-4" />
                 </Link>
               </Button>
@@ -124,8 +124,9 @@ function Home() {
               className="stagger-in mt-5 text-sm text-gold tabular-nums"
               style={{ animationDelay: "320ms" }}
             >
-              Early bird: ${offer.amount} off the first cleanup ·{" "}
-              {offer.remaining} of {offer.cap} spots left
+              {offer.active
+                ? `Book by ${offer.deadlineLabel}: ${Math.round(offer.percent * 100)}% off, up to $${offer.cap}`
+                : `The ${offer.deadlineLabel} rate has closed — still booking at regular rates`}
             </p>
           </div>
           <div className="stagger-in" style={{ animationDelay: "180ms" }}>
@@ -143,7 +144,10 @@ function Home() {
             <div className="absolute inset-0 bg-[linear-gradient(to_top,var(--color-bg)_0%,transparent_45%)]" />
             <div className="absolute inset-x-0 bottom-0 grid gap-3 p-5 sm:grid-cols-3 sm:p-8">
               {[
-                { k: `${offer.remaining} spots`, v: "early-bird $50 off" },
+                {
+                  k: `${Math.round(offer.percent * 100)}% off`,
+                  v: `book by ${offer.deadlineLabel}, up to $${offer.cap}`,
+                },
                 { k: "$50 hold", v: "deposit applied to your bill" },
                 { k: "Silver crew cab", v: "we bag, blow & haul" },
               ].map((stat) => (
@@ -223,7 +227,7 @@ function Home() {
               Three or more on one block and we'll work out the whole street.
             </p>
             <p className="mt-4 text-sm text-gold">
-              Stacks with the early-bird $50 off while spots last.
+              Stacks with the {offer.deadlineLabel} rate while it's still open.
             </p>
           </div>
         </section>
@@ -238,15 +242,17 @@ function Home() {
               Before the rush, before the snow.
             </h2>
             <p className="mt-4 text-muted">
-              First 25 bookings get $50 off the first full cleanup. A $50
-              deposit holds your date and comes off the invoice.
+              Book by {offer.deadlineLabel} and get {Math.round(offer.percent * 100)}%
+              off — up to ${offer.cap} — on any job. Your yard doesn't need to
+              be ready yet; this locks the rate, not the date. A $50 deposit
+              holds your spot and comes off the invoice.
             </p>
             <p className="mt-4 text-sm text-muted">
               We cannot take paint, chemicals, oil, propane tanks, concrete,
               dirt, roofing, or asbestos.
             </p>
           </div>
-          <QuoteForm remaining={offer.remaining} />
+          <QuoteForm promo={offer} />
         </section>
 
         <section id="faq" className="mx-auto max-w-6xl px-4 pb-20">

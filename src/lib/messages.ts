@@ -7,6 +7,8 @@
  * instead of a blank text box at 6am.
  */
 
+import { PROMO_CAP, PROMO_PERCENT } from "@/lib/pricebook";
+
 export const PHONE = "218-779-2553";
 export const TEL = "tel:2187792553";
 
@@ -51,7 +53,9 @@ export const TEMPLATES: MessageTemplate[] = [
     stage: "new",
     build: (c) =>
       `${firstName(c.name)}, here's your number for the ${c.service}: ${c.estimate || "$___"}. ${
-        c.earlyBird ? "That's with the $50 early-bird already off. " : ""
+        c.earlyBird
+          ? `That's with the ${Math.round(PROMO_PERCENT * 100)}% off (up to $${PROMO_CAP}) already taken off. `
+          : ""
       }A $50 deposit holds the date and comes off the bill. Reply YES and I'll lock it in. — Pick It Up E, ${PHONE}`,
   },
   {

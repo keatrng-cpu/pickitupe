@@ -19,7 +19,34 @@
  */
 
 export const DEPOSIT = 50;
-export const EARLY_BIRD_DISCOUNT = 50;
+
+/**
+ * Fall pre-season promo — replaces the old count-based "first 25 bookings"
+ * cap. Two reasons:
+ *
+ * 1. A calendar date is verifiable by anyone; an unproven "spots left"
+ *    counter on a brand-new site with zero completed jobs is not — it reads
+ *    as fake scarcity to a skeptical visitor.
+ * 2. It decouples the discount from leaf season. Grand Forks leaves aren't
+ *    down by this date (city vacuum runs mid-Oct to mid-Nov), so this locks
+ *    the RATE and the DEPOSIT now — it is not a promise the truck shows up
+ *    by the deadline. `isPromoActive` gates booking eligibility, not service
+ *    timing.
+ *
+ * Percent-with-a-cap on purpose, not a flat dollar amount: a flat discount
+ * disproportionately crushes the cheapest tier (see FLOOR below) and
+ * undershoots on the priciest one. Percent scales with the job; the cap
+ * keeps a single acreage quote from giving away an unbounded amount.
+ */
+export const PROMO_PERCENT = 0.2;
+export const PROMO_CAP = 75;
+export const PROMO_DEADLINE_LABEL = "September 20";
+/** 2026-09-20 23:59:59 America/Chicago (CDT, UTC-5 in September). */
+export const PROMO_DEADLINE = new Date("2026-09-21T05:00:00.000Z");
+
+export function isPromoActive(now: Date = new Date()): boolean {
+  return now.getTime() < PROMO_DEADLINE.getTime();
+}
 
 /** Never below this after discounts — a truck roll costs money. */
 const FLOOR = 55;
@@ -217,6 +244,15 @@ function add(a: Range, b: Range): Range {
   return { low: a.low + b.low, high: a.high + b.high };
 }
 
+/** 20% off each end of the range, capped at $75, floored at $55. */
+function applyPromo(range: Range): Range {
+  const cut = (n: number) => Math.min(n * PROMO_PERCENT, PROMO_CAP);
+  return {
+    low: Math.max(FLOOR, Math.round(range.low - cut(range.low))),
+    high: Math.max(FLOOR, Math.round(range.high - cut(range.high))),
+  };
+}
+
 export function estimate(input: EstimateInput): Estimate {
   const sizes = sizeOptionsFor(input.service);
   const size = sizes.find((s) => s.value === input.size) ?? sizes[0];
@@ -257,11 +293,13 @@ export function estimate(input: EstimateInput): Estimate {
   }
 
   const beforeDiscount = total;
-  const discount = input.earlyBird ? EARLY_BIRD_DISCOUNT : 0;
-  const discounted: Range = {
-    low: Math.max(FLOOR, total.low - discount),
-    high: Math.max(FLOOR, total.high - discount),
-  };
+  const discounted = input.earlyBird ? applyPromo(total) : total;
+  // Dollars saved at the top of the range — the number worth putting in a
+  // text message. The bottom of the range can save proportionally less (or
+  // nothing, once the floor clamps it) — that's intentional, not a bug.
+  const discount = input.earlyBird
+    ? beforeDiscount.high - discounted.high
+    : 0;
 
   const needsWalkthrough = size.value === "acreage";
   if (needsWalkthrough) {
@@ -271,7 +309,7 @@ export function estimate(input: EstimateInput): Estimate {
   }
   if (discount > 0) {
     notes.push(
-      `Early-bird $${EARLY_BIRD_DISCOUNT} off is already taken off this range.`,
+      `Book by ${PROMO_DEADLINE_LABEL} to lock this rate — ${Math.round(PROMO_PERCENT * 100)}% off (up to $${PROMO_CAP}) is already taken off this range.`,
     );
   }
   notes.push(

@@ -14,10 +14,10 @@ export function DoorHanger() {
 
       <div className="my-6 h-px bg-gold/40" />
 
-      <p className="text-xs tracking-[0.28em] text-gold">EARLY BIRD</p>
-      <p className="mt-1 font-display text-6xl leading-none">$50 OFF</p>
+      <p className="text-xs tracking-[0.28em] text-gold">BOOK EARLY</p>
+      <p className="mt-1 font-display text-6xl leading-none">20% OFF</p>
       <p className="mt-2 text-sm text-muted">
-        first cleanup · first 25 bookings only
+        up to $75 · lock your rate by Sept 20
       </p>
 
       <div className="my-6 h-px bg-gold/40" />

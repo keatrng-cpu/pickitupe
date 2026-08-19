@@ -11,6 +11,7 @@ import {
   addOnsFor,
   estimate as computeEstimate,
   formatRange,
+  PROMO_DEADLINE_LABEL,
   refusedItemsIn,
   sizeOptionsFor,
   type AddOnKey,
@@ -64,11 +65,15 @@ const URGENCY = [
   { value: "flexible", label: "I'm flexible", hint: "Whenever you're nearby" },
 ] as const;
 
-export function QuoteForm({ remaining }: { remaining: number }) {
-  const [done, setDone] = useState<{
-    earlyBird: boolean;
-    remaining: number;
-  } | null>(null);
+export type PromoStatus = {
+  active: boolean;
+  percent: number;
+  cap: number;
+  deadlineLabel: string;
+};
+
+export function QuoteForm({ promo }: { promo: PromoStatus }) {
+  const [done, setDone] = useState<{ earlyBird: boolean } | null>(null);
   const [aiEstimate, setAiEstimate] = useState<string | null>(null);
   const [estimating, setEstimating] = useState(false);
   const [photo, setPhoto] = useState<string>("");
@@ -114,10 +119,10 @@ export function QuoteForm({ remaining }: { remaining: number }) {
         service,
         size: activeSize,
         addOns: activeAddOns,
-        earlyBird: remaining > 0,
+        earlyBird: promo.active,
         notes,
       }),
-    [service, activeSize, activeAddOns, remaining, notes],
+    [service, activeSize, activeAddOns, promo.active, notes],
   );
 
   const refused = refusedItemsIn(notes);
@@ -136,7 +141,7 @@ export function QuoteForm({ remaining }: { remaining: number }) {
           areaTier: geo?.verdict.tier,
         },
       });
-      setDone({ earlyBird: result.earlyBird, remaining: result.remaining });
+      setDone({ earlyBird: result.earlyBird });
       toast.success("Request received — we'll text you back.");
     } catch {
       toast.error("Could not send. Call or text 218-779-2553.");
@@ -171,11 +176,8 @@ export function QuoteForm({ remaining }: { remaining: number }) {
         <h3 className="mt-4 font-display text-3xl">You're on the list</h3>
         <p className="mt-2 text-muted">
           {done.earlyBird
-            ? `$50 off is locked on this first cleanup. We'll text to confirm and collect a $50 date-hold deposit.`
-            : `Request received. Early-bird slots are gone, but we'll still quote fast.`}
-        </p>
-        <p className="mt-4 text-sm text-gold">
-          {done.remaining} early-bird spots left after yours
+            ? `Your ${Math.round(promo.percent * 100)}% off (up to $${promo.cap}) is locked in. We'll text to confirm and collect the $50 date-hold deposit.`
+            : `Request received — the ${PROMO_DEADLINE_LABEL} rate has closed, but we'll still text back with a fast, straight quote.`}
         </p>
         <a
           className="mt-6 inline-flex text-sm underline decoration-gold/50 underline-offset-4"
@@ -199,9 +201,9 @@ export function QuoteForm({ remaining }: { remaining: number }) {
       <p className="text-xs tracking-[0.25em] text-gold">FREE ESTIMATE</p>
       <h3 className="mt-2 font-display text-3xl">Hold your date</h3>
       <p className="mt-2 text-sm text-muted">
-        {remaining > 0
-          ? `${remaining} of 25 early-bird $50-off spots still open.`
-          : "Early-bird is full — still booking at regular rates."}
+        {promo.active
+          ? `Book by ${promo.deadlineLabel} for ${Math.round(promo.percent * 100)}% off, up to $${promo.cap}.`
+          : `The ${PROMO_DEADLINE_LABEL} rate has closed — still booking at regular rates.`}
       </p>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">

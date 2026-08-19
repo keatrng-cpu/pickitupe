@@ -67,20 +67,46 @@ $211–$344 (avg $271), full truck $422–$550.
 
 ## Rules
 
-- **Early bird:** $50 off, first 25 jobs, applied to both ends of the range.
+- **Pre-season promo:** 20% off, capped at $75, book by September 20
+  (`PROMO_PERCENT` / `PROMO_CAP` / `PROMO_DEADLINE` in `src/lib/pricebook.ts`).
+  A calendar deadline, not a job-count cap — see "Why a date, not a count"
+  below.
 - **Floor:** nothing prices below $55 after discounts — a truck roll costs money.
-- **Deposit:** $50 holds the date, comes off the invoice.
+- **Deposit:** $50 holds the date, comes off the invoice. Same for every
+  booking, promo or not.
 - **Block deal:** two houses on one street the same day, $25 off each.
 - **Scope change:** stop and re-quote before loading. Never load first, bill later.
 - **Refused loads:** paint, chemicals, oil, propane, concrete, dirt, roofing,
   asbestos. The estimator scans the notes field and warns before dispatch.
 
-### Watch the early-bird overlap
+### Why a date, not a count
 
-$50 off a $95 small lot is a **53% discount** — under the floor, so it clamps at
-$55. On a standard lot it's about a third off. That is a real customer-acquisition
-cost, not a rounding error. If the first 25 fill up with small lots, consider
-restricting early-bird to standard-lot-and-up next season.
+The site originally ran a flat $50 off the first 25 bookings. Replaced because:
+
+1. **A count isn't verifiable.** "25 spots, X left" has no proof behind it on
+   a brand-new site with zero completed jobs — it reads as fake scarcity.
+   A calendar date is checkable by anyone.
+2. **Leaves aren't down by September.** The old cap tied the discount to
+   being early in line; the deadline now locks the *rate*, not the *service
+   date* — the site says so explicitly so nobody expects a rake crew before
+   their yard actually needs one.
+3. **A flat dollar amount doesn't scale.** $50 off a $95 job is 53% — deep
+   enough to clamp at the floor. $50 off a $650 acreage job is 8% — barely
+   felt. Percent-with-a-cap scales with the job and can't blow past a fixed
+   dollar giveaway on the biggest jobs.
+
+### Why capped, not a flat percent
+
+An uncapped 20% (or worse, the 35% originally floated) still has two failure
+modes worth naming:
+
+- **Small jobs:** 35% off a $59 one-item job computes to $38.35 — the $55
+  floor catches it, but that means the advertised percentage silently isn't
+  what's actually charged on the cheapest tier. That's a truth-in-advertising
+  problem, not just a margin one.
+- **Big jobs:** 35% off a $650 acreage quote gives away $227.50 on one job,
+  uncapped, with no corresponding drop in cost. The $75 cap bounds this
+  regardless of how big the quoted range gets.
 
 ## What to check after a real season
 

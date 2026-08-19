@@ -10,6 +10,7 @@ import {
   type BookingRow,
 } from "@/lib/bookings";
 import { smsLink, templatesForStage } from "@/lib/messages";
+import { PROMO_CAP, PROMO_PERCENT } from "@/lib/pricebook";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/jobs")({ component: JobsPage });
@@ -166,7 +167,8 @@ function JobsPage() {
                       ) : null}
                       {job.early_bird ? (
                         <span className="rounded-full bg-sioux px-3 py-1 text-xs">
-                          $50 off
+                          {Math.round(PROMO_PERCENT * 100)}% off (up to $
+                          {PROMO_CAP})
                         </span>
                       ) : null}
                       {job.urgency ? (

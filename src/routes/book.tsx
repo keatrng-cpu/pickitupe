@@ -21,8 +21,10 @@ function BookPage() {
           <p className="text-xs tracking-[0.28em] text-gold">REQUEST</p>
           <h1 className="mt-3 font-display text-5xl">Book a haul.</h1>
           <p className="mt-4 text-muted">
-            Text 218-779-2553 or send the form. {offer.remaining} of {offer.cap}{" "}
-            early-bird spots remain.
+            Text 218-779-2553 or send the form.{" "}
+            {offer.active
+              ? `Book by ${offer.deadlineLabel} for ${Math.round(offer.percent * 100)}% off, up to $${offer.cap}.`
+              : `The ${offer.deadlineLabel} rate has closed — still booking at regular rates.`}
           </p>
           <ul className="mt-8 space-y-4 text-sm text-muted">
             <li>
@@ -46,7 +48,7 @@ function BookPage() {
             Call or text 218-779-2553
           </a>
         </div>
-        <QuoteForm remaining={offer.remaining} />
+        <QuoteForm promo={offer} />
       </main>
       <SiteFooter />
     </div>

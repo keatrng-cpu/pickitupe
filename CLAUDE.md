@@ -10,7 +10,8 @@ You are working on the **Pick It Up E** repo: a real local business site, not a 
 - Services: fall leaf cleanup, junk/debris haul, garage & basement, furniture & appliances
 - Truck: **silver 2020 GMC Sierra 1500** crew cab — depict it, do not brand the company as GMC
 - Goal: book fall work before city leaf vacuum (typically mid-Oct to mid-Nov)
-- Early bird: **$50 off** first full cleanup, first **25** jobs, **$50 deposit** applied to invoice
+- Pre-season promo: book by **September 20** for **20% off, up to $75**, any job (`PROMO_PERCENT`/`PROMO_CAP`/`PROMO_DEADLINE` in `src/lib/pricebook.ts`) — a calendar deadline, not a job-count cap, and it locks the rate, not the service date (leaves aren't down by Sept 20)
+- **$50 deposit** applied to invoice on every booking, promo or not
 - Refuse: paint, chemicals, oil, propane, concrete, dirt, roofing, asbestos
 
 Legal: USPS mailboxes are off-limits. Marketing = door hangers, handoffs, this site, texts.

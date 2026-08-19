@@ -3,7 +3,7 @@
 Seasonal leaf cleanup and junk removal site for **Grand Forks, ND**.
 
 - Phone: [218-779-2553](tel:2187792553)
-- Offer: first **25** bookings get **$50 off** the first full cleanup
+- Offer: book by **September 20** for **20% off, up to $75**, on any job
 - Rig: silver 2020 crew-cab pickup (Sierra 1500)
 
 Live site is a booking funnel: door-hanger mock, quote form, owner jobs board.
@@ -42,7 +42,7 @@ npm run build        # build only — run `npm run db:migrate` separately
 
 ## Data
 
-Migrations live in [`migrations/`](migrations/). Bookings table is `0002_bookings.sql`; `0003_booking_intel.sql` adds the job size, instant estimate, urgency, coordinates, and neighbor referral. Early-bird count is `count(*) where early_bird = true`, cap `25`.
+Migrations live in [`migrations/`](migrations/). Bookings table is `0002_bookings.sql`; `0003_booking_intel.sql` adds the job size, instant estimate, urgency, coordinates, and neighbor referral. The promo is a fixed calendar deadline (`PROMO_DEADLINE` in `src/lib/pricebook.ts`), not a database count — `early_bird` on a row just records whether that booking landed before the cutoff.
 
 ## Quoting
 
