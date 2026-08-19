@@ -27,7 +27,7 @@ Dev server: `http://localhost:8080`
 
 ```bash
 npm run typecheck
-npm run build        # also applies SQL migrations
+npm run build        # build only — run `npm run db:migrate` separately
 ```
 
 ## Routes
