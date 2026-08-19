@@ -21,6 +21,18 @@ const bookingInput = z.object({
   ]),
   notes: z.string().trim().max(800).optional().or(z.literal("")),
   preferredDate: z.string().trim().max(40).optional().or(z.literal("")),
+  urgency: z
+    .enum(["before-vacuum", "this-week", "flexible"])
+    .optional()
+    .or(z.literal("")),
+  jobSize: z.string().trim().max(40).optional().or(z.literal("")),
+  addOns: z.array(z.string().max(40)).max(10).optional(),
+  estimateLow: z.number().int().min(0).max(100_000).optional(),
+  estimateHigh: z.number().int().min(0).max(100_000).optional(),
+  lat: z.number().min(-90).max(90).optional(),
+  lon: z.number().min(-180).max(180).optional(),
+  areaTier: z.enum(["core", "ring", "outside", "unknown"]).optional(),
+  neighborOf: z.string().trim().max(200).optional().or(z.literal("")),
 });
 
 export type BookingRow = {
@@ -35,6 +47,15 @@ export type BookingRow = {
   early_bird: boolean;
   status: string;
   created_at: string;
+  urgency: string | null;
+  job_size: string | null;
+  add_ons: string | null;
+  estimate_low: number | null;
+  estimate_high: number | null;
+  lat: number | null;
+  lon: number | null;
+  area_tier: string | null;
+  neighbor_of: string | null;
 };
 
 export const getOfferStatus = createServerFn({ method: "GET" }).handler(
@@ -61,7 +82,8 @@ export const submitBooking = createServerFn({ method: "POST" })
 
     const inserted = await sql<{ id: number }>`
       insert into bookings
-        (name, phone, email, address, service, notes, preferred_date, early_bird, status)
+        (name, phone, email, address, service, notes, preferred_date, early_bird, status,
+         urgency, job_size, add_ons, estimate_low, estimate_high, lat, lon, area_tier, neighbor_of)
       values
         (
           ${data.name},
@@ -72,7 +94,16 @@ export const submitBooking = createServerFn({ method: "POST" })
           ${data.notes || null},
           ${data.preferredDate || null},
           ${earlyBird},
-          ${"new"}
+          ${"new"},
+          ${data.urgency || null},
+          ${data.jobSize || null},
+          ${data.addOns?.length ? data.addOns.join(",") : null},
+          ${data.estimateLow ?? null},
+          ${data.estimateHigh ?? null},
+          ${data.lat ?? null},
+          ${data.lon ?? null},
+          ${data.areaTier || null},
+          ${data.neighborOf || null}
         )
       returning id
     `;
@@ -91,7 +122,9 @@ export const listBookings = createServerFn({ method: "GET" })
     const sql = await getSql();
     return sql<BookingRow>`
       select id, name, phone, email, address, service, notes,
-             preferred_date, early_bird, status, created_at
+             preferred_date, early_bird, status, created_at,
+             urgency, job_size, add_ons, estimate_low, estimate_high,
+             lat, lon, area_tier, neighbor_of
       from bookings
       order by created_at desc
       limit 200

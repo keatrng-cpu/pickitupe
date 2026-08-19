@@ -19,7 +19,11 @@ Legal: USPS mailboxes are off-limits. Marketing = door hangers, handoffs, this s
 
 - Marketing home with falling leaves, door-hanger card, silver-truck hero, **scroll-linked haul animation** (`src/components/haul-on-scroll.tsx`)
 - Quote / book form → `bookings` table (`src/lib/bookings.ts`)
-- `/jobs` for the owner to see incoming work (auth-gated)
+- **Instant estimate** — deterministic flat-rate math, no API key, no model (`src/lib/pricebook.ts`, calibrate in `PRICEBOOK.md`)
+- **Address autocomplete + service-area verdict** — keyless OpenStreetMap, boxed to Greater Grand Forks (`src/lib/service-area.ts`)
+- **Block deal** — two houses on one street the same day, $25 off each
+- `/jobs` for the owner to see incoming work (auth-gated), with same-day clusters and one-tap customer texts (`src/lib/messages.ts`)
+- LocalBusiness + FAQ structured data (`src/lib/seo.ts`) — the FAQ markup must stay identical to the on-page FAQ
 - PGLite when no `DATABASE_URL`; Neon when set
 
 ## Commands
@@ -42,9 +46,15 @@ src/routes/jobs.tsx           owner board
 src/components/door-hanger.tsx
 src/components/haul-on-scroll.tsx
 src/components/quote-form.tsx
+src/components/address-field.tsx  autocomplete + "do you come out here?"
 src/lib/bookings.ts           server fns + offer cap
+src/lib/pricebook.ts          flat-rate ranges — the only place numbers live
+src/lib/service-area.ts       distance bands + keyless geocoding
+src/lib/messages.ts           one-tap customer texts
+src/lib/seo.ts                LocalBusiness + FAQ structured data
 src/styles.css                tokens + motion
 migrations/0002_bookings.sql
+migrations/0003_booking_intel.sql  size, estimate, urgency, lat/lon, neighbor
 public/hero-truck.jpg         silver Sierra hero / OG source
 public/haul-truck.png         cutout used in scroll scene
 ```

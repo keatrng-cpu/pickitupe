@@ -13,6 +13,8 @@ screenshots/
 artifacts/
 .grok/
 AGENTS.md
+.claude/settings.local.json
+.claude/launch.json
 .node_modules.lock
 .DS_Store
 .playwright-cli/

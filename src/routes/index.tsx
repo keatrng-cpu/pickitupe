@@ -15,9 +15,40 @@ import { HaulOnScroll } from "@/components/haul-on-scroll";
 import { QuoteForm } from "@/components/quote-form";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { getOfferStatus } from "@/lib/bookings";
+import { FAQ, faqJsonLd, localBusinessJsonLd, SITE_URL } from "@/lib/seo";
+
+const TITLE =
+  "Leaf Cleanup & Junk Removal in Grand Forks, ND | Pick It Up E";
+const DESCRIPTION =
+  "Fall leaf cleanup and junk hauling in Grand Forks and East Grand Forks. We rake, blow, and haul it — you never touch a bag. $50 off the first 25 cleanups. 218-779-2553.";
 
 export const Route = createFileRoute("/")({
   loader: () => getOfferStatus(),
+  head: () => ({
+    meta: [
+      { title: TITLE },
+      { name: "description", content: DESCRIPTION },
+      { property: "og:title", content: TITLE },
+      { property: "og:description", content: DESCRIPTION },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: SITE_URL },
+      { property: "og:image", content: `${SITE_URL}/og.jpg` },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "geo.region", content: "US-ND" },
+      { name: "geo.placename", content: "Grand Forks" },
+    ],
+    links: [{ rel: "canonical", href: SITE_URL }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify(localBusinessJsonLd()),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify(faqJsonLd()),
+      },
+    ],
+  }),
   component: Home,
 });
 
@@ -179,6 +210,24 @@ function Home() {
           </div>
         </section>
 
+        <section id="block" className="mx-auto max-w-6xl px-4 pb-4">
+          <div className="rounded-3xl border border-gold/30 bg-bg-deep/40 p-8">
+            <p className="text-xs tracking-[0.28em] text-gold">BLOCK DEAL</p>
+            <h2 className="mt-2 font-display text-4xl">
+              Get a neighbor on the same day. Both of you save $25.
+            </h2>
+            <p className="mt-4 max-w-2xl text-muted">
+              One trip down your street costs us less than two, so we hand that
+              back. Book your cleanup, put your neighbor's address in the form,
+              and we take $25 off each bill when we do both houses the same day.
+              Three or more on one block and we'll work out the whole street.
+            </p>
+            <p className="mt-4 text-sm text-gold">
+              Stacks with the early-bird $50 off while spots last.
+            </p>
+          </div>
+        </section>
+
         <section
           id="book"
           className="mx-auto grid max-w-6xl items-start gap-10 px-4 py-16 lg:grid-cols-2"
@@ -198,6 +247,21 @@ function Home() {
             </p>
           </div>
           <QuoteForm remaining={offer.remaining} />
+        </section>
+
+        <section id="faq" className="mx-auto max-w-6xl px-4 pb-20">
+          <p className="text-xs tracking-[0.28em] text-gold">STRAIGHT ANSWERS</p>
+          <h2 className="mt-2 font-display text-4xl">
+            What people ask before they call
+          </h2>
+          <dl className="mt-8 grid gap-4 sm:grid-cols-2">
+            {FAQ.map((item) => (
+              <div key={item.q} className="card-green rounded-2xl p-5">
+                <dt className="font-medium">{item.q}</dt>
+                <dd className="mt-2 text-sm text-muted">{item.a}</dd>
+              </div>
+            ))}
+          </dl>
         </section>
       </main>
 

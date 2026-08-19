@@ -42,7 +42,17 @@ npm run build        # also applies SQL migrations
 
 ## Data
 
-Migrations live in [`migrations/`](migrations/). Bookings table is `0002_bookings.sql`. Early-bird count is `count(*) where early_bird = true`, cap `25`.
+Migrations live in [`migrations/`](migrations/). Bookings table is `0002_bookings.sql`; `0003_booking_intel.sql` adds the job size, instant estimate, urgency, coordinates, and neighbor referral. Early-bird count is `count(*) where early_bird = true`, cap `25`.
+
+## Quoting
+
+The site prices a job the moment the customer picks a size — deterministic math from
+[`src/lib/pricebook.ts`](src/lib/pricebook.ts), no API key and no model involved. Ranges are
+documented and calibrated in [`PRICEBOOK.md`](PRICEBOOK.md).
+
+Address entry uses keyless OpenStreetMap search bounded to Greater Grand Forks
+([`src/lib/service-area.ts`](src/lib/service-area.ts)) and tells the customer on the spot whether
+we come out that far. Lookup failures never block a booking.
 
 ## Brand
 
