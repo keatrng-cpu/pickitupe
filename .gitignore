@@ -19,3 +19,6 @@ AGENTS.md
 .DS_Store
 .playwright-cli/
 coverage/
+
+# Build output
+.netlify/

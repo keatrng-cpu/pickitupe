@@ -1,5 +1,12 @@
 # Deploy — Netlify + Supabase
 
+**Live:** <https://marvelous-trifle-746b0c.netlify.app> — Netlify project
+`marvelous-trifle-746b0c`, deploying from this repo's `main` branch.
+
+`DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `VITE_SITE_URL`
+are set on the Netlify project. `VITE_SITE_URL` is baked in at build time, so
+changing the domain needs a rebuild, not just an env edit.
+
 ## Database
 
 Supabase project **pickitupe** (`fletejughpwkudradend`, us-east-2, free tier).
