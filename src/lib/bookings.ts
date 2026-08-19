@@ -58,15 +58,35 @@ export type BookingRow = {
   neighbor_of: string | null;
 };
 
+/**
+ * The home page loads through this, so a database that is down, unmigrated, or
+ * simply unconfigured must not blank the site — the phone number is the most
+ * valuable thing on the page and it needs no database at all. Degrade to the
+ * full offer instead and let the form report the real failure on submit.
+ */
 export const getOfferStatus = createServerFn({ method: "GET" }).handler(
   async () => {
-    const sql = await getSql();
-    const rows = await sql<{ n: number }>`
-      select count(*)::int as n from bookings where early_bird = true
-    `;
-    const used = rows[0]?.n ?? 0;
-    const remaining = Math.max(0, EARLY_BIRD_CAP - used);
-    return { remaining, cap: EARLY_BIRD_CAP, amount: EARLY_BIRD_OFF };
+    try {
+      const sql = await getSql();
+      const rows = await sql<{ n: number }>`
+        select count(*)::int as n from bookings where early_bird = true
+      `;
+      const used = rows[0]?.n ?? 0;
+      return {
+        remaining: Math.max(0, EARLY_BIRD_CAP - used),
+        cap: EARLY_BIRD_CAP,
+        amount: EARLY_BIRD_OFF,
+        degraded: false,
+      };
+    } catch (error) {
+      console.error("[bookings] offer status unavailable:", error);
+      return {
+        remaining: EARLY_BIRD_CAP,
+        cap: EARLY_BIRD_CAP,
+        amount: EARLY_BIRD_OFF,
+        degraded: true,
+      };
+    }
   },
 );
 
