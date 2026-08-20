@@ -137,21 +137,26 @@ function Home() {
 
         <HaulOnScroll />
 
-        <section id="services" className="mx-auto max-w-6xl px-4 py-16">
-          <p className="kicker">What we haul</p>
-          <h2 className="mt-2 font-display text-4xl">
-            Leaves, junk, and the pile in the garage.
-          </h2>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            {SERVICES.map((s) => (
-              <article key={s.title} className="card-green card-lift rounded-3xl p-6">
-                <s.icon className="size-6 text-gold" />
-                <h3 className="mt-4 font-display text-2xl">{s.title}</h3>
-                <p className="mt-2 text-sm text-muted">{s.copy}</p>
-              </article>
-            ))}
-          </div>
-        </section>
+        <div className="band mt-8">
+          <section id="services" className="mx-auto max-w-6xl px-4 py-20">
+            <p className="kicker">What we haul</p>
+            <h2 className="mt-2 font-display text-4xl">
+              Leaves, junk, and the pile in the garage.
+            </h2>
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              {SERVICES.map((s) => (
+                <article
+                  key={s.title}
+                  className="card-green card-lift rounded-3xl p-6"
+                >
+                  <s.icon className="size-6 text-gold" />
+                  <h3 className="mt-4 font-display text-2xl">{s.title}</h3>
+                  <p className="mt-2 text-sm text-muted">{s.copy}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        </div>
 
         <section className="mx-auto grid max-w-6xl gap-6 px-4 py-8 lg:grid-cols-3">
           {[
@@ -219,20 +224,22 @@ function Home() {
           <QuoteForm promo={offer} />
         </section>
 
-        <section id="faq" className="mx-auto max-w-6xl px-4 pb-20">
-          <p className="kicker">Straight answers</p>
-          <h2 className="mt-2 font-display text-4xl">
-            What people ask before they call
-          </h2>
-          <dl className="mt-8 grid gap-4 sm:grid-cols-2">
-            {FAQ.map((item) => (
-              <div key={item.q} className="card-green rounded-2xl p-5">
-                <dt className="font-medium">{item.q}</dt>
-                <dd className="mt-2 text-sm text-muted">{item.a}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
+        <div className="band">
+          <section id="faq" className="mx-auto max-w-6xl px-4 py-20">
+            <p className="kicker">Straight answers</p>
+            <h2 className="mt-2 font-display text-4xl">
+              What people ask before they call
+            </h2>
+            <dl className="mt-8 grid gap-4 sm:grid-cols-2">
+              {FAQ.map((item) => (
+                <div key={item.q} className="card-green rounded-2xl p-5">
+                  <dt className="font-medium">{item.q}</dt>
+                  <dd className="mt-2 text-sm text-muted">{item.a}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        </div>
       </main>
 
       <SiteFooter />

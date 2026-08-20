@@ -46,7 +46,14 @@ export function HaulOnScroll() {
   }, []);
 
   // Truck already faces RIGHT — no scale-x flip. Drive left → right.
-  const x = -52 + p * 156;
+  //
+  // The old range (-52vw → 104vw) spent most of the scroll with the truck
+  // off-screen: at the top of the section you saw an empty green field and a
+  // dashed line, and at normal scroll speed the truck could be missed
+  // entirely. `drive` eases so it enters fast, dwells centre through the
+  // chair pickup, then leaves fast — on-screen for most of the section.
+  const drive = smoothstep(p * 1.08 - 0.04);
+  const x = -26 + drive * 110;
   const bounce = Math.sin(p * Math.PI * 6) * 5;
   const dash = -p * 420;
   const load = smoothstep((p - 0.42) / 0.2);
@@ -74,7 +81,18 @@ export function HaulOnScroll() {
           </p>
         </div>
 
-        <div className="relative mt-auto h-[64%] min-h-72">
+        <div className="relative mt-auto h-[76%] min-h-80">
+          {/* Horizon. Without it the scene is a flat green void with a truck
+              parked at the bottom — the space has to read as ground under an
+              open sky, not as nothing. */}
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-[62%]"
+            style={{
+              background:
+                "radial-gradient(120% 100% at 50% 100%, color-mix(in srgb, var(--color-sioux) 30%, transparent) 0%, transparent 72%)",
+            }}
+            aria-hidden
+          />
           {Array.from({ length: 12 }).map((_, i) => {
             const delay = (i / 12) * 0.8;
             const visible = p > delay ? Math.min(1, (p - delay) * 4) : 0;
@@ -100,7 +118,7 @@ export function HaulOnScroll() {
           <img
             src="/haul-chair.webp"
             alt=""
-            className="absolute z-20 w-24 origin-bottom drop-shadow-[0_12px_18px_rgba(0,0,0,0.4)] sm:w-32"
+            className="absolute z-20 w-28 origin-bottom drop-shadow-[0_12px_18px_rgba(0,0,0,0.4)] sm:w-40"
             style={{
               left: `${chairX}vw`,
               bottom: `${chairBottom}%`,
@@ -118,7 +136,7 @@ export function HaulOnScroll() {
             <img
               src="/haul-truck.webp"
               alt="Vintage cream pickup facing right, maple leaves in the bed"
-              className="relative w-[min(92vw,700px)] drop-shadow-[0_18px_24px_rgba(0,0,0,0.45)]"
+              className="relative w-[min(94vw,880px)] drop-shadow-[0_22px_30px_rgba(0,0,0,0.5)]"
             />
           </div>
 

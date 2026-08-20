@@ -366,35 +366,42 @@ export function QuoteForm({ promo }: { promo: PromoStatus }) {
 
       {/* Instant number. Computed on the spot from the pricebook — no waiting,
           no API key, same answer every time. */}
-      <div className="mt-6 rounded-2xl border border-gold/30 bg-bg-deep/40 p-4">
-        <p className="text-xs tracking-[0.25em] text-gold">YOUR ESTIMATE</p>
+      <div className="card-estimate mt-6 rounded-2xl p-5">
+        <p className="kicker">Your estimate</p>
         {quote.range ? (
           <>
-            <p className="mt-1 font-display text-3xl">
-              {formatRange(quote.range)}
-              {quote.discount > 0 ? (
-                <span className="ml-2 align-middle text-base text-muted line-through">
-                  {quote.beforeDiscount
-                    ? formatRange(quote.beforeDiscount)
-                    : null}
+            <p className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span className="font-display text-4xl leading-none tracking-tight">
+                {formatRange(quote.range)}
+              </span>
+              {quote.discount > 0 && quote.beforeDiscount ? (
+                <span className="text-base text-print/45 line-through">
+                  {formatRange(quote.beforeDiscount)}
                 </span>
               ) : null}
             </p>
-            <ul className="mt-3 space-y-1 text-xs text-muted">
+            {quote.discount > 0 ? (
+              <p className="mt-2 inline-flex rounded-full bg-mahogany px-3 py-1 text-xs font-medium text-paper">
+                You save up to ${quote.discount}
+              </p>
+            ) : null}
+            <div className="estimate-rule my-4" />
+            <ul className="space-y-1.5 text-xs text-print/70">
               {quote.lines.map((l) => (
                 <li key={l.label} className="flex justify-between gap-4">
                   <span>{l.label}</span>
-                  <span>{formatRange(l.range)}</span>
+                  <span className="tabular-nums">{formatRange(l.range)}</span>
                 </li>
               ))}
             </ul>
           </>
         ) : (
-          <p className="mt-1 text-sm">
+          <p className="mt-1.5 text-sm">
             Tell us what it is below and we'll price it the same day.
           </p>
         )}
-        <ul className="mt-3 space-y-1 text-xs text-muted">
+        <div className="estimate-rule my-4" />
+        <ul className="space-y-1.5 text-xs text-print/65">
           {quote.notes.map((n) => (
             <li key={n}>· {n}</li>
           ))}
