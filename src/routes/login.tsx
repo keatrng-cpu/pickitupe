@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { GROK_PROVIDERS, authEnabled, signIn } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
-import { FallingLeaves } from "@/components/falling-leaves";
 import { SiteHeader } from "@/components/site-header";
 
 export const Route = createFileRoute("/login")({ component: Login });
@@ -9,11 +8,10 @@ export const Route = createFileRoute("/login")({ component: Login });
 function Login() {
   return (
     <div className="relative min-h-screen bg-bg">
-      <FallingLeaves />
       <SiteHeader />
       <main className="mx-auto grid max-w-md place-items-center px-4 py-20">
         <div className="card-green w-full rounded-3xl p-8">
-          <p className="text-xs tracking-[0.28em] text-gold">OWNER</p>
+          <p className="kicker">Owner</p>
           <h1 className="mt-2 font-display text-3xl">Sign in to jobs</h1>
           <p className="mt-2 text-sm text-muted">
             Incoming bookings live on the jobs board.

@@ -11,6 +11,10 @@
   --color-muted: #c9bfa8;
   --color-gold: #d4c4a0;
   --color-ink: #04351c;
+  --color-mahogany: #4a2418;
+  --color-mahogany-deep: #2f1610;
+  --color-paper: #f3ead6;
+  --color-print: #3c1e14;
   --color-border: color-mix(in srgb, #ede3d0 22%, transparent);
   --radius: 1.25rem;
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
@@ -29,6 +33,7 @@
     background: var(--color-bg);
     color: var(--color-fg);
     font-family: var(--font-sans);
+    overflow-x: hidden;
   }
 
   button:not(:disabled),
@@ -77,6 +82,10 @@
     filter: none !important;
     transform: none !important;
   }
+
+  .edge-leaf {
+    opacity: 0.32 !important;
+  }
 }
 
 @keyframes fall-leaf {
@@ -112,7 +121,7 @@
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-10px);
+    transform: translateY(-8px);
   }
 }
 
@@ -134,8 +143,30 @@
   will-change: transform;
 }
 
+.edge-leaf {
+  position: absolute;
+  top: 0;
+  height: auto;
+  opacity: 0.58;
+  filter: drop-shadow(0 2px 4px rgb(0 0 0 / 0.25));
+  will-change: transform;
+}
+
+@media (max-width: 640px) {
+  .edge-leaf {
+    opacity: 0.4;
+  }
+}
+
 .float-card {
-  animation: float-card 7s ease-in-out infinite;
+  animation: float-card 8s ease-in-out infinite;
+}
+
+.kicker {
+  font-size: 0.7rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--color-gold);
 }
 
 .card-green {
@@ -147,6 +178,37 @@
     0 24px 48px -28px rgb(0 0 0 / 0.45);
 }
 
+.card-paper {
+  background-color: var(--color-paper);
+  background-image: url("/grain.png");
+  background-size: 192px 192px;
+  color: var(--color-print);
+  border: 1px solid color-mix(in srgb, var(--color-mahogany) 16%, transparent);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--color-fg) 35%, transparent),
+    0 28px 50px -30px rgb(0 0 0 / 0.5);
+}
+
+.card-paper .kicker {
+  color: color-mix(in srgb, var(--color-mahogany) 72%, var(--color-gold));
+}
+
+.card-print {
+  background-color: var(--color-mahogany);
+  background-image: url("/grain.png");
+  background-size: 160px 160px;
+  color: var(--color-paper);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--color-paper) 32%, transparent),
+    inset 0 0 0 7px var(--color-mahogany),
+    inset 0 0 0 8px color-mix(in srgb, var(--color-paper) 26%, transparent),
+    0 30px 60px -28px rgb(0 0 0 / 0.55);
+}
+
+.card-print .kicker {
+  color: color-mix(in srgb, var(--color-paper) 72%, transparent);
+}
+
 .card-lift {
   transition:
     transform 200ms ease-out,
@@ -156,7 +218,6 @@
 
 .card-lift:hover {
   transform: translateY(-3px);
-  border-color: color-mix(in srgb, var(--color-gold) 45%, transparent);
   box-shadow: 0 28px 56px -28px rgb(0 0 0 / 0.55);
 }
 
@@ -177,13 +238,38 @@
     var(--color-gold) 0 28px,
     transparent 28px 56px
   );
-  opacity: 0.55;
+  opacity: 0.45;
 }
 
-.haul-sky {
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    color-mix(in srgb, var(--color-bg-deep) 35%, transparent)
-  );
+.hero-scrim {
+  background:
+    linear-gradient(
+      90deg,
+      var(--color-bg) 0%,
+      color-mix(in srgb, var(--color-bg) 82%, transparent) 34%,
+      transparent 62%
+    ),
+    linear-gradient(
+      to top,
+      var(--color-bg) 0%,
+      color-mix(in srgb, var(--color-bg) 55%, transparent) 28%,
+      transparent 52%
+    );
+}
+
+@media (max-width: 640px) {
+  .hero-scrim {
+    background: linear-gradient(
+      to top,
+      var(--color-bg) 0%,
+      color-mix(in srgb, var(--color-bg) 78%, transparent) 36%,
+      color-mix(in srgb, var(--color-bg) 20%, transparent) 58%,
+      transparent 72%
+    );
+  }
+}
+
+.print-rule {
+  height: 1px;
+  background: color-mix(in srgb, var(--color-paper) 28%, transparent);
 }

@@ -22,3 +22,7 @@ coverage/
 
 # Build output
 .netlify/
+
+# VIN plate / personal photos — never push
+attachments/Screenshot*
+attachments/*VIN*

@@ -11,8 +11,8 @@ const buttonVariants = cva(
         primary:
           "bg-sioux text-fg hover:bg-sioux/90 shadow-[0_10px_30px_-12px_rgba(0,154,68,0.9)]",
         cream: "bg-fg text-ink hover:bg-gold",
-        ghost:
-          "border border-border bg-transparent text-fg hover:bg-fg/8",
+        print: "bg-mahogany text-paper hover:bg-mahogany-deep",
+        ghost: "border border-border bg-transparent text-fg hover:bg-fg/8",
       },
       size: {
         md: "h-11 px-5 text-sm",

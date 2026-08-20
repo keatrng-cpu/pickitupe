@@ -5,12 +5,10 @@ import {
   Sofa,
   Truck,
   Warehouse,
-  Phone,
   ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DoorHanger } from "@/components/door-hanger";
-import { FallingLeaves } from "@/components/falling-leaves";
 import { HaulOnScroll } from "@/components/haul-on-scroll";
 import { QuoteForm } from "@/components/quote-form";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
@@ -77,18 +75,16 @@ const SERVICES = [
 
 function Home() {
   const offer = Route.useLoaderData();
+  const pct = Math.round(offer.percent * 100);
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-bg">
-      <FallingLeaves />
+    <div className="relative min-h-screen bg-bg">
       <SiteHeader />
 
       <main>
         <section className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 lg:grid-cols-[1.1fr_0.9fr] lg:py-24">
           <div>
-            <p className="stagger-in text-xs tracking-[0.32em] text-gold">
-              GRAND FORKS · LOCALLY OWNED
-            </p>
+            <p className="kicker stagger-in">Grand Forks · locally owned</p>
             <h1
               className="stagger-in mt-4 font-display text-5xl leading-[0.95] sm:text-7xl"
               style={{ animationDelay: "80ms" }}
@@ -109,15 +105,9 @@ function Home() {
             >
               <Button asChild variant="cream" size="lg">
                 <Link to="/book">
-                  Grab {Math.round(offer.percent * 100)}% off
+                  {offer.active ? `Grab ${pct}% off` : "Book a cleanup"}
                   <ArrowRight className="size-4" />
                 </Link>
-              </Button>
-              <Button asChild variant="ghost" size="lg">
-                <a href="tel:2187792553">
-                  <Phone className="size-4" />
-                  218-779-2553
-                </a>
               </Button>
             </div>
             <p
@@ -125,7 +115,7 @@ function Home() {
               style={{ animationDelay: "320ms" }}
             >
               {offer.active
-                ? `Book by ${offer.deadlineLabel}: ${Math.round(offer.percent * 100)}% off, up to $${offer.cap}`
+                ? `Book by ${offer.deadlineLabel}: ${pct}% off, up to $${offer.cap}`
                 : `The ${offer.deadlineLabel} rate has closed — still booking at regular rates`}
             </p>
           </div>
@@ -138,33 +128,20 @@ function Home() {
           <div className="relative overflow-hidden rounded-[2rem] ring-1 ring-gold/30">
             <img
               src="/hero-truck.jpg"
-              alt="Silver 2020 crew-cab pickup loaded with fall leaves and junk in Grand Forks"
-              className="h-64 w-full object-cover sm:h-[28rem]"
+              alt="Vintage cream pickup loaded with maple leaves and an armchair"
+              className="h-64 w-full object-cover object-[68%_60%] sm:h-[28rem]"
             />
             <div className="absolute inset-0 bg-[linear-gradient(to_top,var(--color-bg)_0%,transparent_45%)]" />
-            <div className="absolute inset-x-0 bottom-0 grid gap-3 p-5 sm:grid-cols-3 sm:p-8">
-              {[
-                {
-                  k: `${Math.round(offer.percent * 100)}% off`,
-                  v: `book by ${offer.deadlineLabel}, up to $${offer.cap}`,
-                },
-                { k: "$50 hold", v: "deposit applied to your bill" },
-                { k: "Silver crew cab", v: "we bag, blow & haul" },
-              ].map((stat) => (
-                <div key={stat.k} className="card-green rounded-2xl px-4 py-3">
-                  <p className="font-display text-xl">{stat.k}</p>
-                  <p className="text-sm text-muted">{stat.v}</p>
-                </div>
-              ))}
-            </div>
           </div>
         </section>
 
         <HaulOnScroll />
 
         <section id="services" className="mx-auto max-w-6xl px-4 py-16">
-          <p className="text-xs tracking-[0.28em] text-gold">WHAT WE DO</p>
-          <h2 className="mt-2 font-display text-4xl">Same silver truck. Clean yard.</h2>
+          <p className="kicker">What we haul</p>
+          <h2 className="mt-2 font-display text-4xl">
+            Leaves, junk, and the pile in the garage.
+          </h2>
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             {SERVICES.map((s) => (
               <article key={s.title} className="card-green card-lift rounded-3xl p-6">
@@ -178,14 +155,11 @@ function Home() {
 
         <section className="mx-auto grid max-w-6xl gap-6 px-4 py-8 lg:grid-cols-3">
           {[
-            { n: "01", t: "Text a photo", d: "Show us the pile. We quote fast." },
+            { n: "01", t: "Send a photo", d: "We quote from the pile — no walk-around needed." },
             { n: "02", t: "Hold the date", d: "$50 deposit, applied to your bill." },
             { n: "03", t: "We haul it", d: "You never bag. We never leave a mess." },
           ].map((step) => (
-            <article
-              key={step.n}
-              className="card-green card-lift rounded-3xl p-6"
-            >
+            <article key={step.n} className="card-green card-lift rounded-3xl p-6">
               <p className="font-display text-3xl text-gold">{step.n}</p>
               <h3 className="mt-3 font-display text-2xl">{step.t}</h3>
               <p className="mt-2 text-sm text-muted">{step.d}</p>
@@ -195,13 +169,13 @@ function Home() {
 
         <section id="rules" className="mx-auto max-w-6xl px-4 py-16">
           <div className="card-green rounded-3xl p-8">
-            <p className="text-xs tracking-[0.28em] text-gold">KEEP THIS</p>
+            <p className="kicker">City window</p>
             <h2 className="mt-2 font-display text-4xl">Grand Forks leaf rules</h2>
             <ul className="mt-6 grid gap-3 text-sm sm:grid-cols-2">
               <li>Leaves must be loose — bagged leaves are never collected.</li>
               <li>Within 3 ft of the curb, not in the street.</li>
               <li>3 ft clear of trees, mailboxes, and poles.</li>
-              <li>Outside city weeks it's self-haul — or call us.</li>
+              <li>Outside city weeks it's self-haul — or book us.</li>
             </ul>
             <p className="mt-6 text-xs text-muted">
               City vacuum typically mid-October to mid-November. Confirm 2026
@@ -216,7 +190,7 @@ function Home() {
 
         <section id="block" className="mx-auto max-w-6xl px-4 pb-4">
           <div className="rounded-3xl border border-gold/30 bg-bg-deep/40 p-8">
-            <p className="text-xs tracking-[0.28em] text-gold">BLOCK DEAL</p>
+            <p className="kicker">Block deal</p>
             <h2 className="mt-2 font-display text-4xl">
               Get a neighbor on the same day. Both of you save $25.
             </h2>
@@ -224,10 +198,6 @@ function Home() {
               One trip down your street costs us less than two, so we hand that
               back. Book your cleanup, put your neighbor's address in the form,
               and we take $25 off each bill when we do both houses the same day.
-              Three or more on one block and we'll work out the whole street.
-            </p>
-            <p className="mt-4 text-sm text-gold">
-              Stacks with the {offer.deadlineLabel} rate while it's still open.
             </p>
           </div>
         </section>
@@ -237,17 +207,11 @@ function Home() {
           className="mx-auto grid max-w-6xl items-start gap-10 px-4 py-16 lg:grid-cols-2"
         >
           <div>
-            <p className="text-xs tracking-[0.28em] text-gold">BOOK EARLY</p>
+            <p className="kicker">Book</p>
             <h2 className="mt-2 font-display text-4xl">
               Before the rush, before the snow.
             </h2>
             <p className="mt-4 text-muted">
-              Book by {offer.deadlineLabel} and get {Math.round(offer.percent * 100)}%
-              off — up to ${offer.cap} — on any job. Your yard doesn't need to
-              be ready yet; this locks the rate, not the date. A $50 deposit
-              holds your spot and comes off the invoice.
-            </p>
-            <p className="mt-4 text-sm text-muted">
               We cannot take paint, chemicals, oil, propane tanks, concrete,
               dirt, roofing, or asbestos.
             </p>
@@ -256,7 +220,7 @@ function Home() {
         </section>
 
         <section id="faq" className="mx-auto max-w-6xl px-4 pb-20">
-          <p className="text-xs tracking-[0.28em] text-gold">STRAIGHT ANSWERS</p>
+          <p className="kicker">Straight answers</p>
           <h2 className="mt-2 font-display text-4xl">
             What people ask before they call
           </h2>

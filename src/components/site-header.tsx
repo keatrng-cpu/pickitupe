@@ -34,6 +34,9 @@ export function SiteHeader() {
           <a href="/#rules" className="hover:text-fg">
             Leaf rules
           </a>
+          <a href="/#faq" className="hover:text-fg">
+            FAQ
+          </a>
           <Link to="/book" className="hover:text-fg">
             Book
           </Link>
@@ -53,7 +56,7 @@ export function SiteHeader() {
             {PHONE}
           </a>
           <Button asChild size="md" variant="cream">
-            <Link to="/book">Book now</Link>
+            <Link to="/book">Book</Link>
           </Button>
           {isPending ? (
             <div className="size-8 animate-pulse rounded-full bg-fg/10" />
@@ -81,20 +84,14 @@ export function SiteHeader() {
 export function SiteFooter() {
   return (
     <footer className="border-t border-border bg-bg-deep">
-      <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-10 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-10 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="font-display text-xl">Pick It Up E</p>
-          <p className="mt-1 text-sm text-muted">
-            Leaf cleanup & junk removal · Grand Forks, ND
-          </p>
+          <p className="mt-1 text-sm text-muted">Grand Forks, ND</p>
         </div>
-        <div className="text-sm text-muted">
-          <a className="block text-fg hover:text-gold" href="tel:2187792553">
-            218-779-2553
-          </a>
-          <p>Call or text · Free estimates</p>
-          <p className="mt-2">Locally owned · $50 holds the date</p>
-        </div>
+        <a className="text-fg hover:text-gold" href="tel:2187792553">
+          218-779-2553
+        </a>
       </div>
     </footer>
   );
