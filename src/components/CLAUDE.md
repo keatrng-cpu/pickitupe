@@ -13,3 +13,7 @@ Read the root [`CLAUDE.md`](../../CLAUDE.md) first. This folder is the **visual 
 | `ui/button.tsx` | Cream / ghost / print variants. |
 
 Assets: `public/haul-truck.webp`, `public/haul-chair.webp`, `public/hero-truck.jpg`, `public/grain.png`, `public/og.jpg`. Source sketch: `attachments/image.png`.
+
+`hero-truck.jpg` is 1792×1008 (16:9) — render it at that ratio. Forcing a taller crop cuts the truck off at the wheels.
+
+`grain.png` has **no alpha channel**. Always pair it with `background-blend-mode` — see [`.claude/rules/visual.md`](../../.claude/rules/visual.md).

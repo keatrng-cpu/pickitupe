@@ -184,6 +184,21 @@
   color: var(--color-gold);
 }
 
+/* Keyboard focus. Nothing in the app defined one, and the form fields ship
+   Tailwind's `outline-none`, so a keyboard user had no idea where they were.
+   Unlayered on purpose — it has to beat the `outline-none` utility. */
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.card-estimate :focus-visible,
+.card-print :focus-visible,
+.card-paper :focus-visible {
+  outline-color: var(--color-mahogany);
+}
+
 /* Elevation ramp. The old card sat ~4% lighter than the page, which read as
    one flat field of green at a glance. Cards now lift with a gradient face, a
    brighter top hairline, and a deeper shadow so the eye can rank the page. */

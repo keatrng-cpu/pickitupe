@@ -126,10 +126,15 @@ function Home() {
 
         <section className="mx-auto max-w-6xl px-4 pb-8">
           <div className="relative overflow-hidden rounded-[2rem] ring-1 ring-gold/30">
+            {/* The art is exactly 16:9 (1792×1008). The old fixed heights
+                cropped it to ~2.7:1 and cut the truck off at the wheels —
+                match the source ratio so the whole illustration reads. */}
             <img
               src="/hero-truck.jpg"
               alt="Vintage cream pickup loaded with maple leaves and an armchair"
-              className="h-64 w-full object-cover object-[68%_60%] sm:h-[28rem]"
+              width={1792}
+              height={1008}
+              className="aspect-[16/9] w-full object-cover object-center"
             />
             <div className="absolute inset-0 bg-[linear-gradient(to_top,var(--color-bg)_0%,transparent_45%)]" />
           </div>
