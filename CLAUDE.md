@@ -2,10 +2,20 @@
 
 You are working on the **Pick It Up E** repo: a real local business site, not a template.
 
-**Read this whole file before editing.** Then pull `origin/main`. Two agents (Claude Code and Grok) share this repo — stay in your workstream, don't revert the other one's files.
+**Read this whole file before editing.** Then `git pull origin main`. Two agents (Claude Code and Grok) share this repo — stay in your workstream, don't revert the other one's files.
 
-Live site: https://pickitupe.netlify.app  
+Live site: https://pickitupe.netlify.app
 GitHub: https://github.com/keatrng-cpu/pickitupe
+
+Nested instructions load automatically:
+
+- [`src/components/CLAUDE.md`](src/components/CLAUDE.md) — visual / motion
+- [`src/lib/CLAUDE.md`](src/lib/CLAUDE.md) — pricing, bookings, SEO, area
+- [`src/routes/CLAUDE.md`](src/routes/CLAUDE.md) — pages
+- [`print/CLAUDE.md`](print/CLAUDE.md) — door hanger
+- [`migrations/CLAUDE.md`](migrations/CLAUDE.md) — schema
+
+Path-scoped rules also live in [`.claude/rules/`](.claude/rules/).
 
 ---
 
@@ -16,7 +26,7 @@ GitHub: https://github.com/keatrng-cpu/pickitupe
 - Phone: **218-779-2553** — show it in the **header and footer only**, plus the door-hanger print replica. Do not repeat it on every section.
 - Services: fall leaf cleanup, junk/debris haul, garage & basement, furniture & appliances
 - Real truck: **2020 GMC Sierra 1500 Denali**, silver, VIN `1GTU9FEL9LZ149794`. Do not brand the company as GMC.
-- Marketing art: **vintage cream letterpress pickup** (right-facing, leaves in the bed). Owner replaced the silver photo. Hero/haul/OG use `public/hero-truck.jpg`, `public/haul-truck.webp`, `public/haul-chair.webp`.
+- Marketing art: **vintage cream letterpress pickup** (right-facing, leaves in the bed). Owner replaced the silver photo. Hero/haul/OG use `public/hero-truck.jpg`, `public/haul-truck.webp`, `public/haul-chair.webp`. Source sketch: `attachments/image.png`.
 - Goal: book fall work before city leaf vacuum (typically mid-Oct to mid-Nov)
 - Pre-season promo: book by **September 20** for **20% off, up to $75**, any job (`PROMO_PERCENT` / `PROMO_CAP` / `PROMO_DEADLINE` in `src/lib/pricebook.ts`). Calendar deadline, not a job-count cap. Locks the **rate**, not the service date (leaves aren't down by Sept 20).
 - **$50 deposit** applied to invoice on every booking, promo or not
@@ -66,36 +76,66 @@ npm run build        # build only — run npm run db:migrate separately
 
 Do not add a second package manager. Do not rewrite the stack (TanStack Start + Vite + Tailwind v4).
 
-## Code map
+## Full inventory (everything Claude should be able to open)
 
 ```
+CLAUDE.md                        this file — start here
+README.md                        human overview
+DEPLOY.md                        Netlify + env
+PRICEBOOK.md                     why the numbers are what they are
+.env.example                     DATABASE_URL, auth, optional XAI_API_KEY
+netlify.toml                     build = vite only, no migrate on CI
+package.json                     scripts, no second package manager
+
+print/DOOR-HANGER.md             4.25×11 print spec
+attachments/PickItUpE-DoorHanger.pdf
+attachments/Ks1nw.jpg            mahogany flyer reference
+attachments/image.png            vintage cream truck source sketch
+
+public/hero-truck.jpg            vintage cream pickup hero
+public/haul-truck.webp           right-facing cutout (do not CSS-flip)
+public/haul-chair.webp
+public/grain.png
+public/og.jpg
+public/favicon.svg
+
 src/routes/__root.tsx            html shell + FallingLeaves (once)
 src/routes/index.tsx             home, SEO, FAQ, block deal, quote form
 src/routes/book.tsx              booking page
 src/routes/jobs.tsx              owner board
+src/routes/login.tsx
+src/routes/api/auth/$.ts         better-auth catch-all
+
 src/components/door-hanger.tsx   mahogany print replica
 src/components/falling-leaves.tsx  edge leaves, scroll-boosted
 src/components/haul-on-scroll.tsx  vintage truck L→R + chair pickup
-src/components/quote-form.tsx
+src/components/quote-form.tsx    booking + instant estimate
 src/components/address-field.tsx autocomplete + "do you come out here?"
+src/components/site-header.tsx   header + footer (phone lives here)
+src/components/ui/button.tsx
+
 src/lib/bookings.ts              server fns
 src/lib/pricebook.ts             the only place money numbers live
 src/lib/service-area.ts          distance bands + keyless geocoding
 src/lib/messages.ts              one-tap customer texts
 src/lib/seo.ts                   LocalBusiness + FAQ (keep in sync with the page)
+src/lib/db.ts                    PGLite / Postgres
+src/lib/auth/*                   leave unless the task is auth
 src/styles.css                   tokens + motion (Sioux green, cream, mahogany, paper)
+
+migrations/0001_auth.sql
 migrations/0002_bookings.sql
 migrations/0003_booking_intel.sql  size, estimate, urgency, lat/lon, neighbor
-print/DOOR-HANGER.md             print spec
-public/hero-truck.jpg            vintage cream pickup hero
-public/haul-truck.webp           right-facing cutout
-public/haul-chair.webp
-public/grain.png
-PRICEBOOK.md
-DEPLOY.md
+
+scripts/migrate.mjs
+vite.config.ts
 ```
 
 Auth lives in `src/lib/auth/*`. Leave it unless the task is auth. Local demo: `VITE_AUTH_ENABLED=false`.
+
+Scaffold leftovers — **do not expand**: `src/lib/multiplayer/*`, `public/__grok/*`, `scripts/grok-pwa-*`, `scripts/browser-smoke*`. They exist for the Grok preview host.
+
+Not in git (on purpose): `.env`, `node_modules`, Grok sandbox `AGENTS.md`, VIN photos (`attachments/Screenshot*`), `artifacts/`.
 
 ## Design bar
 

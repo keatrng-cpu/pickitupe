@@ -66,6 +66,15 @@ Showing the truck we own is fine. Do not use GMC / Sierra wordmarks as if GM spo
 
 Read [`CLAUDE.md`](CLAUDE.md) before editing. It maps workstreams (visual, pricing, ops, print, deploy) so two agents can work without overwriting each other. Pull `main` first.
 
+Nested files Claude Code auto-loads:
+
+- [`src/components/CLAUDE.md`](src/components/CLAUDE.md)
+- [`src/lib/CLAUDE.md`](src/lib/CLAUDE.md)
+- [`src/routes/CLAUDE.md`](src/routes/CLAUDE.md)
+- [`print/CLAUDE.md`](print/CLAUDE.md)
+- [`migrations/CLAUDE.md`](migrations/CLAUDE.md)
+- [`.claude/rules/`](.claude/rules/)
+
 - Print spec: [`print/DOOR-HANGER.md`](print/DOOR-HANGER.md)
 - Deploy: [`DEPLOY.md`](DEPLOY.md)
 - Prices: [`PRICEBOOK.md`](PRICEBOOK.md)
