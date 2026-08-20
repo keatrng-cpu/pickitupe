@@ -25,7 +25,7 @@ Path-scoped rules also live in [`.claude/rules/`](.claude/rules/).
 - Owner market: Grand Forks, ND / East Grand Forks
 - Phone: **218-779-2553** — show it in the **header and footer only**, plus the door-hanger print replica. Do not repeat it on every section.
 - Services: fall leaf cleanup, junk/debris haul, garage & basement, furniture & appliances
-- Real truck: **2020 GMC Sierra 1500 Denali**, silver, VIN `1GTU9FEL9LZ149794`. Do not brand the company as GMC.
+- Real truck: **2020 GMC Sierra 1500 Denali**, silver. Do not brand the company as GMC.
 - Marketing art: **vintage cream letterpress pickup** (right-facing, leaves in the bed). Owner replaced the silver photo. Hero/haul/OG use `public/hero-truck.jpg`, `public/haul-truck.webp`, `public/haul-chair.webp`. Source sketch: `attachments/image.png`.
 - Goal: book fall work before city leaf vacuum (typically mid-Oct to mid-Nov)
 - Pre-season promo: book by **September 20** for **20% off, up to $75**, any job (`PROMO_PERCENT` / `PROMO_CAP` / `PROMO_DEADLINE` in `src/lib/pricebook.ts`). Calendar deadline, not a job-count cap. Locks the **rate**, not the service date (leaves aren't down by Sept 20).
