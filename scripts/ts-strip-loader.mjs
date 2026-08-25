@@ -8,14 +8,27 @@
  * thing under test. Node can already strip TypeScript types (>= 22.6), so this
  * only has to answer "yes, .ts is a module" and hand the source over.
  *
- * Deliberately NOT a general-purpose TS loader: no path aliases, no JSX, no
- * decorators. If pricebook.ts ever grows an import of anything, replace this
- * with a real build step rather than extending it.
+ * Resolves exactly one path alias, "@/" to "src/", because that is the only
+ * alias the project declares and the modules under test import each other
+ * through it.
+ *
+ * Deliberately NOT a general-purpose TS loader beyond that: no JSX, no
+ * decorators, no interop games. If a module under test ever needs a framework
+ * import, give it a real build step instead of growing this.
  */
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
+const SRC = new URL("../src/", import.meta.url);
+
 export async function resolve(specifier, context, nextResolve) {
+  if (specifier.startsWith("@/")) {
+    return {
+      url: new URL(specifier.slice(2) + ".ts", SRC).href,
+      format: "module",
+      shortCircuit: true,
+    };
+  }
   if (specifier.endsWith(".ts")) {
     const parent = context.parentURL ?? import.meta.url;
     return {
