@@ -5,10 +5,20 @@ import { useEffect, useRef, useState } from "react";
  *
  * Was an illustrated truck+chair rig driven by scroll position (see git
  * history — src/components/haul-on-scroll.tsx before this commit). Replaced
- * at the owner's request with the video Grok Imagine generated: two people
- * tarp-dragging and loading leaves, on-brand (cream truck, mahogany-ish
- * palette) even though the rendering technique differs from the engraved
- * door-hanger line art.
+ * at the owner's request with a Grok Imagine video, on-brand (cream truck,
+ * mahogany-ish palette) even though the rendering technique differs from the
+ * engraved door-hanger line art.
+ *
+ * On its second cut: the first video (git history, public/haul-crew.mp4)
+ * only showed leaf loading — a second, unrelated vignette in that same clip
+ * got cut mid-load (see that commit), which meant junk removal had no video
+ * representation at all. This one (public/haul-junk.mp4) is a single
+ * continuous scene that loads both a leaf-filled tarp AND a junk pile —
+ * chair, drum, rake — into the same truck, so one clip now covers both
+ * services instead of needing two. Source was 10.04s; sped 1.5x to 6.67s
+ * rather than trimmed, because unlike the leaf clip this one's ending (truck
+ * loaded, drives off, lawn clear) is the whole point and cutting it away
+ * would reproduce the exact bug that killed the first video.
  *
  * NOT scroll-scrubbed. Video currentTime tied to scroll position is a real
  * technique but it is fragile — it needs the whole file buffered before
@@ -58,22 +68,22 @@ export function HaulOnScroll() {
     <section
       ref={wrapRef}
       className="mx-auto max-w-6xl px-4 py-16 lg:py-20"
-      aria-label="Two-person crew tarping and loading leaves into a cream pickup"
+      aria-label="Two-person crew loading a leaf-filled tarp and a junk pile into a cream pickup, then driving off"
     >
       <p className="kicker">The haul</p>
       <h2 className="mt-2 font-display text-3xl sm:text-4xl">
         Two of us. One truck. Your whole yard.
       </h2>
       <p className="mt-2 max-w-xl text-sm text-muted">
-        Rake it onto the tarp, drag it to the bed, load it — the pile you'd
-        spend a Saturday on, gone in one trip.
+        Leaves, the chair you meant to donate, whatever's been sitting in the
+        garage — same trip, same truck, gone.
       </p>
 
       <div className="relative mt-8 overflow-hidden rounded-2xl ring-1 ring-gold/20">
         {reducedMotion ? (
           <img
-            src="/haul-crew-poster.jpg"
-            alt="Two people dragging a tarp of leaves toward a cream pickup"
+            src="/haul-junk-poster.jpg"
+            alt="Two people loading a leaf-filled tarp and a junk pile into a cream pickup"
             width={1280}
             height={720}
             className="aspect-video w-full object-cover"
@@ -82,8 +92,8 @@ export function HaulOnScroll() {
           <video
             ref={videoRef}
             className="aspect-video w-full object-cover"
-            src="/haul-crew.mp4"
-            poster="/haul-crew-poster.jpg"
+            src="/haul-junk.mp4"
+            poster="/haul-junk-poster.jpg"
             width={1280}
             height={720}
             muted
