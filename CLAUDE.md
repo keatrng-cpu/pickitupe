@@ -60,7 +60,8 @@ If a task spans two columns, touch the minimum files and say so in the commit me
 ## What this app already does
 
 - `falling-leaves.tsx` exists but **is not mounted anywhere** (owner: "lets get rid of the falling leafs on the sides"). It used to render in `__root.tsx`; the import and `<FallingLeaves />` call were removed there, not the component file.
-- Hero is a **live instant-estimate widget** (`hero-quote-teaser.tsx`) — service + size, real number from `pricebook.ts`, no name/phone/address collected there. Replaced the on-site door-hanger picture (owner: "get rid of the door hanger picture and replace it with the estimated quote section"). `door-hanger.tsx` still exists for the print replica but is not currently mounted anywhere on the page.
+- Hero is a **live instant-estimate widget** (`hero-quote-teaser.tsx`) — service + size + add-ons, real number and a line-by-line breakdown from `pricebook.ts`, no name/phone/address collected there. Replaced the on-site door-hanger picture (owner: "get rid of the door hanger picture and replace it with the estimated quote section"). `door-hanger.tsx` still exists for the print replica but is not currently mounted anywhere on the page.
+- **The home page has no booking form.** It used to also render `QuoteForm` in a `#book` section at the bottom; that was the hero's estimate widget a second time wrapped in twelve contact fields (owner: "this is too long and basically a duplicate from the one up top"). The estimate lives **once**, in the hero; the contact fields live **once**, on `/book`. The hero CTA links to `/book` carrying `?service=&size=&addons=` so nobody picks their service and yard size twice. Don't re-add a form to `index.tsx`.
 - The haul section is a **video** of a two-person crew loading leaves AND a junk pile into the same truck, then driving off (`haul-on-scroll.tsx` renders `public/haul-junk.mp4`), autoplay gated on IntersectionObserver, no `<video>` mounted under reduced motion
 - Quote / book form → `bookings` table
 - **Instant estimate** — deterministic flat-rate math, no API key (`pricebook.ts`, calibrate in `PRICEBOOK.md`)
@@ -108,8 +109,8 @@ public/og.jpg
 public/favicon.svg
 
 src/routes/__root.tsx            html shell — FallingLeaves is NOT mounted here anymore
-src/routes/index.tsx             home, SEO, FAQ, block deal, quote form
-src/routes/book.tsx              booking page
+src/routes/index.tsx             home, SEO, FAQ, block deal — NO booking form (it lives on /book)
+src/routes/book.tsx              booking page — the ONLY place QuoteForm renders; validates ?service/?size/?addons
 src/routes/jobs.tsx              owner board
 src/routes/login.tsx
 src/routes/api/auth/$.ts         better-auth catch-all

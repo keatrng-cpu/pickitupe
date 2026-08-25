@@ -7,8 +7,8 @@ Read the root [`CLAUDE.md`](../../CLAUDE.md) first. This folder is the **visual 
 | `falling-leaves.tsx` | **Not mounted anywhere.** Owner asked for the edge leaves gone; `__root.tsx` no longer imports or renders it. Component itself is untouched — if it comes back, mount it once in `__root.tsx`, never per-page. |
 | `haul-on-scroll.tsx` | The home haul section. Renders `public/haul-junk.mp4` — leaves AND a junk pile loaded into one truck, then it drives off (two-person crew, IntersectionObserver-gated autoplay) — **not** a scroll-driven illustration, despite the filename. `prefers-reduced-motion` mounts no `<video>` at all, just the poster as a plain `<img>`. |
 | `door-hanger.tsx` | Mahogany print replica. Copy must match `print/DOOR-HANGER.md`. **Not currently rendered anywhere on the page** — the hero used to show it, now shows `hero-quote-teaser.tsx` instead. Phone is allowed inside this component if it's ever remounted (it's the print card). |
-| `hero-quote-teaser.tsx` | **Pricing workstream** — the live estimate widget that replaced the door-hanger picture in the hero. Reads `pricebook.ts`; don't restyle the math from here. |
-| `quote-form.tsx` | **Pricing workstream** — don't restyle the math. Tokens only. |
+| `hero-quote-teaser.tsx` | **Pricing workstream** — the live estimate widget that replaced the door-hanger picture in the hero, and now the page's **only** estimate: service, size, add-ons, price, line breakdown. Links to `/book` carrying the selection. Reads `pricebook.ts`; don't restyle the math from here. |
+| `quote-form.tsx` | **Pricing workstream** — don't restyle the math. Tokens only. **Renders on `/book` only** — it is no longer on the home page (it duplicated the hero card). |
 | `address-field.tsx` | **Pricing workstream** |
 | `site-header.tsx` | Phone lives in header + footer only. Don't add a third copy. |
 | `ui/button.tsx` | Cream / ghost / print variants. |

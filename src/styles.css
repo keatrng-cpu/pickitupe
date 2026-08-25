@@ -290,9 +290,16 @@
 }
 
 /* Hero only: it sits under a 64px sticky header and must keep the estimate
-   card above the fold. 40/48px on mobile, 72px top + 80px bottom at 1440. */
+   card above the fold, so it gets a shorter top than section-y (40px mobile,
+   72px at 1440) and NO bottom at all.
+   The zero is deliberate. The hero and the haul scene below it sit on the
+   same background field, so two full section paddings meeting at that seam
+   read as one dead band — measured 168px of empty green between the last
+   hero line and "THE HAUL". The following section owns the gap; the hero
+   does not double it. Only safe because what follows is always a section
+   with its own top padding. */
 @utility section-y-lead {
-  padding-block: clamp(2.5rem, 5vw, 4.5rem) clamp(3rem, 6vw, 5rem);
+  padding-block: clamp(2.5rem, 5vw, 4.5rem) 0;
 }
 
 /* grain.png is opaque RGB — no alpha, no tRNS. Painting it as a plain

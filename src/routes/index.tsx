@@ -13,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { HeroQuoteTeaser } from "@/components/hero-quote-teaser";
 import { HaulOnScroll } from "@/components/haul-on-scroll";
-import { QuoteForm } from "@/components/quote-form";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { getOfferStatus } from "@/lib/bookings";
 import { FAQ, faqJsonLd, localBusinessJsonLd, SITE_URL } from "@/lib/seo";
@@ -213,7 +212,9 @@ function Home() {
                 >
                   {s.n}
                 </span>
-                <div className="card-green card-lift mt-5 w-full rounded-2xl p-6 lg:p-7">
+                {/* flex-1 so all three cards end level — step 01's copy wraps
+                    to two lines and the others don't. */}
+                <div className="card-green card-lift mt-5 flex w-full flex-1 flex-col rounded-2xl p-6 lg:p-7">
                   <s.icon
                     className="mx-auto size-7 text-gold"
                     strokeWidth={1.75}
@@ -256,13 +257,20 @@ function Home() {
           </section>
         </div>
 
+        {/* The one cream field on the page. Centred rather than left-aligned:
+            it is a single short statement in a full-bleed band, and left-set
+            text left two thirds of the band visibly empty. .kicker already
+            carries the optical-centre correction for exactly this case. */}
         <div className="band-paper">
-          <section id="block" className="section-y mx-auto max-w-6xl px-4">
+          <section
+            id="block"
+            className="section-y mx-auto max-w-3xl px-4 text-center"
+          >
             <p className="kicker">Block deal</p>
             <h2 className="mt-3 font-display text-3xl leading-[1.05] tracking-[-0.01em] sm:text-4xl lg:text-5xl">
               Get a neighbor on the same day. Both of you save $25.
             </h2>
-            <p className="mt-5 max-w-[34rem] text-base leading-[1.6]">
+            <p className="mx-auto mt-5 max-w-[34rem] text-base leading-[1.6]">
               One trip down your street costs us less than two, so we hand
               that back. Book your cleanup, put your neighbor's address in
               the form, and we take $25 off each bill when we do both houses
@@ -271,25 +279,17 @@ function Home() {
           </section>
         </div>
 
-        <div className="band">
-          <section
-            id="book"
-            className="section-y mx-auto grid max-w-6xl items-start gap-10 px-4 lg:grid-cols-2 lg:gap-14"
-          >
-            <div>
-              <p className="kicker">Book</p>
-              <h2 className="mt-3 font-display text-3xl leading-[1.05] tracking-[-0.01em] sm:text-4xl lg:text-5xl">
-                Before the rush, before the snow.
-              </h2>
-              <p className="mt-4 text-base leading-[1.6] text-muted">
-                We cannot take paint, chemicals, oil, propane tanks, concrete,
-                dirt, roofing, or asbestos.
-              </p>
-            </div>
-            <QuoteForm promo={offer} />
-          </section>
-        </div>
+        {/* The full booking form used to sit here, in a #book section. It was
+            the hero's estimate widget a second time wrapped in twelve contact
+            fields (owner: "this is too long and basically a duplicate from the
+            one up top"). The estimate now lives once, in the hero, and the
+            contact fields live once, on /book. The refused-items list that was
+            in this section's copy is not lost — it is FAQ entry 3, verbatim,
+            rendered below and in the JSON-LD. */}
 
+        {/* No .band wrapper here on purpose: the FAQ has to sit on the page
+            field so the page does not end on an invisible seam. A band against
+            the bg-deep footer measures 1.136:1 — effectively no edge at all. */}
         <section id="faq" className="section-y mx-auto max-w-6xl px-4">
           <p className="kicker">Straight answers</p>
           <h2 className="mt-3 font-display text-3xl leading-[1.05] tracking-[-0.01em] sm:text-4xl lg:text-5xl">

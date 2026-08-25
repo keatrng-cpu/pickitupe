@@ -97,13 +97,36 @@ function FieldError({ message }: { message: string }) {
   );
 }
 
-export function QuoteForm({ promo }: { promo: PromoStatus }) {
+/**
+ * `initial*` are seeded from the hero estimate card's URL search params (see
+ * src/routes/book.tsx) so a visitor who already picked their service, yard
+ * size and add-ons on the home page does not pick them a second time here.
+ * They are plain initial state, not controlled props — the form owns them
+ * once mounted.
+ */
+export function QuoteForm({
+  promo,
+  initialService,
+  initialSize,
+  initialAddOns,
+}: {
+  promo: PromoStatus;
+  initialService?: ServiceKey;
+  initialSize?: string;
+  initialAddOns?: AddOnKey[];
+}) {
   const [done, setDone] = useState<{ earlyBird: boolean } | null>(null);
   const [aiEstimate, setAiEstimate] = useState<string | null>(null);
   const [estimating, setEstimating] = useState(false);
   const [photo, setPhoto] = useState<string>("");
-  const [size, setSize] = useState<string>("medium");
-  const [addOns, setAddOns] = useState<AddOnKey[]>([]);
+  const [size, setSize] = useState<string>(initialSize ?? "medium");
+  // Array.isArray, not `?? []`: this value originates in a URL, and a
+  // hand-edited ?addons=bogus arrives as a string. book.tsx sanitises it, but
+  // a second guard here is what keeps a bad link from white-screening the one
+  // page that takes bookings.
+  const [addOns, setAddOns] = useState<AddOnKey[]>(
+    Array.isArray(initialAddOns) ? initialAddOns : [],
+  );
   const [geo, setGeo] = useState<{
     lat: number;
     lon: number;
@@ -117,7 +140,7 @@ export function QuoteForm({ promo }: { promo: PromoStatus }) {
       phone: "",
       email: "",
       address: "",
-      service: "leaf-cleanup",
+      service: initialService ?? "leaf-cleanup",
       notes: "",
       preferredDate: "",
       urgency: "before-vacuum",
