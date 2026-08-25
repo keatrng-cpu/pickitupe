@@ -8,11 +8,13 @@ const PHONE = "218-779-2553";
 
 function Mark() {
   return (
-    <span className="grid size-8 place-items-center rounded-full bg-sioux text-fg">
-      <svg viewBox="0 0 24 24" className="size-4" fill="currentColor" aria-hidden>
-        <path d="M12 2c.4 1.8 1.4 3.2 3 4.2-.2 1.3.3 2.4 1.4 3.1 1.2.2 2.1-.2 2.8-1.1.8 1.6 1.9 2.8 3.3 3.4-1.1 1.2-1.5 2.6-1.2 4.1.9.9 2 .9 3.2.3-.3 2-1.4 3.5-3.2 4.5.2 1.3-.3 2.4-1.5 3.1-1.3.1-2.2-.4-2.8-1.4-.8 1.2-2 2-3.5 2.3L12 22l-.5-2.5c-1.5-.3-2.7-1.1-3.5-2.3-.6 1-1.5 1.5-2.8 1.4-1.2-.7-1.7-1.8-1.5-3.1C1.6 16.4.5 14.9.2 12.9c1.2.6 2.3.6 3.2-.3.3-1.5-.1-2.9-1.2-4.1C3.6 7.9 4.7 6.7 5.5 5.1c.7.9 1.6 1.3 2.8 1.1 1.1-.7 1.6-1.8 1.4-3.1C11.3 2.2 11.6 2 12 2z" />
-      </svg>
-    </span>
+    <img
+      src="/logo.png"
+      alt=""
+      width={40}
+      height={40}
+      className="size-10 rounded-[0.85rem] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-fg)_18%,transparent)]"
+    />
   );
 }
 
@@ -22,7 +24,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-bg/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
-        <Link to="/" className="flex items-center gap-2 text-fg">
+        <Link to="/" className="flex items-center gap-2.5 text-fg">
           <Mark />
           <span className="font-display text-lg tracking-wide">Pick It Up E</span>
         </Link>
@@ -91,9 +93,18 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-border bg-bg-deep">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-10 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="font-display text-xl">Pick It Up E</p>
-          <p className="mt-1 text-sm text-muted">Grand Forks, ND</p>
+        <div className="flex items-center gap-3">
+          <img
+            src="/logo.png"
+            alt=""
+            width={40}
+            height={40}
+            className="size-10 rounded-[0.85rem]"
+          />
+          <div>
+            <p className="font-display text-xl">Pick It Up E</p>
+            <p className="mt-1 text-sm text-muted">Grand Forks, ND</p>
+          </div>
         </div>
         <a className="text-fg hover:text-gold" href="tel:2187792553">
           218-779-2553

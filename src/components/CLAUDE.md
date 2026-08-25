@@ -10,11 +10,11 @@ Read the root [`CLAUDE.md`](../../CLAUDE.md) first. This folder is the **visual 
 | `hero-quote-teaser.tsx` | **Pricing workstream** — the live estimate widget that replaced the door-hanger picture in the hero, and now the page's **only** estimate: service, size, add-ons, price, line breakdown. Links to `/book` carrying the selection. Reads `pricebook.ts`; don't restyle the math from here. |
 | `quote-form.tsx` | **Pricing workstream** — don't restyle the math. Tokens only. **Renders on `/book` only** — it is no longer on the home page (it duplicated the hero card). |
 | `address-field.tsx` | **Pricing workstream** |
-| `site-header.tsx` | Phone lives in header + footer only. Don't add a third copy. |
+| `site-header.tsx` | Logo is `public/logo.png` (cream pickup on a maple, rounded tile). Phone lives in header + footer only. Don't add a third copy. |
 | `ask-box.tsx` | "Have more questions?" under the FAQ. Claude Haiku, but it **never computes a price** — every number it may state is rendered from `pricebook.ts` into its system prompt server-side (`src/lib/chat-actions.ts`). Not a floating bubble, on purpose: a launcher that follows you down the page is the generic-AI-startup tell this site avoids. |
 | `ui/button.tsx` | Cream / ghost / print variants. |
 
-Assets: `public/haul-junk.mp4` + `public/haul-junk-poster.jpg` (the home haul scene — leaves + junk), `public/haul-crew.mp4` + `public/haul-crew-poster.jpg` (superseded, leaves-only cut, unused), `public/haul-truck.webp` (still used on `/login`), `public/haul-chair.webp` (unused, kept), `public/hero-truck.jpg`, `public/grain.png`, `public/og.jpg`. Source sketch: `attachments/image.png`.
+Assets: `public/logo.png`, `public/favicon.svg`, `public/haul-junk.mp4` + `public/haul-junk-poster.jpg` (the home haul scene — leaves + junk), `public/haul-crew.mp4` + `public/haul-crew-poster.jpg` (superseded, leaves-only cut, unused), `public/haul-truck.webp` (still used on `/login`), `public/haul-chair.webp` (unused, kept), `public/hero-truck.jpg`, `public/grain.png`, `public/og.jpg`. Logo source: `attachments/logo-source.png`. Source sketch: `attachments/image.png`.
 
 `hero-truck.jpg` is **not displayed on the page** — its art is baked onto a near-black field and read as a dark hole against the green. Kept as source art / OG only. On-page art needs a transparent cutout **or** its own background close enough to `--color-bg` to blend on sight — `haul-junk-poster.jpg`/`.mp4` are opaque and that's fine, because the clip's own green reads as part of the page. Check visually, don't apply the rule mechanically.
 

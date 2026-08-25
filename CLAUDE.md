@@ -27,6 +27,7 @@ Path-scoped rules also live in [`.claude/rules/`](.claude/rules/).
 - Services: fall leaf cleanup, junk/debris haul, garage & basement, furniture & appliances
 - Real truck: **2020 GMC Sierra 1500 Denali**, silver. Do not brand the company as GMC.
 - Marketing art: **vintage cream letterpress pickup** (right-facing, leaves in the bed). Owner replaced the silver photo. `public/haul-truck.webp` is still used on `/login`; source sketch `attachments/image.png`.
+- Site mark / favicon: cream pickup on a maple leaf, rounded forest tile — `public/logo.png`, `public/favicon.svg`. Source: `attachments/logo-source.png`.
 - The haul section on the home page is a **video**, not the illustrated scroll rig it used to be — `public/haul-junk.mp4` + poster `public/haul-junk-poster.jpg`, a Grok Imagine clip of a two-person crew (owner: "I may have a helper here and there, so the two-person crew is okay") loading a leaf-filled tarp AND a junk pile (chair, drum, rake) into the same truck, then driving off onto a clear lawn — one clip covers both services. Autoplay is gated on IntersectionObserver (plays only while on screen); `prefers-reduced-motion` drops the `<video>` element entirely and shows the poster as a plain `<img>` — not a paused video, no motion mounted at all. Source was 10.04s; sped 1.5x to 6.67s rather than trimmed, since the drive-off ending is the point.
 - **`public/haul-crew.mp4` / `haul-crew-poster.jpg` are the previous cut — leaves only, no junk.** Superseded, kept in the repo, not referenced anywhere. If you're tempted to restore them: don't, `haul-junk.mp4` is a strict superset of what they showed.
 - **Do not put `public/hero-truck.jpg` back on the page.** Its art is baked onto a near-black field, so on the Sioux-green background it renders as a dark hole instead of part of the design — the owner asked for it gone. The file is kept as source art and for `og.jpg`; it is not displayed. On-page art needs a transparent cutout (`haul-truck.webp`) **or** its own background close enough to `--color-bg` to blend, which is why `haul-junk-poster.jpg`/`haul-junk.mp4` are fine as an opaque rounded card — check that visually before shipping a new opaque asset, don't assume it from the rule alone.
@@ -95,7 +96,7 @@ package.json                     scripts, no second package manager
 print/DOOR-HANGER.md             4.25×11 print spec
 attachments/PickItUpE-DoorHanger.pdf
 attachments/Ks1nw.jpg            mahogany flyer reference
-attachments/image.png            vintage cream truck source sketch
+attachments/logo-source.png      cream truck + maple mark (owner art)
 
 public/hero-truck.jpg            source art + OG only — NOT displayed on the page
 public/haul-truck.webp           used on /login only; NOT the home haul scene anymore
@@ -106,7 +107,11 @@ public/haul-crew.mp4             superseded (leaves only) — unused, kept
 public/haul-crew-poster.jpg      superseded — unused, kept
 public/grain.png
 public/og.jpg
-public/favicon.svg
+public/logo.png                  rounded tile: cream pickup on maple
+public/favicon.svg               same mark, simplified for 16px
+public/favicon-32.png
+public/apple-touch-icon.png
+public/icon-192.png
 
 src/routes/__root.tsx            html shell — FallingLeaves is NOT mounted here anymore
 src/routes/index.tsx             home, SEO, FAQ, block deal — NO booking form (it lives on /book)
