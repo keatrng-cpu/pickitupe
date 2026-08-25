@@ -161,7 +161,11 @@ export const askQuestion = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const key = process.env.ANTHROPIC_API_KEY;
+    // .trim() is load-bearing, not defensive noise: an API key pasted into a
+    // dashboard field routinely carries a trailing newline or space, which the
+    // provider rejects as an invalid key. It presents identically to a wrong
+    // key, so it is worth eliminating before anyone goes hunting.
+    const key = process.env.ANTHROPIC_API_KEY?.trim();
     if (!key) {
       return {
         ok: false as const,
@@ -195,9 +199,25 @@ export const askQuestion = createServerFn({ method: "POST" })
       });
 
       if (!res.ok) {
-        console.error(`[ask] anthropic ${res.status}: ${await res.text()}`);
+        const detail = await res.text();
+        console.error(`[ask] anthropic ${res.status}: ${detail}`);
+
+        // Distinguish the failure CLASS. These are three different problems
+        // with three different owners, and collapsing them into one message
+        // means nobody can tell a bad key from an out-of-credit account from
+        // a busy minute. `code` is the bare HTTP status — not sensitive, and
+        // never rendered to the visitor; it exists so the owner can diagnose
+        // without shell access to the function logs.
+        const owner =
+          res.status === 401 || res.status === 403
+            ? "auth"
+            : res.status === 402 || res.status === 429
+              ? "quota"
+              : "unknown";
         return {
           ok: false as const,
+          code: res.status,
+          reason: owner,
           error: `Something went wrong on our end. Text ${BUSINESS.phone} and the owner will answer directly.`,
         };
       }
