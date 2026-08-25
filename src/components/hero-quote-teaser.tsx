@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import {
   addOnsFor,
@@ -10,6 +10,7 @@ import {
   type ServiceKey,
 } from "@/lib/pricebook";
 import type { PromoStatus } from "@/components/quote-form";
+import { askQuestion } from "@/lib/chat-actions";
 
 const SERVICES = [
   { value: "leaf-cleanup", label: "Fall leaf cleanup" },
@@ -37,6 +38,29 @@ export function HeroQuoteTeaser({ promo }: { promo: PromoStatus }) {
   const [service, setService] = useState<ServiceKey>("leaf-cleanup");
   const [size, setSize] = useState<string>("medium");
   const [addOns, setAddOns] = useState<AddOnKey[]>([]);
+
+  // "Something else" is the one branch the estimator deliberately cannot
+  // price, so it used to dead-end on a sentence telling people to text. That
+  // wasted the most interested visitor on the page — someone with an unusual
+  // job, already asking. Now it answers.
+  const [ask, setAsk] = useState("");
+  const [answer, setAnswer] = useState<string | null>(null);
+  const [asking, setAsking] = useState(false);
+
+  async function sendAsk() {
+    const q = ask.trim();
+    if (!q || asking) return;
+    setAsking(true);
+    setAnswer(null);
+    try {
+      const res = await askQuestion({ data: { question: q } });
+      setAnswer(res.ok ? res.answer : res.error);
+    } catch {
+      setAnswer("Couldn't reach us just now — text 218-779-2553 and we'll answer.");
+    } finally {
+      setAsking(false);
+    }
+  }
 
   const sizes = useMemo(() => sizeOptionsFor(service), [service]);
   const availableAddOns = useMemo(() => addOnsFor(service), [service]);
@@ -171,9 +195,50 @@ export function HeroQuoteTeaser({ promo }: { promo: PromoStatus }) {
           </ul>
         </>
       ) : (
-        <p className="text-sm">
-          Tell us what it is — we'll text back a number the same day.
-        </p>
+        <div>
+          <p className="text-sm">
+            Tell us what it is and we'll price it — or ask anything about the
+            work, the area, or how we compare.
+          </p>
+
+          {answer ? (
+            <p className="mt-3 whitespace-pre-wrap rounded-xl bg-mahogany/8 p-3 text-sm leading-[1.55] text-print">
+              {answer}
+            </p>
+          ) : null}
+
+          <div className="mt-3 flex gap-2">
+            <label htmlFor="hero-ask" className="sr-only">
+              Ask about your job
+            </label>
+            <input
+              id="hero-ask"
+              value={ask}
+              maxLength={500}
+              disabled={asking}
+              onChange={(e) => setAsk(e.target.value)}
+              onKeyDown={(e) => {
+                // Enter must not submit the surrounding page; this is its own
+                // little form-less control inside a card that has a CTA below.
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void sendAsk();
+                }
+              }}
+              placeholder="e.g. a hot tub, a shed, half a garage…"
+              className="w-full rounded-xl border border-mahogany/25 bg-paper px-3 py-2.5 text-sm text-print outline-none focus:border-mahogany/50 disabled:opacity-60"
+            />
+            <button
+              type="button"
+              onClick={() => void sendAsk()}
+              disabled={asking || !ask.trim()}
+              className="btn-press inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-mahogany px-4 text-sm font-medium text-paper hover:bg-mahogany-deep disabled:opacity-50"
+            >
+              {asking ? <Loader2 className="size-4 animate-spin" /> : null}
+              Ask
+            </button>
+          </div>
+        </div>
       )}
 
       <Link

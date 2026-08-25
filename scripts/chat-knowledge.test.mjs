@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 
 register("./ts-strip-loader.mjs", pathToFileURL("./scripts/"));
 
-const { knowledge, SYSTEM } = await import("../src/lib/chat-knowledge.ts");
+const { knowledge, SYSTEM, COMPETITOR_BENCHMARKS } = await import("../src/lib/chat-knowledge.ts");
 const {
   sizeOptionsFor,
   springSizeOptions,
@@ -134,12 +134,50 @@ test("the facts contain no price that the pricebook does not produce", () => {
   addRange(RUSH_SURCHARGE);
   for (const v of ["small", "medium", "large"]) legal.add(String(planPriceFor(v)));
   [DEPOSIT, PROMO_CAP, 50, 100, 20].forEach((n) => legal.add(String(n)));
+  // Competitor figures are legitimately NOT pricebook-produced, but each one
+  // must be declared in COMPETITOR_BENCHMARKS with a source. That keeps the
+  // guard meaningful: an undeclared number still fails.
+  for (const b of COMPETITOR_BENCHMARKS) {
+    for (const a of b.amounts) legal.add(String(a));
+  }
+  // Local facts carry two census figures, cited in the LOCAL block.
+  ["63,627", "80,734"].forEach((n) => legal.add(n));
 
-  const found = [...K.matchAll(/\$(\d+)/g)].map((m) => m[1]);
+  // Comma-aware: "$63,627" must be read as one figure, not as "$63". Reading
+  // it as 63 both fails spuriously and would let a real 63 slip past.
+  const found = [...K.matchAll(/\$(\d[\d,]*)/g)].map((m) => m[1]);
   const illegal = [...new Set(found)].filter((n) => !legal.has(n));
   assert.deepEqual(
     illegal,
     [],
     `chat facts contain dollar figures the pricebook does not produce: ${illegal.join(", ")}`,
   );
+});
+
+test("every competitor figure is declared with a source", () => {
+  assert.ok(COMPETITOR_BENCHMARKS.length >= 5, "need real comparables to argue price with");
+  for (const b of COMPETITOR_BENCHMARKS) {
+    assert.ok(b.who && b.what && b.price, `incomplete benchmark: ${JSON.stringify(b)}`);
+    assert.ok(b.source && b.source.length > 3, `benchmark missing a source: ${b.who}`);
+    assert.ok(Array.isArray(b.amounts) && b.amounts.length > 0, `benchmark missing amounts: ${b.who}`);
+    assert.ok(K.includes(b.who), `benchmark not rendered into the facts: ${b.who}`);
+  }
+});
+
+test("the agent is told to prove the price, never to undercut it", () => {
+  // The owner asked it to "beat competitors". The safe reading is the only one
+  // allowed: show the published price already sits lower. If this guardrail is
+  // ever softened, the $55 floor stops meaning anything.
+  assert.ok(/NEVER do is invent a lower number/i.test(SYSTEM));
+  assert.ok(/offer a discount, match a quote/i.test(SYSTEM));
+  assert.ok(/hard floor under these prices/i.test(SYSTEM));
+});
+
+test("local Grand Forks knowledge is present", () => {
+  for (const fact of ["701-738-8740", "loose", "vacuum", "frost", "East Grand Forks"]) {
+    assert.ok(
+      K.toLowerCase().includes(fact.toLowerCase()),
+      `local fact missing from the agent's knowledge: ${fact}`,
+    );
+  }
 });
