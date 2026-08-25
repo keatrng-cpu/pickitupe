@@ -34,7 +34,37 @@ export type NoticeResult = {
 };
 
 export function senderConfigured(): boolean {
-  return Boolean(process.env.RESEND_API_KEY && process.env.RENEWAL_FROM_EMAIL);
+  const from = process.env.RENEWAL_FROM_EMAIL?.trim();
+  if (!process.env.RESEND_API_KEY?.trim() || !from) return false;
+
+  // A free-provider from-address can never send: those domains cannot be
+  // verified by someone who does not own them, and the sender's own DMARC
+  // policy rejects third-party senders. Treating it as "configured" would
+  // open the sell-gate on a plan whose statutory notices are guaranteed to
+  // bounce — the exact failure the gate exists to prevent, arrived at through
+  // a setting that merely looks filled in.
+  const domain = from.split("@")[1]?.toLowerCase() ?? "";
+  const unusable = [
+    "gmail.com",
+    "googlemail.com",
+    "yahoo.com",
+    "outlook.com",
+    "hotmail.com",
+    "live.com",
+    "icloud.com",
+    "aol.com",
+    "proton.me",
+    "protonmail.com",
+  ];
+  if (unusable.includes(domain)) {
+    console.error(
+      `[renewal-notice] RENEWAL_FROM_EMAIL is @${domain}, which no provider can send from. ` +
+        `Use an address on a domain verified in Resend (e.g. hello@pickitupe.com) and put the ` +
+        `personal address in RENEWAL_REPLY_TO instead.`,
+    );
+    return false;
+  }
+  return true;
 }
 
 function noticeBody(sub: SubscriptionRow, renewsOn: string): string {
@@ -61,20 +91,35 @@ function noticeBody(sub: SubscriptionRow, renewsOn: string): string {
 /**
  * Sends via Resend's HTTP API with plain fetch — no SDK, no new dependency.
  * Returns null on success or a reason string on failure.
+ *
+ * FROM must be an address on a domain verified in Resend. It cannot be a
+ * gmail.com (or any other free provider) address: you can only verify a domain
+ * you control, and Google's DMARC policy rejects third parties sending as
+ * @gmail.com regardless. Attempting it produces mail that bounces or lands in
+ * spam — worse than not sending, because the obligation looks discharged.
+ *
+ * REPLY-TO is where that gets solved. This is the one email whose entire job
+ * is "you are about to be charged, here is how to stop it", so a meaningful
+ * share of recipients will hit reply instead of clicking. Those replies have
+ * to reach a human inbox — a reply that vanishes undercuts the same easy
+ * cancellation the notice exists to provide. Falls back to the from address
+ * when unset, which is correct but only if that address is monitored.
  */
 async function send(to: string, subject: string, text: string): Promise<string | null> {
   try {
+    const replyTo = process.env.RENEWAL_REPLY_TO?.trim();
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        Authorization: `Bearer ${process.env.RESEND_API_KEY?.trim()}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: process.env.RENEWAL_FROM_EMAIL,
+        from: process.env.RENEWAL_FROM_EMAIL?.trim(),
         to,
         subject,
         text,
+        ...(replyTo ? { reply_to: replyTo } : {}),
       }),
     });
     if (!res.ok) return `provider returned ${res.status}: ${await res.text()}`;
