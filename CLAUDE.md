@@ -4,7 +4,7 @@ You are working on the **Pick It Up E** repo: a real local business site, not a 
 
 **Read this whole file before editing.** Then `git pull origin main`. Two agents (Claude Code and Grok) share this repo — stay in your workstream, don't revert the other one's files.
 
-Live site: https://pickitupe.netlify.app
+Live site: https://pickitupe.com  (Netlify project `pickitupe`; the pickitupe.netlify.app subdomain still resolves)
 GitHub: https://github.com/keatrng-cpu/pickitupe
 
 Nested instructions load automatically:

@@ -1,6 +1,6 @@
 # Deploy — Netlify + Supabase
 
-**Live:** <https://pickitupe.netlify.app> — Netlify project
+**Live:** <https://pickitupe.com> — Netlify project
 `pickitupe`, deploying from this repo's `main` branch.
 
 `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `VITE_SITE_URL`
@@ -76,7 +76,7 @@ Set these in **Site configuration → Environment variables**, then redeploy.
 |---|---|
 | `DATABASE_URL` | The transaction-pooler URI from above |
 | `BETTER_AUTH_SECRET` | A fresh 32-byte random string |
-| `BETTER_AUTH_URL` | The live site URL, e.g. `https://pickitupe.netlify.app` |
+| `BETTER_AUTH_URL` | The live site URL — `https://pickitupe.com` |
 | `VITE_SITE_URL` | Same URL — feeds canonical, OG, and JSON-LD tags |
 
 Generate the auth secret:

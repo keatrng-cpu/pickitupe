@@ -6,7 +6,7 @@ Seasonal leaf cleanup and junk removal site for **Grand Forks, ND**.
 - Offer: book by **September 20** for **20% off, up to $75**, on any job
 - Rig: 2020 Sierra 1500. Marketing art is a vintage cream letterpress pickup.
 
-Live: [pickitupe.netlify.app](https://pickitupe.netlify.app)
+Live: [pickitupe.com](https://pickitupe.com)
 
 ## Stack
 
