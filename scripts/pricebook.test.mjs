@@ -38,7 +38,6 @@ function allJobs() {
     "leaf-cleanup",
     "junk-removal",
     "furniture-appliances",
-    "single-item",
   ];
   const out = [];
   for (const service of services) {
@@ -172,7 +171,7 @@ test("the three defects that were live in production are fixed", () => {
   // 3. The credit used to apply to a single mattress and go under floor twice.
   const oneItem = estimate({
     ...base,
-    service: "single-item",
+    service: "furniture-appliances",
     size: "single",
     earlyBird: true,
     households: 3,
@@ -351,4 +350,21 @@ test("garage-basement is gone from every service list", () => {
     !q.lines.some((l) => /sort & carry/i.test(l.label)),
     "the old hard-coded cleanout line must not fire automatically any more",
   );
+});
+
+test("a single item is still priceable — it is a SIZE, not a service", () => {
+  // "Single-item pickup" was removed as a service because it priced
+  // identically to furniture-appliances. The job itself must still be
+  // quotable, via the "One item" size, or removing the service would have
+  // quietly deleted the cheapest thing this business sells.
+  const one = sizeOptionsFor("furniture-appliances").find((s) => s.value === "single");
+  assert.ok(one, "the One item size must still exist");
+  assert.equal(one.range.low, 59);
+  assert.equal(one.range.high, 95);
+
+  const q = estimate({
+    service: "furniture-appliances", size: "single",
+    addOns: [], earlyBird: false, notes: "",
+  });
+  assert.deepEqual(q.range, { low: 59, high: 95 });
 });

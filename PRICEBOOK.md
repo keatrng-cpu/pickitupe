@@ -86,6 +86,17 @@ $211–$344 (avg $271), full truck $422–$550.
 - **Refused loads:** paint, chemicals, oil, propane, concrete, dirt, roofing,
   asbestos. The estimator scans the notes field and warns before dispatch.
 
+### Why "Single-item pickup" is no longer a service
+
+Same reason as garage/basement: it was duplication in the picker. It resolved to
+exactly the same price table as "Furniture & appliances" (the first three load
+sizes), so two dropdown entries produced identical quotes.
+
+**A single item is a SIZE, not a service.** The "One item" tier ($59-$95) is how
+it gets quoted, under either haul service. A test asserts that tier still exists,
+because removing the service without it would have quietly deleted the cheapest
+thing this business sells.
+
 ### Why "Garage / basement" is no longer a service
 
 Removed at the owner's request — the dropdown listed six options where several

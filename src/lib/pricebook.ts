@@ -107,7 +107,6 @@ export type ServiceKey =
   | "leaf-cleanup"
   | "junk-removal"
   | "furniture-appliances"
-  | "single-item"
   | "other";
 
 export type SizeOption = {
@@ -275,7 +274,7 @@ const CLEANOUT_LABOR: Range = { low: 50, high: 100 };
 
 export function sizeOptionsFor(service: ServiceKey): SizeOption[] {
   if (service === "leaf-cleanup") return LEAF_SIZES;
-  if (service === "single-item" || service === "furniture-appliances") {
+  if (service === "furniture-appliances") {
     return LOAD_SIZES.slice(0, 3);
   }
   return LOAD_SIZES;
@@ -315,7 +314,7 @@ export const ADD_ONS: {
     label: "Stairs or basement carry",
     hint: "Anything not at ground level",
     range: { low: 30, high: 60 },
-    appliesTo: ["junk-removal", "furniture-appliances", "single-item"],
+    appliesTo: ["junk-removal", "furniture-appliances"],
   },
   {
     key: "long-carry",
@@ -334,14 +333,14 @@ export const ADD_ONS: {
     label: "Garage or basement cleanout",
     hint: "We sort and carry it out, not just load at the curb",
     range: CLEANOUT_LABOR,
-    appliesTo: ["junk-removal", "furniture-appliances", "single-item"],
+    appliesTo: ["junk-removal", "furniture-appliances"],
   },
   {
     key: "appliance-freon",
     label: "Fridge, freezer, or AC",
     hint: "Refrigerant units cost extra to drop",
     range: { low: 25, high: 45 },
-    appliesTo: ["junk-removal", "furniture-appliances", "single-item"],
+    appliesTo: ["junk-removal", "furniture-appliances"],
   },
 ];
 

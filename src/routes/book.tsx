@@ -13,7 +13,6 @@ const SERVICE_KEYS: ServiceKey[] = [
   "leaf-cleanup",
   "junk-removal",
   "furniture-appliances",
-  "single-item",
   "other",
 ];
 

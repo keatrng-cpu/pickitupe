@@ -15,7 +15,6 @@ const SERVICES = [
   { value: "leaf-cleanup", label: "Fall leaf cleanup" },
   { value: "junk-removal", label: "Junk removal" },
   { value: "furniture-appliances", label: "Furniture & appliances" },
-  { value: "single-item", label: "Single-item pickup" },
   { value: "other", label: "Something else" },
 ] as const;
 

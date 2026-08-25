@@ -21,7 +21,6 @@ const bookingInput = z.object({
     "leaf-cleanup",
     "junk-removal",
     "furniture-appliances",
-    "single-item",
     "other",
   ]),
   notes: z.string().trim().max(800).optional().or(z.literal("")),

@@ -41,7 +41,6 @@ const schema = z.object({
     "leaf-cleanup",
     "junk-removal",
     "furniture-appliances",
-    "single-item",
     "other",
   ]),
   notes: z.string().optional(),
@@ -49,7 +48,18 @@ const schema = z.object({
   urgency: z.enum(["before-vacuum", "this-week", "flexible"]),
   neighborOf: z.string().optional(),
   households: z.number().int().min(1).max(6).optional(),
+  otherDescription: z.string().optional(),
 }).refine(
+  // "Something else" is the one service the estimator cannot price, so the
+  // description IS the request. Without it the owner receives a booking that
+  // says only "something else" and has to phone back to learn what the job is
+  // — which is the callback this whole form exists to avoid.
+  (v) => v.service !== "other" || Boolean(v.otherDescription && v.otherDescription.trim().length >= 5),
+  {
+    message: "Tell us what you need done and we'll price it the same day",
+    path: ["otherDescription"],
+  },
+).refine(
   // The block credit is a promise to route two houses on one street the same
   // day. Without the neighbour's address that is unroutable: the owner cannot
   // confirm the houses are actually on the same street, cannot plan the trip
@@ -70,7 +80,6 @@ const SERVICES = [
   { value: "leaf-cleanup", label: "Fall leaf cleanup" },
   { value: "junk-removal", label: "Junk removal" },
   { value: "furniture-appliances", label: "Furniture & appliances" },
-  { value: "single-item", label: "Single-item pickup" },
   { value: "other", label: "Something else" },
 ] as const;
 
@@ -159,6 +168,7 @@ export function QuoteForm({
       urgency: "before-vacuum",
       neighborOf: "",
       households: 1,
+      otherDescription: "",
     },
   });
 
@@ -195,9 +205,17 @@ export function QuoteForm({
 
   async function onSubmit(values: Values) {
     try {
+      const described =
+        values.service === "other" && values.otherDescription
+          ? [values.otherDescription.trim(), values.notes?.trim()]
+              .filter(Boolean)
+              .join("\n\n")
+          : values.notes;
+
       const result = await submitBooking({
         data: {
           ...values,
+          notes: described,
           jobSize: activeSize,
           addOns: activeAddOns,
           households,
@@ -344,6 +362,28 @@ export function QuoteForm({
             ))}
           </select>
         </label>
+
+        {/* Sits immediately under the picker, not down with the optional
+            details, because when nothing in the list fits this field IS the
+            booking — everything below it is secondary. */}
+        {service === "other" ? (
+          <label className="block sm:col-span-2">
+            <span className={labelClass}>What do you need done?{requiredMark}</span>
+            <textarea
+              className={`${field} min-h-20`}
+              placeholder="Tell us what it is — a shed to tear down, a hot tub, whatever it is"
+              aria-required="true"
+              {...form.register("otherDescription")}
+            />
+            {err.otherDescription ? (
+              <FieldError message={err.otherDescription.message!} />
+            ) : null}
+            <span className="mt-1.5 block text-xs text-muted">
+              We can't put a number on this one automatically, so we'll read it
+              and text you a price the same day.
+            </span>
+          </label>
+        ) : null}
       </div>
 
       {service !== "other" ? (

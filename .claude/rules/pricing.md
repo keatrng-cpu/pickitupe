@@ -55,3 +55,18 @@ else that moves the price.
 zod `.refine` on the whole form object rather than on the field. The block credit
 is a promise to route two houses on one street the same day; without the address
 that is unroutable, so the discount cannot be claimed without it.
+
+**`single-item` is no longer a ServiceKey either.** It priced identically to
+`furniture-appliances` (both used the first three LOAD_SIZES), so it was pure
+duplication in the picker. A single item is a **size**, not a service — the
+"One item" tier ($59-$95) is how it is quoted, and a test asserts that tier
+still exists so removing the service cannot quietly delete the cheapest thing
+the business sells.
+
+**"Something else" now requires a description.** `otherDescription` is required
+by zod when `service === "other"`, rendered directly under the picker rather
+than down with the optional details, and merged into `notes` on submit so it
+lands in a column that already exists and gets scanned by `refusedItemsIn`.
+The estimator returns `range: null` for that service — the description IS the
+request, and without it the owner gets a booking saying only "something else"
+and has to phone back, which is the callback this form exists to prevent.
