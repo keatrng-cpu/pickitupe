@@ -13,7 +13,10 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as BookRouteImport } from './routes/book'
 import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as PlanRouteImport } from './routes/plan'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiCronRenewalNoticesRouteImport } from './routes/api/cron/renewal-notices'
+import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe/webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -35,9 +38,24 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlanRoute = PlanRouteImport.update({
+  id: '/plan',
+  path: '/plan',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCronRenewalNoticesRoute = ApiCronRenewalNoticesRouteImport.update({
+  id: '/api/cron/renewal-notices',
+  path: '/api/cron/renewal-notices',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
+  id: '/api/stripe/webhook',
+  path: '/api/stripe/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -46,14 +64,20 @@ export interface FileRoutesByFullPath {
   '/book': typeof BookRoute
   '/jobs': typeof JobsRoute
   '/login': typeof LoginRoute
+  '/plan': typeof PlanRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/book': typeof BookRoute
   '/jobs': typeof JobsRoute
   '/login': typeof LoginRoute
+  '/plan': typeof PlanRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -61,14 +85,42 @@ export interface FileRoutesById {
   '/book': typeof BookRoute
   '/jobs': typeof JobsRoute
   '/login': typeof LoginRoute
+  '/plan': typeof PlanRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/book' | '/jobs' | '/login' | '/api/auth/$'
+  fullPaths:
+    | '/'
+    | '/book'
+    | '/jobs'
+    | '/login'
+    | '/plan'
+    | '/api/auth/$'
+    | '/api/cron/renewal-notices'
+    | '/api/stripe/webhook'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/book' | '/jobs' | '/login' | '/api/auth/$'
-  id: '__root__' | '/' | '/book' | '/jobs' | '/login' | '/api/auth/$'
+  to:
+    | '/'
+    | '/book'
+    | '/jobs'
+    | '/login'
+    | '/plan'
+    | '/api/auth/$'
+    | '/api/cron/renewal-notices'
+    | '/api/stripe/webhook'
+  id:
+    | '__root__'
+    | '/'
+    | '/book'
+    | '/jobs'
+    | '/login'
+    | '/plan'
+    | '/api/auth/$'
+    | '/api/cron/renewal-notices'
+    | '/api/stripe/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,7 +128,10 @@ export interface RootRouteChildren {
   BookRoute: typeof BookRoute
   JobsRoute: typeof JobsRoute
   LoginRoute: typeof LoginRoute
+  PlanRoute: typeof PlanRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiCronRenewalNoticesRoute: typeof ApiCronRenewalNoticesRoute
+  ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -109,11 +164,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/plan': {
+      id: '/plan'
+      path: '/plan'
+      fullPath: '/plan'
+      preLoaderRoute: typeof PlanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cron/renewal-notices': {
+      id: '/api/cron/renewal-notices'
+      path: '/api/cron/renewal-notices'
+      fullPath: '/api/cron/renewal-notices'
+      preLoaderRoute: typeof ApiCronRenewalNoticesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/stripe/webhook': {
+      id: '/api/stripe/webhook'
+      path: '/api/stripe/webhook'
+      fullPath: '/api/stripe/webhook'
+      preLoaderRoute: typeof ApiStripeWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -124,7 +200,10 @@ const rootRouteChildren: RootRouteChildren = {
   BookRoute: BookRoute,
   JobsRoute: JobsRoute,
   LoginRoute: LoginRoute,
+  PlanRoute: PlanRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiCronRenewalNoticesRoute: ApiCronRenewalNoticesRoute,
+  ApiStripeWebhookRoute: ApiStripeWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

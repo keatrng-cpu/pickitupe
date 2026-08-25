@@ -37,6 +37,9 @@ export function SiteHeader() {
           <a href="/#rules" className="hover:text-fg">
             Leaf rules
           </a>
+          <Link to="/plan" className="hover:text-fg">
+            Plan
+          </Link>
           <a href="/#faq" className="hover:text-fg">
             FAQ
           </a>
