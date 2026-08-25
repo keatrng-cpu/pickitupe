@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouterState } from "@tanstack/react-router";
 import { QuoteForm } from "@/components/quote-form";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { getOfferStatus } from "@/lib/bookings";
@@ -25,30 +25,18 @@ export type BookSearch = {
 };
 
 /**
- * The hero estimate card on / links here with what the visitor already
- * picked. Everything is validated against the pricebook rather than trusted:
- * a hand-edited ?service=foo simply falls back to the form's defaults instead
- * of throwing or feeding a bad key into estimate().
+ * The hero estimate card on / links here with what the visitor already picked.
+ * Nothing is trusted: every value is checked against the pricebook, so a
+ * hand-edited ?service=foo falls back to the form's own defaults instead of
+ * feeding a bad key into estimate().
  *
- * It must return ALL THREE KEYS on every path, even as undefined. The router
- * merges anything validateSearch does not return straight back out of the raw
- * query string, so an early `return {}` on a bad ?service left the raw
- * ?addons="bogus" STRING reaching the form, where addOns.filter blew up the
- * page (verified in the browser — the types alone do not catch it, because
- * the declared type is the sanitised one).
- *
- * Keys are optional in the type so `<Link to="/book">` stays legal elsewhere
- * with no search prop; they are always present at runtime so nothing raw
- * survives. `addons` is read as either a real array or a comma string,
- * because the router serialises arrays itself and a hand-typed URL will not.
+ * `addons` is read as either a real array or a comma string — the router
+ * serialises arrays as JSON itself, a hand-typed URL will not.
  */
-function parseSearch(search: Record<string, unknown>): BookSearch {
+export function sanitizeBookSearch(search: Record<string, unknown>): BookSearch {
   const serviceRaw = String(search.service ?? "");
-  const service = SERVICE_KEYS.includes(serviceRaw as ServiceKey)
-    ? (serviceRaw as ServiceKey)
-    : undefined;
-
-  if (!service) return { service: undefined, size: undefined, addons: undefined };
+  if (!SERVICE_KEYS.includes(serviceRaw as ServiceKey)) return {};
+  const service = serviceRaw as ServiceKey;
 
   const sizeRaw = String(search.size ?? "");
   const size = sizeOptionsFor(service).some((s) => s.value === sizeRaw)
@@ -66,15 +54,27 @@ function parseSearch(search: Record<string, unknown>): BookSearch {
   return { service, size, addons: addons.length > 0 ? addons : undefined };
 }
 
+/**
+ * Deliberately NO `validateSearch` on this route. It looks like the right tool
+ * and it is a trap here: the router merges any key validateSearch does not
+ * return straight back out of the raw query string, so a sanitised result can
+ * never differ from a hostile URL — the router redirects to "canonical", the
+ * raw keys survive, and it redirects again. Verified in production:
+ * /book?service=nonsense&size=zzz&addons=bogus served an endless 307 to itself
+ * (ERR_TOO_MANY_REDIRECTS). Local dev never showed it. Sanitising in the
+ * component has no redirect machinery to loop on.
+ */
 export const Route = createFileRoute("/book")({
-  validateSearch: parseSearch,
   loader: () => getOfferStatus(),
   component: BookPage,
 });
 
 function BookPage() {
   const offer = Route.useLoaderData();
-  const { service, size, addons } = Route.useSearch();
+  const rawSearch = useRouterState({
+    select: (s) => s.location.search as Record<string, unknown>,
+  });
+  const { service, size, addons } = sanitizeBookSearch(rawSearch);
 
   return (
     <div className="relative z-10 min-h-screen">
