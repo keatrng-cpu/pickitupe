@@ -51,6 +51,9 @@ const AREA_SERVED = [
   "Oslo MN",
 ] as const;
 
+/** Flat list for the answer box — same source as the JSON-LD, so they cannot drift. */
+export const AREA_SERVED_TEXT = AREA_SERVED.join(", ");
+
 export function localBusinessJsonLd() {
   return {
     "@context": "https://schema.org",

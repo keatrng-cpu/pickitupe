@@ -11,6 +11,7 @@ Read the root [`CLAUDE.md`](../../CLAUDE.md) first. This folder is the **visual 
 | `quote-form.tsx` | **Pricing workstream** — don't restyle the math. Tokens only. **Renders on `/book` only** — it is no longer on the home page (it duplicated the hero card). |
 | `address-field.tsx` | **Pricing workstream** |
 | `site-header.tsx` | Phone lives in header + footer only. Don't add a third copy. |
+| `ask-box.tsx` | "Have more questions?" under the FAQ. Claude Haiku, but it **never computes a price** — every number it may state is rendered from `pricebook.ts` into its system prompt server-side (`src/lib/chat-actions.ts`). Not a floating bubble, on purpose: a launcher that follows you down the page is the generic-AI-startup tell this site avoids. |
 | `ui/button.tsx` | Cream / ghost / print variants. |
 
 Assets: `public/haul-junk.mp4` + `public/haul-junk-poster.jpg` (the home haul scene — leaves + junk), `public/haul-crew.mp4` + `public/haul-crew-poster.jpg` (superseded, leaves-only cut, unused), `public/haul-truck.webp` (still used on `/login`), `public/haul-chair.webp` (unused, kept), `public/hero-truck.jpg`, `public/grain.png`, `public/og.jpg`. Source sketch: `attachments/image.png`.

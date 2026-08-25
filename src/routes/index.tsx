@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { HeroQuoteTeaser } from "@/components/hero-quote-teaser";
 import { HaulOnScroll } from "@/components/haul-on-scroll";
+import { AskBox } from "@/components/ask-box";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { getOfferStatus } from "@/lib/bookings";
 import { BLOCK_TIERS, PROMO_DEADLINE_LABEL } from "@/lib/pricebook";
@@ -307,6 +308,13 @@ function Home() {
               </div>
             ))}
           </dl>
+
+          {/* Sits after the FAQ on purpose: the common questions are already
+              answered above for free, so anything reaching this box is a real
+              question rather than one a static list would have handled. */}
+          <div className="mt-10 lg:mt-12">
+            <AskBox />
+          </div>
         </section>
       </main>
 
