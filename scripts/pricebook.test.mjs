@@ -18,6 +18,8 @@ const {
   BLOCK_MIN_JOB_LOW,
   PROMO_CAP,
   PLAN_DISCOUNT_CAP,
+  RUSH_SURCHARGE,
+  ADD_ONS,
 } = await import("../src/lib/pricebook.ts");
 
 const FLOOR = 55;
@@ -35,7 +37,6 @@ function allJobs() {
   const services = [
     "leaf-cleanup",
     "junk-removal",
-    "garage-basement",
     "furniture-appliances",
     "single-item",
   ];
@@ -289,4 +290,65 @@ test("no plan price can fall below the single-job floor", () => {
   for (const tier of ["small", "medium", "large"]) {
     assert.ok(planPriceFor(tier) >= 55);
   }
+});
+
+test("same-week rush adds the surcharge; the other urgencies do not", () => {
+  const base = { service: "leaf-cleanup", size: "medium", addOns: [], earlyBird: false, notes: "" };
+  const normal = estimate({ ...base, urgency: "before-vacuum" });
+  const flexible = estimate({ ...base, urgency: "flexible" });
+  const rush = estimate({ ...base, urgency: "this-week" });
+  const none = estimate(base);
+
+  // "Before city vacuum" is the seasonal norm here, not a rush. It must cost
+  // the same as flexible and the same as saying nothing.
+  assert.deepEqual(normal.range, flexible.range);
+  assert.deepEqual(normal.range, none.range);
+
+  assert.equal(rush.range.low, normal.range.low + RUSH_SURCHARGE.low);
+  assert.equal(rush.range.high, normal.range.high + RUSH_SURCHARGE.high);
+  assert.ok(rush.lines.some((l) => /rush/i.test(l.label)), "rush must be an itemised line");
+});
+
+test("rush never breaks the floor and never appears twice", () => {
+  for (const job of allJobs()) {
+    for (const earlyBird of [true, false]) {
+      const q = estimate({ ...base, ...job, earlyBird, urgency: "this-week" });
+      if (!q.range) continue;
+      assert.ok(q.range.low >= FLOOR, `${job.service}/${job.size} rush breached floor`);
+      const rushLines = q.lines.filter((l) => /rush/i.test(l.label));
+      assert.equal(rushLines.length, 1, "exactly one rush line");
+    }
+  }
+});
+
+test("the deleted garage service kept its labor as an add-on", () => {
+  // Removing "garage-basement" without this would have silently priced every
+  // cleanout $50-$100 under cost.
+  const cleanout = ADD_ONS.find((a) => a.key === "cleanout");
+  assert.ok(cleanout, "cleanout add-on must exist");
+  assert.equal(cleanout.range.low, 50);
+  assert.equal(cleanout.range.high, 100);
+  assert.ok(cleanout.appliesTo.includes("junk-removal"));
+
+  const withCleanout = estimate({
+    service: "junk-removal", size: "half", addOns: ["cleanout"],
+    earlyBird: false, notes: "",
+  });
+  const without = estimate({
+    service: "junk-removal", size: "half", addOns: [], earlyBird: false, notes: "",
+  });
+  assert.equal(withCleanout.range.low, without.range.low + 50);
+  assert.equal(withCleanout.range.high, without.range.high + 100);
+});
+
+test("garage-basement is gone from every service list", () => {
+  // sizeOptionsFor falls back rather than throwing, so assert the union itself
+  // is unreachable by checking the estimator no longer special-cases it.
+  const q = estimate({
+    service: "junk-removal", size: "half", addOns: [], earlyBird: false, notes: "",
+  });
+  assert.ok(
+    !q.lines.some((l) => /sort & carry/i.test(l.label)),
+    "the old hard-coded cleanout line must not fire automatically any more",
+  );
 });

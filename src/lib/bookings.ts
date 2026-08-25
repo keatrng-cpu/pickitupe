@@ -20,7 +20,6 @@ const bookingInput = z.object({
   service: z.enum([
     "leaf-cleanup",
     "junk-removal",
-    "garage-basement",
     "furniture-appliances",
     "single-item",
     "other",
@@ -105,6 +104,7 @@ export const submitBooking = createServerFn({ method: "POST" })
       earlyBird,
       notes: data.notes || "",
       households,
+      urgency: data.urgency || undefined,
     });
 
     const inserted = await sql<{ id: number }>`

@@ -52,6 +52,19 @@ export function isPromoActive(now: Date = new Date()): boolean {
 const FLOOR = 55;
 
 /**
+ * Same-week rush. "Before city vacuum" is the SEASONAL norm here, not a rush —
+ * the whole business is built around that mid-Oct to mid-Nov window — so it
+ * carries no surcharge. "This week" is the actual rush: it displaces work
+ * already on the calendar and burns a slot that could have been routed with a
+ * neighbour on the same street.
+ *
+ * Priced as a range, like every other line, because a squeeze-in costs more on
+ * a full week than an empty one. Added BEFORE discounts, the same way add-ons
+ * are, so one mechanism governs the whole quote.
+ */
+export const RUSH_SURCHARGE: Range = { low: 10, high: 20 };
+
+/**
  * Block deal — two or more houses on the same street, the same day. One trip
  * down a street costs less than two, so we hand that back.
  *
@@ -93,7 +106,6 @@ export type Range = { low: number; high: number };
 export type ServiceKey =
   | "leaf-cleanup"
   | "junk-removal"
-  | "garage-basement"
   | "furniture-appliances"
   | "single-item"
   | "other";
@@ -274,7 +286,8 @@ export type AddOnKey =
   | "stairs"
   | "long-carry"
   | "appliance-freon"
-  | "wet-heavy";
+  | "wet-heavy"
+  | "cleanout";
 
 export const ADD_ONS: {
   key: AddOnKey;
@@ -302,7 +315,7 @@ export const ADD_ONS: {
     label: "Stairs or basement carry",
     hint: "Anything not at ground level",
     range: { low: 30, high: 60 },
-    appliesTo: ["junk-removal", "garage-basement", "furniture-appliances", "single-item"],
+    appliesTo: ["junk-removal", "furniture-appliances", "single-item"],
   },
   {
     key: "long-carry",
@@ -312,11 +325,23 @@ export const ADD_ONS: {
     appliesTo: "all",
   },
   {
+    // Was a hard-coded surcharge on the deleted "garage-basement" service. It
+    // is real labour — sorting a basement is not the same job as lifting a
+    // couch already at the curb — so removing the service without keeping this
+    // would have quietly priced every cleanout $50-$100 under cost. As an
+    // add-on it now applies to any haul that turns out to be a cleanout.
+    key: "cleanout",
+    label: "Garage or basement cleanout",
+    hint: "We sort and carry it out, not just load at the curb",
+    range: CLEANOUT_LABOR,
+    appliesTo: ["junk-removal", "furniture-appliances", "single-item"],
+  },
+  {
     key: "appliance-freon",
     label: "Fridge, freezer, or AC",
     hint: "Refrigerant units cost extra to drop",
     range: { low: 25, high: 45 },
-    appliesTo: ["junk-removal", "garage-basement", "furniture-appliances", "single-item"],
+    appliesTo: ["junk-removal", "furniture-appliances", "single-item"],
   },
 ];
 
@@ -358,6 +383,8 @@ export type EstimateInput = {
    * 1 (or omitted) means no block deal.
    */
   households?: number;
+  /** Only "this-week" changes the price. See RUSH_SURCHARGE. */
+  urgency?: "before-vacuum" | "this-week" | "flexible";
 };
 
 /** Which credit actually got applied. Never both — see `estimate()`. */
@@ -460,17 +487,19 @@ export function estimate(input: EstimateInput): Estimate {
   lines.push({ label: size.label, range: size.range });
   total = add(total, size.range);
 
-  if (input.service === "garage-basement") {
-    lines.push({ label: "Sort & carry labor", range: CLEANOUT_LABOR });
-    total = add(total, CLEANOUT_LABOR);
-  }
-
   const available = addOnsFor(input.service);
   for (const key of input.addOns) {
     const addOn = available.find((a) => a.key === key);
     if (!addOn) continue;
     lines.push({ label: addOn.label, range: addOn.range });
     total = add(total, addOn.range);
+  }
+
+  // Rush last, so it reads as a surcharge on the assembled job rather than
+  // something bundled into the base price.
+  if (input.urgency === "this-week") {
+    lines.push({ label: "Same-week rush", range: RUSH_SURCHARGE });
+    total = add(total, RUSH_SURCHARGE);
   }
 
   const beforeDiscount = total;

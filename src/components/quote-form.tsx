@@ -40,7 +40,6 @@ const schema = z.object({
   service: z.enum([
     "leaf-cleanup",
     "junk-removal",
-    "garage-basement",
     "furniture-appliances",
     "single-item",
     "other",
@@ -50,14 +49,26 @@ const schema = z.object({
   urgency: z.enum(["before-vacuum", "this-week", "flexible"]),
   neighborOf: z.string().optional(),
   households: z.number().int().min(1).max(6).optional(),
-});
+}).refine(
+  // The block credit is a promise to route two houses on one street the same
+  // day. Without the neighbour's address that is unroutable: the owner cannot
+  // confirm the houses are actually on the same street, cannot plan the trip
+  // the discount is paying for, and cannot tell the neighbour they are booked.
+  // So it is required exactly when a block credit is being claimed, and stays
+  // optional otherwise — asking a solo booker for a neighbour's address would
+  // be a pointless field.
+  (v) => (v.households ?? 1) < 2 || Boolean(v.neighborOf && v.neighborOf.trim().length >= 5),
+  {
+    message: "We need your neighbor's address to put you on the same day",
+    path: ["neighborOf"],
+  },
+);
 
 type Values = z.infer<typeof schema>;
 
 const SERVICES = [
   { value: "leaf-cleanup", label: "Fall leaf cleanup" },
   { value: "junk-removal", label: "Junk removal" },
-  { value: "garage-basement", label: "Garage / basement" },
   { value: "furniture-appliances", label: "Furniture & appliances" },
   { value: "single-item", label: "Single-item pickup" },
   { value: "other", label: "Something else" },
@@ -155,6 +166,7 @@ export function QuoteForm({
   const notes = form.watch("notes") ?? "";
   const address = form.watch("address") ?? "";
   const households = Number(form.watch("households") ?? 1) || 1;
+  const urgency = form.watch("urgency");
 
   const sizes = useMemo(() => sizeOptionsFor(service), [service]);
   const availableAddOns = useMemo(() => addOnsFor(service), [service]);
@@ -174,8 +186,9 @@ export function QuoteForm({
         earlyBird: promo.active,
         notes,
         households,
+        urgency,
       }),
-    [service, activeSize, activeAddOns, promo.active, notes, households],
+    [service, activeSize, activeAddOns, promo.active, notes, households, urgency],
   );
 
   const refused = refusedItemsIn(notes);
@@ -448,12 +461,23 @@ export function QuoteForm({
           </span>
         </label>
         <label className="block">
-          <span className={labelClass}>Neighbor's address (optional)</span>
+          <span className={labelClass}>
+            Neighbor's address
+            {households >= 2 ? requiredMark : " (optional)"}
+          </span>
           <input
             className={field}
-            placeholder="So we can put you on the same day"
+            placeholder={
+              households >= 2
+                ? "Street address of the other house"
+                : "So we can put you on the same day"
+            }
+            aria-required={households >= 2}
             {...form.register("neighborOf")}
           />
+          {err.neighborOf ? (
+            <FieldError message={err.neighborOf.message!} />
+          ) : null}
         </label>
         <label className="block">
           <span className={labelClass}>Photo of the pile (optional)</span>

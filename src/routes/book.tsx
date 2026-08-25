@@ -12,7 +12,6 @@ import {
 const SERVICE_KEYS: ServiceKey[] = [
   "leaf-cleanup",
   "junk-removal",
-  "garage-basement",
   "furniture-appliances",
   "single-item",
   "other",

@@ -9,6 +9,7 @@ import {
   BLOCK_TIERS,
   formatRange,
   isPromoActive,
+  RUSH_SURCHARGE,
   sizeOptionsFor,
   springSizeOptions,
   planPriceFor,
@@ -72,6 +73,8 @@ ${spring}
 
 ADD-ONS:
 ${addons}
+
+SAME-WEEK RUSH: adding "this week" urgency costs an extra ${formatRange(RUSH_SURCHARGE)}. "Before city vacuum" is the normal seasonal window and costs nothing extra.
 
 PROMO: ${promo}
 

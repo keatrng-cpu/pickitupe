@@ -40,3 +40,18 @@ undercut the small-lot list price. `estimate()` takes `households` and returns
   `earlyBird`. Never trust a client for something that changes the price.
 
 Run `node --test scripts/pricebook.test.mjs` after touching any of this.
+
+**`garage-basement` is no longer a ServiceKey.** The owner cut it as a duplicate
+of the other haul options. Its $50-$100 labour survives as the `cleanout`
+add-on — do not delete that, and do not re-add the service without also removing
+the add-on, or cleanouts get charged the labour twice.
+
+**Same-week rush is a real price input.** `estimate()` takes `urgency`, and
+`this-week` adds `RUSH_SURCHARGE` ($10-$20). `before-vacuum` is the seasonal
+norm and adds nothing. `submitBooking` recomputes it server-side like everything
+else that moves the price.
+
+**The neighbour's address is required when `households >= 2`,** enforced by a
+zod `.refine` on the whole form object rather than on the field. The block credit
+is a promise to route two houses on one street the same day; without the address
+that is unroutable, so the discount cannot be claimed without it.

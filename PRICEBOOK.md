@@ -77,9 +77,31 @@ $211–$344 (avg $271), full truck $422–$550.
 - **Block deal:** two houses on one street the same day, $25 off each; three or
   more, $40 off each (`BLOCK_TIERS` / `BLOCK_MIN_JOB_LOW`). **Never stacks with
   the promo** — the customer gets whichever is bigger. See below.
+- **Same-week rush:** `this-week` urgency adds **$10-$20** (`RUSH_SURCHARGE`).
+  "Before city vacuum" is the seasonal norm, not a rush, and costs nothing extra
+  — the whole business is built around that mid-Oct to mid-Nov window. "This
+  week" displaces booked work and burns a slot that could have been routed with
+  a neighbour on the same street.
 - **Scope change:** stop and re-quote before loading. Never load first, bill later.
 - **Refused loads:** paint, chemicals, oil, propane, concrete, dirt, roofing,
   asbestos. The estimator scans the notes field and warns before dispatch.
+
+### Why "Garage / basement" is no longer a service
+
+Removed at the owner's request — the dropdown listed six options where several
+read as the same job to a customer ("junk removal", "garage / basement",
+"furniture & appliances", "single-item pickup" are all *hauling*).
+
+**Its $50-$100 sort-and-carry labor did NOT go away.** It became the `cleanout`
+add-on, available on any haul service. Sorting a basement genuinely is not the
+same job as lifting a couch already at the curb, so deleting the service without
+keeping the labor would have quietly priced every cleanout $50-$100 under cost.
+`scripts/pricebook.test.mjs` asserts the add-on still exists and still adds
+exactly $50-$100.
+
+Garage and basement cleanouts remain in the SEO service list and the JSON-LD —
+we still do the work, it is just priced as a haul plus the cleanout add-on
+rather than as its own tier.
 
 ### The block deal: why $40, and why it can't stack
 

@@ -16,6 +16,7 @@ const {
   PROMO_CAP,
   formatRange,
   planPriceFor,
+  RUSH_SURCHARGE,
 } = await import("../src/lib/pricebook.ts");
 
 /**
@@ -130,6 +131,7 @@ test("the facts contain no price that the pricebook does not produce", () => {
   for (const s of springSizeOptions()) addRange(s.range);
   for (const a of ADD_ONS) addRange(a.range);
   for (const t of BLOCK_TIERS) legal.add(String(t.credit));
+  addRange(RUSH_SURCHARGE);
   for (const v of ["small", "medium", "large"]) legal.add(String(planPriceFor(v)));
   [DEPOSIT, PROMO_CAP, 50, 100, 20].forEach((n) => legal.add(String(n)));
 
