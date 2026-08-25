@@ -57,7 +57,7 @@ function JobsPage() {
 
   if (isPending) {
     return (
-      <div className="min-h-screen bg-bg">
+      <div className="relative z-10 min-h-screen">
         <SiteHeader />
         <div className="mx-auto max-w-5xl px-4 py-16 text-muted">Loading…</div>
       </div>
@@ -66,7 +66,7 @@ function JobsPage() {
   if (!user) return <RedirectToSignIn />;
 
   return (
-    <div className="min-h-screen bg-bg">
+    <div className="relative z-10 min-h-screen">
       <SiteHeader />
       <main className="mx-auto max-w-5xl px-4 py-12">
         <p className="text-xs tracking-[0.28em] text-gold">OWNER BOARD</p>

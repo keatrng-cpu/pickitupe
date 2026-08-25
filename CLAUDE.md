@@ -26,7 +26,8 @@ Path-scoped rules also live in [`.claude/rules/`](.claude/rules/).
 - Phone: **218-779-2553** — show it in the **header and footer only**, plus the door-hanger print replica. Do not repeat it on every section.
 - Services: fall leaf cleanup, junk/debris haul, garage & basement, furniture & appliances
 - Real truck: **2020 GMC Sierra 1500 Denali**, silver. Do not brand the company as GMC.
-- Marketing art: **vintage cream letterpress pickup** (right-facing, leaves in the bed). Owner replaced the silver photo. Hero/haul/OG use `public/hero-truck.jpg`, `public/haul-truck.webp`, `public/haul-chair.webp`. Source sketch: `attachments/image.png`.
+- Marketing art: **vintage cream letterpress pickup** (right-facing, leaves in the bed). Owner replaced the silver photo. The haul scene uses the transparent cutouts `public/haul-truck.webp` + `public/haul-chair.webp`. Source sketch: `attachments/image.png`.
+- **Do not put `public/hero-truck.jpg` back on the page.** Its art is baked onto a near-black field, so on the Sioux-green background it renders as a dark hole instead of part of the design — the owner asked for it gone. The file is kept as source art and for `og.jpg`; it is not displayed. Any on-page art must be a transparent cutout.
 - Goal: book fall work before city leaf vacuum (typically mid-Oct to mid-Nov)
 - Pre-season promo: book by **September 20** for **20% off, up to $75**, any job (`PROMO_PERCENT` / `PROMO_CAP` / `PROMO_DEADLINE` in `src/lib/pricebook.ts`). Calendar deadline, not a job-count cap. Locks the **rate**, not the service date (leaves aren't down by Sept 20).
 - **$50 deposit** applied to invoice on every booking, promo or not
@@ -92,7 +93,7 @@ attachments/PickItUpE-DoorHanger.pdf
 attachments/Ks1nw.jpg            mahogany flyer reference
 attachments/image.png            vintage cream truck source sketch
 
-public/hero-truck.jpg            vintage cream pickup hero
+public/hero-truck.jpg            source art + OG only — NOT displayed on the page
 public/haul-truck.webp           right-facing cutout (do not CSS-flip)
 public/haul-chair.webp
 public/grain.png

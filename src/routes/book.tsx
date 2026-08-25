@@ -11,7 +11,7 @@ export const Route = createFileRoute("/book")({
 function BookPage() {
   const offer = Route.useLoaderData();
   return (
-    <div className="relative min-h-screen bg-bg">
+    <div className="relative z-10 min-h-screen">
       <SiteHeader />
       <main className="mx-auto grid max-w-5xl items-start gap-10 px-4 py-16 lg:grid-cols-[0.9fr_1.1fr]">
         <div>

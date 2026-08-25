@@ -14,6 +14,8 @@ Read the root [`CLAUDE.md`](../../CLAUDE.md) first. This folder is the **visual 
 
 Assets: `public/haul-truck.webp`, `public/haul-chair.webp`, `public/hero-truck.jpg`, `public/grain.png`, `public/og.jpg`. Source sketch: `attachments/image.png`.
 
-`hero-truck.jpg` is 1792×1008 (16:9) — render it at that ratio. Forcing a taller crop cuts the truck off at the wheels.
+`hero-truck.jpg` is **not displayed on the page** — its art is baked onto a near-black field and read as a dark hole against the green. Kept as source art / OG only. On-page art must be a transparent cutout.
+
+`falling-leaves.tsx` renders at **`z-0`, behind the content**; page wrappers are transparent and `relative z-10`. Don't raise it — at `z-30` the leaves covered the door hanger on mobile.
 
 `grain.png` has **no alpha channel**. Always pair it with `background-blend-mode` — see [`.claude/rules/visual.md`](../../.claude/rules/visual.md).

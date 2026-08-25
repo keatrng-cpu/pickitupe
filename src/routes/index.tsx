@@ -78,7 +78,7 @@ function Home() {
   const pct = Math.round(offer.percent * 100);
 
   return (
-    <div className="relative min-h-screen bg-bg">
+    <div className="relative z-10 min-h-screen">
       <SiteHeader />
 
       <main>
@@ -124,22 +124,11 @@ function Home() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-4 pb-8">
-          <div className="relative overflow-hidden rounded-[2rem] ring-1 ring-gold/30">
-            {/* The art is exactly 16:9 (1792×1008). The old fixed heights
-                cropped it to ~2.7:1 and cut the truck off at the wheels —
-                match the source ratio so the whole illustration reads. */}
-            <img
-              src="/hero-truck.jpg"
-              alt="Vintage cream pickup loaded with maple leaves and an armchair"
-              width={1792}
-              height={1008}
-              className="aspect-[16/9] w-full object-cover object-center"
-            />
-            <div className="absolute inset-0 bg-[linear-gradient(to_top,var(--color-bg)_0%,transparent_45%)]" />
-          </div>
-        </section>
-
+        {/* The static hero-truck.jpg band used to sit here. It was removed:
+            the source art is baked onto a near-black field, so on the forest
+            green page it read as a dark hole rather than part of the design.
+            The same illustration already appears — transparent, on the page's
+            own background — in the scroll scene right below. */}
         <HaulOnScroll />
 
         <div className="band mt-8">

@@ -98,7 +98,12 @@ export function FallingLeaves() {
   return (
     <div
       ref={layer}
-      className="pointer-events-none fixed inset-0 z-30 overflow-hidden"
+      // Behind the page content, above the body background. At z-30 these sat
+      // on top of everything: fine on desktop where the leaves fall in the
+      // gutters beside the max-w-6xl column, but on a phone there is no
+      // gutter, so they landed across the door hanger like litter. Page
+      // wrappers are transparent and z-10 so the leaves still show through.
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
       aria-hidden
     >
       {leaves.current.map((leaf, i) => (
@@ -109,7 +114,10 @@ export function FallingLeaves() {
           }}
           className={`edge-leaf ${TINT[leaf.tint]}`}
           style={{
-            [leaf.side]: `${leaf.inset}px`,
+            // Inset is capped in viewport units so the leaves stay in the
+            // gutters. A flat 58px is an edge on a 1440px desktop and a
+            // sixth of the screen on a phone.
+            [leaf.side]: `min(${leaf.inset}px, 5vw)`,
             width: leaf.size,
             transform: `translate3d(0, ${leaf.y}vh, 0) rotate(${leaf.rot}deg)`,
           }}

@@ -8,7 +8,7 @@ export const Route = createFileRoute("/login")({ component: Login });
 
 function Login() {
   return (
-    <div className="relative flex min-h-screen flex-col bg-bg">
+    <div className="relative z-10 flex min-h-screen flex-col">
       <SiteHeader />
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 items-center px-4 py-16">
