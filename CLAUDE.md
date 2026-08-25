@@ -59,7 +59,7 @@ If a task spans two columns, touch the minimum files and say so in the commit me
 
 ## What this app already does
 
-- Site-wide **scroll-driven edge leaves** (`falling-leaves.tsx`, mounted once in `__root.tsx`) — left and right gutters only, faster as you scroll
+- `falling-leaves.tsx` exists but **is not mounted anywhere** (owner: "lets get rid of the falling leafs on the sides"). It used to render in `__root.tsx`; the import and `<FallingLeaves />` call were removed there, not the component file.
 - Hero is a **live instant-estimate widget** (`hero-quote-teaser.tsx`) — service + size, real number from `pricebook.ts`, no name/phone/address collected there. Replaced the on-site door-hanger picture (owner: "get rid of the door hanger picture and replace it with the estimated quote section"). `door-hanger.tsx` still exists for the print replica but is not currently mounted anywhere on the page.
 - The haul section is a **video** of a two-person crew loading leaves AND a junk pile into the same truck, then driving off (`haul-on-scroll.tsx` renders `public/haul-junk.mp4`), autoplay gated on IntersectionObserver, no `<video>` mounted under reduced motion
 - Quote / book form → `bookings` table
@@ -107,7 +107,7 @@ public/grain.png
 public/og.jpg
 public/favicon.svg
 
-src/routes/__root.tsx            html shell + FallingLeaves (once)
+src/routes/__root.tsx            html shell — FallingLeaves is NOT mounted here anymore
 src/routes/index.tsx             home, SEO, FAQ, block deal, quote form
 src/routes/book.tsx              booking page
 src/routes/jobs.tsx              owner board
@@ -116,7 +116,7 @@ src/routes/api/auth/$.ts         better-auth catch-all
 
 src/components/door-hanger.tsx   mahogany print replica — not mounted on the page currently
 src/components/hero-quote-teaser.tsx  live 2-tap estimate, hero right column
-src/components/falling-leaves.tsx  edge leaves, scroll-boosted
+src/components/falling-leaves.tsx  edge leaves — unused, not mounted, kept in case they come back
 src/components/haul-on-scroll.tsx  the crew video — not a scroll-driven illustration anymore
 src/components/quote-form.tsx    booking + instant estimate
 src/components/address-field.tsx autocomplete + "do you come out here?"

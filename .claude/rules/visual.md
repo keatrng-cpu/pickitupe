@@ -9,11 +9,13 @@ paths:
   - public/**
 ---
 
-Visual / motion workstream. Truck faces RIGHT — never `-scale-x-100`. Leaves only on the left and right edges, scroll-boosted, mounted once in `__root.tsx`. Tokens stay in `src/styles.css` `@theme`. Don't rewrite `pricebook.ts` from here.
+Visual / motion workstream. Truck faces RIGHT — never `-scale-x-100`. Tokens stay in `src/styles.css` `@theme`. Don't rewrite `pricebook.ts` from here.
+
+**`FallingLeaves` is not mounted anywhere** — owner asked for the edge leaves gone (`__root.tsx` no longer imports or renders it). The component file is untouched, just unused. If it's ever remounted: once, in `__root.tsx`, never per-page — that constraint below is about the DOM layering if it comes back, not a live bug today.
 
 **`public/grain.png` is opaque** — RGB colortype 2, no alpha, no `tRNS`. Any rule that sets it as `background-image` over a `background-color` **must** also set `background-blend-mode` (we use `soft-light`), or the grain paints straight over the colour and the element renders flat grey. This is what made the mahogany door hanger grey. Applies to `.card-print`, `.card-paper`, `.card-estimate`, and `body`.
 
-**Leaf layer sits BEHIND content.** `FallingLeaves` is `fixed inset-0 z-0`; every page wrapper is transparent with `relative z-10` and the page background is painted by `body`. At `z-30` the leaves floated over everything — invisible on desktop where they fall in the gutters, but on a phone there is no gutter and they landed across the door hanger like litter. Don't re-add `bg-bg` to a page wrapper or raise the leaf z-index. Leaf inset is capped with `min(Npx, 5vw)` for the same reason.
+**If `FallingLeaves` is remounted, it sits BEHIND content.** It's `fixed inset-0 z-0`; every page wrapper is transparent with `relative z-10` and the page background is painted by `body` — that layering is unrelated to whether the leaf layer is mounted, it's just how the page background works now, so don't revert it thinking it's dead code. At `z-30` the leaves used to float over everything — invisible on desktop where they fell in the gutters, but on a phone there was no gutter and they landed across the door hanger like litter. If it comes back: don't raise the z-index, and cap the inset with `min(Npx, 5vw)` for the same reason.
 
 **Opaque art on the page must actually blend.** Prefer a transparent cutout (`haul-truck.webp`, `haul-chair.webp`). Opaque is acceptable only when its own background sits close enough to `--color-bg` to read as part of the page — verified by eye, not assumed: `haul-junk.mp4`/`haul-junk-poster.jpg` are opaque and fine, `hero-truck.jpg` is opaque and was a dark hole. It was removed from the page at the owner's request; still exists for source art / `og.jpg`.
 
