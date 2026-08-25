@@ -95,17 +95,17 @@ export function HeroQuoteTeaser({ promo }: { promo: PromoStatus }) {
       {quote.range ? (
         <>
           <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <span className="font-display text-4xl leading-none tracking-tight">
+            <span className="font-display text-5xl font-bold leading-none tracking-tight">
               {formatRange(quote.range)}
             </span>
             {quote.discount > 0 && quote.beforeDiscount ? (
-              <span className="text-base text-print/45 line-through">
+              <span className="text-base text-print/65 line-through">
                 {formatRange(quote.beforeDiscount)}
               </span>
             ) : null}
           </p>
           {quote.discount > 0 ? (
-            <p className="mt-2 inline-flex rounded-full bg-mahogany px-3 py-1 text-xs font-medium text-paper">
+            <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-mahogany px-3.5 py-1.5 text-sm font-semibold text-paper">
               You save up to ${quote.discount}
             </p>
           ) : null}

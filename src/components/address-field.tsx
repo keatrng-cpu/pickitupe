@@ -18,12 +18,14 @@ import {
  * behaves like a plain text input and falls back to matching the town name.
  */
 export function AddressField({
+  id,
   value,
   onChange,
   onResolve,
   className,
   error,
 }: {
+  id?: string;
   value: string;
   onChange: (v: string) => void;
   onResolve: (hit: { lat: number; lon: number; verdict: AreaVerdict } | null) => void;
@@ -93,9 +95,11 @@ export function AddressField({
   return (
     <div ref={boxRef} className="relative">
       <input
+        id={id}
         className={className}
         autoComplete="street-address"
         placeholder="Street, city"
+        aria-required="true"
         value={value}
         onChange={(e) => handleTyping(e.target.value)}
         onFocus={() => setOpen(hits.length > 0)}
@@ -119,7 +123,10 @@ export function AddressField({
       ) : null}
 
       {error ? (
-        <span className="mt-1 block text-xs text-gold">{error}</span>
+        <span className="mt-1.5 flex items-start gap-1.5 text-xs text-gold">
+          <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
+          {error}
+        </span>
       ) : verdict ? (
         <span className={`mt-1.5 flex items-start gap-1.5 text-xs ${tone}`}>
           {verdict.tier === "outside" ? (

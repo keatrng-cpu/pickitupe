@@ -1,11 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
+  Armchair,
+  Boxes,
+  CalendarCheck,
+  Camera,
   Leaf,
-  Sofa,
-  Truck,
-  Warehouse,
   ShieldCheck,
+  Trash2,
+  Truck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HeroQuoteTeaser } from "@/components/hero-quote-teaser";
@@ -50,6 +53,9 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
+// Every service ends in hauling, so Truck moved to step 03 below — it was
+// duplicating the pickup already on screen in the HaulOnScroll video right
+// above this section.
 const SERVICES = [
   {
     icon: Leaf,
@@ -57,19 +63,40 @@ const SERVICES = [
     copy: "Rake, blow, and haul. Loose piles, beds, and curb-ready yards.",
   },
   {
-    icon: Truck,
+    icon: Trash2,
     title: "Junk removal",
     copy: "Yard debris, storm fall, and the pile you've been walking past.",
   },
   {
-    icon: Warehouse,
+    icon: Boxes,
     title: "Garage & basement",
     copy: "Cleanouts and move-out / rental turnovers without the dump-run.",
   },
   {
-    icon: Sofa,
+    icon: Armchair,
     title: "Furniture & appliances",
     copy: "Single-item pickups when you just need one thing gone today.",
+  },
+];
+
+const STEPS = [
+  {
+    n: "01",
+    icon: Camera,
+    t: "Send a photo",
+    d: "We quote from the pile — no walk-around needed.",
+  },
+  {
+    n: "02",
+    icon: CalendarCheck,
+    t: "Hold the date",
+    d: "$50 deposit, applied to your bill.",
+  },
+  {
+    n: "03",
+    icon: Truck,
+    t: "We haul it",
+    d: "You never bag. We never leave a mess.",
   },
 ];
 
@@ -82,18 +109,18 @@ function Home() {
       <SiteHeader />
 
       <main>
-        <section className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 lg:grid-cols-[1.1fr_0.9fr] lg:py-24">
+        <section className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 section-y-lead lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
           <div>
             <p className="kicker stagger-in">Grand Forks · locally owned</p>
             <h1
-              className="stagger-in mt-4 font-display text-5xl leading-[0.95] sm:text-7xl"
+              className="stagger-in mt-4 font-display text-5xl leading-[0.95] tracking-[-0.02em] sm:text-6xl lg:text-7xl xl:text-8xl"
               style={{ animationDelay: "80ms" }}
             >
               We haul the fall.
               <span className="mt-2 block italic text-gold">You don't.</span>
             </h1>
             <p
-              className="stagger-in mt-6 max-w-xl text-lg text-muted"
+              className="stagger-in mt-6 max-w-xl text-lg leading-[1.5] text-muted sm:text-xl"
               style={{ animationDelay: "160ms" }}
             >
               Leaf cleanup and junk removal. We rake, blow, and haul it — you
@@ -109,9 +136,12 @@ function Home() {
                   <ArrowRight className="size-4" />
                 </Link>
               </Button>
+              <Button asChild variant="ghost" size="lg">
+                <a href="/#services">See what we haul</a>
+              </Button>
             </div>
             <p
-              className="stagger-in mt-5 text-sm text-gold tabular-nums"
+              className="stagger-in mt-4 text-xs text-muted tabular-nums"
               style={{ animationDelay: "320ms" }}
             >
               {offer.active
@@ -131,109 +161,151 @@ function Home() {
             own background — in the scroll scene right below. */}
         <HaulOnScroll />
 
-        <div className="band mt-8">
-          <section id="services" className="mx-auto max-w-6xl px-4 py-20">
+        <div className="band">
+          <section id="services" className="section-y mx-auto max-w-6xl px-4">
             <p className="kicker">What we haul</p>
-            <h2 className="mt-2 font-display text-4xl">
+            <h2 className="mt-3 font-display text-3xl leading-[1.05] tracking-[-0.01em] sm:text-4xl lg:text-5xl">
               Leaves, junk, and the pile in the garage.
             </h2>
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:mt-12 lg:grid-cols-4 lg:gap-6">
               {SERVICES.map((s) => (
                 <article
                   key={s.title}
-                  className="card-green card-lift rounded-3xl p-6"
+                  className="card-green card-lift rounded-2xl p-6 lg:p-7"
                 >
-                  <s.icon className="size-6 text-gold" />
-                  <h3 className="mt-4 font-display text-2xl">{s.title}</h3>
-                  <p className="mt-2 text-sm text-muted">{s.copy}</p>
+                  <span className="grid size-12 place-items-center rounded-full bg-bg-deep/60 ring-1 ring-gold/25">
+                    <s.icon
+                      className="size-6 text-gold"
+                      strokeWidth={1.75}
+                      aria-hidden
+                    />
+                  </span>
+                  <h3 className="mt-4 font-display text-xl leading-[1.2]">
+                    {s.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-[1.5] text-fg/90">
+                    {s.copy}
+                  </p>
                 </article>
               ))}
             </div>
           </section>
         </div>
 
-        <section className="mx-auto grid max-w-6xl gap-6 px-4 py-8 lg:grid-cols-3">
-          {[
-            { n: "01", t: "Send a photo", d: "We quote from the pile — no walk-around needed." },
-            { n: "02", t: "Hold the date", d: "$50 deposit, applied to your bill." },
-            { n: "03", t: "We haul it", d: "You never bag. We never leave a mess." },
-          ].map((step) => (
-            <article key={step.n} className="card-green card-lift rounded-3xl p-6">
-              <p className="font-display text-3xl text-gold">{step.n}</p>
-              <h3 className="mt-3 font-display text-2xl">{step.t}</h3>
-              <p className="mt-2 text-sm text-muted">{step.d}</p>
-            </article>
-          ))}
-        </section>
-
-        <section id="rules" className="mx-auto max-w-6xl px-4 py-16">
-          <div className="card-green rounded-3xl p-8">
-            <p className="kicker">City window</p>
-            <h2 className="mt-2 font-display text-4xl">Grand Forks leaf rules</h2>
-            <ul className="mt-6 grid gap-3 text-sm sm:grid-cols-2">
-              <li>Leaves must be loose — bagged leaves are never collected.</li>
-              <li>Within 3 ft of the curb, not in the street.</li>
-              <li>3 ft clear of trees, mailboxes, and poles.</li>
-              <li>Outside city weeks it's self-haul — or book us.</li>
-            </ul>
-            <p className="mt-6 text-xs text-muted">
-              City vacuum typically mid-October to mid-November. Confirm 2026
-              dates at grandforksgov.com or 701-738-8740.
-            </p>
-            <div className="mt-6 flex items-center gap-2 text-sm text-gold">
-              <ShieldCheck className="size-4" />
-              We take the load when the city window doesn't work.
-            </div>
-          </div>
-        </section>
-
-        <section id="block" className="mx-auto max-w-6xl px-4 pb-4">
-          <div className="rounded-3xl border border-gold/30 bg-bg-deep/40 p-8">
-            <p className="kicker">Block deal</p>
-            <h2 className="mt-2 font-display text-4xl">
-              Get a neighbor on the same day. Both of you save $25.
-            </h2>
-            <p className="mt-4 max-w-2xl text-muted">
-              One trip down your street costs us less than two, so we hand that
-              back. Book your cleanup, put your neighbor's address in the form,
-              and we take $25 off each bill when we do both houses the same day.
-            </p>
-          </div>
-        </section>
-
-        <section
-          id="book"
-          className="mx-auto grid max-w-6xl items-start gap-10 px-4 py-16 lg:grid-cols-2"
-        >
-          <div>
-            <p className="kicker">Book</p>
-            <h2 className="mt-2 font-display text-4xl">
-              Before the rush, before the snow.
-            </h2>
-            <p className="mt-4 text-muted">
-              We cannot take paint, chemicals, oil, propane tanks, concrete,
-              dirt, roofing, or asbestos.
-            </p>
-          </div>
-          <QuoteForm promo={offer} />
+        <section id="how" className="section-y mx-auto max-w-6xl px-4">
+          <p className="kicker">How it works</p>
+          <h2 className="mt-3 font-display text-3xl leading-[1.05] tracking-[-0.01em] sm:text-4xl lg:text-5xl">
+            Three steps, one trip.
+          </h2>
+          <ol className="relative mt-10 grid gap-6 md:grid-cols-3 lg:mt-12">
+            <div
+              aria-hidden
+              className="haul-road pointer-events-none absolute inset-x-[calc((100%_-_3rem)/6)] top-8 hidden h-1.5 -translate-y-1/2 md:block"
+            />
+            {STEPS.map((s) => (
+              <li
+                key={s.n}
+                className="relative flex flex-col items-center text-center"
+              >
+                <span
+                  aria-hidden
+                  className="relative z-10 grid size-16 place-items-center rounded-full bg-bg-deep font-display text-3xl tabular-nums text-gold ring-1 ring-gold/35"
+                >
+                  {s.n}
+                </span>
+                <div className="card-green card-lift mt-5 w-full rounded-2xl p-6 lg:p-7">
+                  <s.icon
+                    className="mx-auto size-7 text-gold"
+                    strokeWidth={1.75}
+                    aria-hidden
+                  />
+                  <h3 className="mt-3 font-display text-2xl leading-[1.15]">
+                    {s.t}
+                  </h3>
+                  <p className="mt-2 text-sm leading-[1.5] text-fg/90">
+                    {s.d}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
         </section>
 
         <div className="band">
-          <section id="faq" className="mx-auto max-w-6xl px-4 py-20">
-            <p className="kicker">Straight answers</p>
-            <h2 className="mt-2 font-display text-4xl">
-              What people ask before they call
-            </h2>
-            <dl className="mt-8 grid gap-4 sm:grid-cols-2">
-              {FAQ.map((item) => (
-                <div key={item.q} className="card-green rounded-2xl p-5">
-                  <dt className="font-medium">{item.q}</dt>
-                  <dd className="mt-2 text-sm text-muted">{item.a}</dd>
-                </div>
-              ))}
-            </dl>
+          <section id="rules" className="section-y mx-auto max-w-6xl px-4">
+            <div className="card-green rounded-2xl p-8 lg:p-10">
+              <p className="kicker">City window</p>
+              <h2 className="mt-3 font-display text-3xl leading-[1.05] tracking-[-0.01em] sm:text-4xl lg:text-5xl">
+                Grand Forks leaf rules
+              </h2>
+              <ul className="mt-8 grid gap-4 text-sm leading-[1.5] sm:grid-cols-2 lg:gap-x-10">
+                <li>Leaves must be loose — bagged leaves are never collected.</li>
+                <li>Within 3 ft of the curb, not in the street.</li>
+                <li>3 ft clear of trees, mailboxes, and poles.</li>
+                <li>Outside city weeks it's self-haul — or book us.</li>
+              </ul>
+              <p className="mt-6 text-sm leading-[1.5] text-muted">
+                City vacuum typically mid-October to mid-November. Confirm 2026
+                dates at grandforksgov.com or 701-738-8740.
+              </p>
+              <div className="mt-6 flex items-center gap-2 text-sm text-gold">
+                <ShieldCheck className="size-4" />
+                We take the load when the city window doesn't work.
+              </div>
+            </div>
           </section>
         </div>
+
+        <div className="band-paper">
+          <section id="block" className="section-y mx-auto max-w-6xl px-4">
+            <p className="kicker">Block deal</p>
+            <h2 className="mt-3 font-display text-3xl leading-[1.05] tracking-[-0.01em] sm:text-4xl lg:text-5xl">
+              Get a neighbor on the same day. Both of you save $25.
+            </h2>
+            <p className="mt-5 max-w-[34rem] text-base leading-[1.6]">
+              One trip down your street costs us less than two, so we hand
+              that back. Book your cleanup, put your neighbor's address in
+              the form, and we take $25 off each bill when we do both houses
+              the same day.
+            </p>
+          </section>
+        </div>
+
+        <div className="band">
+          <section
+            id="book"
+            className="section-y mx-auto grid max-w-6xl items-start gap-10 px-4 lg:grid-cols-2 lg:gap-14"
+          >
+            <div>
+              <p className="kicker">Book</p>
+              <h2 className="mt-3 font-display text-3xl leading-[1.05] tracking-[-0.01em] sm:text-4xl lg:text-5xl">
+                Before the rush, before the snow.
+              </h2>
+              <p className="mt-4 text-base leading-[1.6] text-muted">
+                We cannot take paint, chemicals, oil, propane tanks, concrete,
+                dirt, roofing, or asbestos.
+              </p>
+            </div>
+            <QuoteForm promo={offer} />
+          </section>
+        </div>
+
+        <section id="faq" className="section-y mx-auto max-w-6xl px-4">
+          <p className="kicker">Straight answers</p>
+          <h2 className="mt-3 font-display text-3xl leading-[1.05] tracking-[-0.01em] sm:text-4xl lg:text-5xl">
+            What people ask before they call
+          </h2>
+          <dl className="mt-10 grid gap-5 sm:grid-cols-2 lg:mt-12 lg:gap-6">
+            {FAQ.map((item) => (
+              <div key={item.q} className="card-green card-lift rounded-2xl p-6">
+                <dt className="font-display text-xl leading-[1.2]">{item.q}</dt>
+                <dd className="mt-2 text-base leading-[1.6] text-fg/90">
+                  {item.a}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
       </main>
 
       <SiteFooter />

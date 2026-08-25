@@ -71,10 +71,10 @@ export function HaulOnScroll() {
       aria-label="Two-person crew loading a leaf-filled tarp and a junk pile into a cream pickup, then driving off"
     >
       <p className="kicker">The haul</p>
-      <h2 className="mt-2 font-display text-3xl sm:text-4xl">
+      <h2 className="mt-3 font-display text-3xl leading-[1.05] tracking-[-0.01em] sm:text-4xl lg:text-5xl">
         Two of us. One truck. Your whole yard.
       </h2>
-      <p className="mt-2 max-w-xl text-sm text-muted">
+      <p className="mt-3 max-w-xl text-sm leading-[1.5] text-muted">
         Leaves, the chair you meant to donate, whatever's been sitting in the
         garage — same trip, same truck, gone.
       </p>

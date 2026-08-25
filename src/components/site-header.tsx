@@ -31,6 +31,9 @@ export function SiteHeader() {
           <a href="/#services" className="hover:text-fg">
             Services
           </a>
+          <a href="/#how" className="hover:text-fg">
+            How it works
+          </a>
           <a href="/#rules" className="hover:text-fg">
             Leaf rules
           </a>

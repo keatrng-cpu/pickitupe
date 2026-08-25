@@ -2,7 +2,13 @@ import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CheckCircle2, Loader2, Sparkles, AlertTriangle } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  CheckCircle2,
+  Loader2,
+  Sparkles,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AddressField } from "@/components/address-field";
@@ -55,14 +61,15 @@ const SERVICES = [
   { value: "other", label: "Something else" },
 ] as const;
 
+// Labels kept short on purpose: at the form's column width a 3-up grid gives
+// each card ~127px of text, and the old "Before city vacuum" / "Mid-Oct to
+// mid-Nov rush" pair overflowed that and wrapped ragged. The dropped detail
+// moves to one shared hint line under the whole group instead of being said
+// three times.
 const URGENCY = [
-  {
-    value: "before-vacuum",
-    label: "Before city vacuum",
-    hint: "Mid-Oct to mid-Nov rush",
-  },
-  { value: "this-week", label: "This week", hint: "Soon as you can" },
-  { value: "flexible", label: "I'm flexible", hint: "Whenever you're nearby" },
+  { value: "before-vacuum", label: "Before vacuum" },
+  { value: "this-week", label: "This week" },
+  { value: "flexible", label: "Flexible" },
 ] as const;
 
 export type PromoStatus = {
@@ -71,6 +78,24 @@ export type PromoStatus = {
   cap: number;
   deadlineLabel: string;
 };
+
+const labelClass =
+  "block text-xs font-semibold uppercase tracking-[0.12em] text-fg";
+const requiredMark = (
+  <span aria-hidden="true" className="text-gold">
+    {" "}
+    *
+  </span>
+);
+
+function FieldError({ message }: { message: string }) {
+  return (
+    <span className="mt-1.5 flex items-start gap-1.5 text-xs text-gold">
+      <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+      {message}
+    </span>
+  );
+}
 
 export function QuoteForm({ promo }: { promo: PromoStatus }) {
   const [done, setDone] = useState<{ earlyBird: boolean } | null>(null);
@@ -171,7 +196,7 @@ export function QuoteForm({ promo }: { promo: PromoStatus }) {
 
   if (done) {
     return (
-      <div className="card-green rounded-3xl p-8 text-center">
+      <div className="card-green rounded-2xl p-8 text-center">
         <CheckCircle2 className="mx-auto size-10 text-gold" />
         <h3 className="mt-4 font-display text-3xl">You're on the list</h3>
         <p className="mt-2 text-muted">
@@ -190,15 +215,15 @@ export function QuoteForm({ promo }: { promo: PromoStatus }) {
   }
 
   const field =
-    "mt-1.5 w-full rounded-xl border border-border bg-bg-deep/50 px-3 py-2.5 text-fg outline-none placeholder:text-muted/70 focus:border-gold";
+    "mt-2 w-full rounded-xl border border-border bg-bg-deep/50 px-4 py-3 text-base text-fg outline-none placeholder:text-muted/70 focus:border-gold";
   const err = form.formState.errors;
 
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
-      className="card-green rounded-3xl p-6 sm:p-8"
+      className="card-green rounded-2xl p-6 sm:p-8"
     >
-      <p className="text-xs tracking-[0.25em] text-gold">FREE ESTIMATE</p>
+      <p className="kicker">Free estimate</p>
       <h3 className="mt-2 font-display text-3xl">Hold your date</h3>
       <p className="mt-2 text-sm text-muted">
         {promo.active
@@ -206,44 +231,40 @@ export function QuoteForm({ promo }: { promo: PromoStatus }) {
           : `The ${PROMO_DEADLINE_LABEL} rate has closed — still booking at regular rates.`}
       </p>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <label className="text-sm">
-          Name
+      <div className="mt-8 grid gap-x-4 gap-y-5 sm:grid-cols-2">
+        <label className="block">
+          <span className={labelClass}>Name{requiredMark}</span>
           <input
             className={field}
             autoComplete="name"
+            aria-required="true"
             {...form.register("name")}
           />
-          {err.name ? (
-            <span className="mt-1 block text-xs text-gold">{err.name.message}</span>
-          ) : null}
+          {err.name ? <FieldError message={err.name.message!} /> : null}
         </label>
-        <label className="text-sm">
-          Phone
+        <label className="block">
+          <span className={labelClass}>Phone{requiredMark}</span>
           <input
             className={field}
             type="tel"
             autoComplete="tel"
+            aria-required="true"
             {...form.register("phone")}
           />
-          {err.phone ? (
-            <span className="mt-1 block text-xs text-gold">{err.phone.message}</span>
-          ) : null}
+          {err.phone ? <FieldError message={err.phone.message!} /> : null}
         </label>
-        <label className="text-sm">
-          Email (optional)
+        <label className="block">
+          <span className={labelClass}>Email (optional)</span>
           <input
             className={field}
             type="email"
             autoComplete="email"
             {...form.register("email")}
           />
-          {err.email ? (
-            <span className="mt-1 block text-xs text-gold">{err.email.message}</span>
-          ) : null}
+          {err.email ? <FieldError message={err.email.message!} /> : null}
         </label>
-        <label className="text-sm">
-          Preferred date
+        <label className="block">
+          <span className={labelClass}>Preferred date (optional)</span>
           <input
             className={field}
             type="date"
@@ -251,9 +272,12 @@ export function QuoteForm({ promo }: { promo: PromoStatus }) {
           />
         </label>
 
-        <div className="text-sm sm:col-span-2">
-          Address
+        <div className="sm:col-span-2">
+          <label htmlFor="address" className={labelClass}>
+            Address{requiredMark}
+          </label>
           <AddressField
+            id="address"
             className={field}
             value={address}
             onChange={(v) =>
@@ -264,9 +288,13 @@ export function QuoteForm({ promo }: { promo: PromoStatus }) {
           />
         </div>
 
-        <label className="text-sm sm:col-span-2">
-          Service
-          <select className={field} {...form.register("service")}>
+        <label className="block sm:col-span-2">
+          <span className={labelClass}>Service{requiredMark}</span>
+          <select
+            className={field}
+            aria-required="true"
+            {...form.register("service")}
+          >
             {SERVICES.map((s) => (
               <option key={s.value} value={s.value}>
                 {s.label}
@@ -277,15 +305,15 @@ export function QuoteForm({ promo }: { promo: PromoStatus }) {
       </div>
 
       {service !== "other" ? (
-        <fieldset className="mt-5">
-          <legend className="text-sm">
+        <fieldset className="mt-10">
+          <legend className={labelClass}>
             {service === "leaf-cleanup" ? "How big is the yard?" : "How much is there?"}
           </legend>
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {sizes.map((s) => (
               <label
                 key={s.value}
-                className={`btn-press cursor-pointer rounded-xl border px-3 py-2.5 text-sm transition ${
+                className={`btn-press cursor-pointer rounded-xl border px-4 py-3.5 text-sm transition has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-gold ${
                   activeSize === s.value
                     ? "border-gold bg-bg-deep/60"
                     : "border-border bg-bg-deep/30 hover:border-gold/50"
@@ -308,16 +336,16 @@ export function QuoteForm({ promo }: { promo: PromoStatus }) {
       ) : null}
 
       {service !== "other" && availableAddOns.length > 0 ? (
-        <fieldset className="mt-5">
-          <legend className="text-sm">Anything else we should know?</legend>
-          <div className="mt-2 flex flex-wrap gap-2">
+        <fieldset className="mt-8">
+          <legend className={labelClass}>Anything else we should know?</legend>
+          <div className="mt-3 flex flex-wrap gap-2.5">
             {availableAddOns.map((a) => {
               const on = activeAddOns.includes(a.key);
               return (
                 <label
                   key={a.key}
                   title={a.hint}
-                  className={`btn-press cursor-pointer rounded-full border px-3.5 py-1.5 text-xs transition ${
+                  className={`btn-press inline-flex min-h-11 cursor-pointer items-center rounded-full border px-4 text-sm transition has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-gold ${
                     on
                       ? "border-gold bg-gold/15 text-fg"
                       : "border-border text-muted hover:border-gold/50"
@@ -343,13 +371,13 @@ export function QuoteForm({ promo }: { promo: PromoStatus }) {
         </fieldset>
       ) : null}
 
-      <fieldset className="mt-5">
-        <legend className="text-sm">When do you need it?</legend>
-        <div className="mt-2 grid gap-2 sm:grid-cols-3">
+      <fieldset className="mt-8">
+        <legend className={labelClass}>When do you need it?</legend>
+        <div className="mt-3 grid grid-cols-3 gap-2.5">
           {URGENCY.map((u) => (
             <label
               key={u.value}
-              className="btn-press cursor-pointer rounded-xl border border-border bg-bg-deep/30 px-3 py-2.5 text-sm transition has-checked:border-gold has-checked:bg-bg-deep/60 hover:border-gold/50"
+              className="btn-press cursor-pointer rounded-xl border border-border bg-bg-deep/30 px-2 py-3 text-center text-sm transition has-checked:border-gold has-checked:bg-bg-deep/60 hover:border-gold/50 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-gold"
             >
               <input
                 type="radio"
@@ -358,35 +386,92 @@ export function QuoteForm({ promo }: { promo: PromoStatus }) {
                 {...form.register("urgency")}
               />
               <span className="block font-medium">{u.label}</span>
-              <span className="block text-xs text-muted">{u.hint}</span>
             </label>
           ))}
         </div>
+        <p className="mt-2 text-xs text-gold">
+          City vacuum runs mid-Oct to mid-Nov.
+        </p>
       </fieldset>
 
+      <div className="mt-10 grid gap-5">
+        <label className="block">
+          <span className={labelClass}>Notes (optional)</span>
+          <textarea
+            className={`${field} min-h-24`}
+            placeholder="How many bags, what's in the pile, stairs, etc."
+            {...form.register("notes")}
+          />
+        </label>
+        <label className="block">
+          <span className={labelClass}>Neighbor booking with you? (optional)</span>
+          <input
+            className={field}
+            placeholder="Their address — you both get $25 off the same day"
+            {...form.register("neighborOf")}
+          />
+        </label>
+        <label className="block">
+          <span className={labelClass}>Photo of the pile (optional)</span>
+          <input
+            className={`${field} file:mr-3 file:rounded-full file:border file:border-border file:bg-bg-deep file:px-4 file:py-1.5 file:text-sm file:text-fg`}
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return setPhoto("");
+              const reader = new FileReader();
+              reader.onload = () => setPhoto(String(reader.result ?? ""));
+              reader.readAsDataURL(file);
+            }}
+          />
+          {photo ? (
+            <button
+              type="button"
+              onClick={onEstimate}
+              disabled={estimating}
+              className="btn-press mt-3 inline-flex items-center gap-2 text-sm underline decoration-gold/50 underline-offset-4 disabled:opacity-50"
+            >
+              {estimating ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Sparkles className="size-4" />
+              )}
+              Check this photo
+            </button>
+          ) : null}
+        </label>
+      </div>
+
+      {aiEstimate ? (
+        <p className="mt-4 rounded-2xl border border-border bg-bg-deep/40 p-4 text-sm">
+          {aiEstimate}
+        </p>
+      ) : null}
+
       {/* Instant number. Computed on the spot from the pricebook — no waiting,
-          no API key, same answer every time. */}
-      <div className="card-estimate mt-6 rounded-2xl p-5">
+          no API key, same answer every time. Sits last, right above the
+          button it exists to motivate. */}
+      <div className="card-estimate mt-10 rounded-2xl p-6 sm:p-7">
         <p className="kicker">Your estimate</p>
         {quote.range ? (
           <>
             <p className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="font-display text-4xl leading-none tracking-tight">
+              <span className="font-display text-5xl font-bold leading-none tracking-tight">
                 {formatRange(quote.range)}
               </span>
               {quote.discount > 0 && quote.beforeDiscount ? (
-                <span className="text-base text-print/45 line-through">
+                <span className="text-base text-print/65 line-through">
                   {formatRange(quote.beforeDiscount)}
                 </span>
               ) : null}
             </p>
             {quote.discount > 0 ? (
-              <p className="mt-2 inline-flex rounded-full bg-mahogany px-3 py-1 text-xs font-medium text-paper">
+              <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-mahogany px-3.5 py-1.5 text-sm font-semibold text-paper">
                 You save up to ${quote.discount}
               </p>
             ) : null}
-            <div className="estimate-rule my-4" />
-            <ul className="space-y-1.5 text-xs text-print/70">
+            <ul className="mt-4 space-y-1.5 text-xs text-print/80">
               {quote.lines.map((l) => (
                 <li key={l.label} className="flex justify-between gap-4">
                   <span>{l.label}</span>
@@ -400,8 +485,8 @@ export function QuoteForm({ promo }: { promo: PromoStatus }) {
             Tell us what it is below and we'll price it the same day.
           </p>
         )}
-        <div className="estimate-rule my-4" />
-        <ul className="space-y-1.5 text-xs text-print/65">
+        <div className="estimate-rule my-5" />
+        <ul className="space-y-1.5 text-xs text-print/75">
           {quote.notes.map((n) => (
             <li key={n}>· {n}</li>
           ))}
@@ -418,72 +503,23 @@ export function QuoteForm({ promo }: { promo: PromoStatus }) {
         </p>
       ) : null}
 
-      <div className="mt-5 grid gap-4">
-        <label className="text-sm">
-          Notes
-          <textarea
-            className={`${field} min-h-24`}
-            placeholder="How many bags, what's in the pile, stairs, etc."
-            {...form.register("notes")}
-          />
-        </label>
-        <label className="text-sm">
-          Neighbor booking with you? (optional)
-          <input
-            className={field}
-            placeholder="Their address — you both get $25 off the same day"
-            {...form.register("neighborOf")}
-          />
-        </label>
-        <label className="text-sm">
-          Photo of the pile (optional)
-          <input
-            className={`${field} file:mr-3 file:rounded-full file:border-0 file:bg-sioux file:px-3 file:py-1 file:text-fg`}
-            type="file"
-            accept="image/*"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (!file) return setPhoto("");
-              const reader = new FileReader();
-              reader.onload = () => setPhoto(String(reader.result ?? ""));
-              reader.readAsDataURL(file);
-            }}
-          />
-        </label>
-      </div>
-
-      {aiEstimate ? (
-        <p className="mt-4 rounded-2xl border border-border bg-bg-deep/40 p-4 text-sm">
-          {aiEstimate}
-        </p>
-      ) : null}
-
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <Button type="submit" variant="cream" size="lg" className="flex-1">
+      <div className="mt-6">
+        <Button
+          type="submit"
+          variant="cream"
+          size="lg"
+          className="h-14 w-full text-base font-semibold"
+        >
           {form.formState.isSubmitting ? (
             <Loader2 className="size-4 animate-spin" />
           ) : null}
           Request booking
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="lg"
-          onClick={onEstimate}
-          disabled={estimating}
-        >
-          {estimating ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Sparkles className="size-4" />
-          )}
-          Check my photo
+          <ArrowRight className="size-4" />
         </Button>
       </div>
-      <p className="mt-3 text-xs text-muted">
-        $50 deposit holds the date and comes off your invoice. We'll text to
-        confirm before we collect it. If the pile is bigger than described, we
-        stop and re-quote — we never load first and bill later.
+      <p className="mt-3 text-sm leading-[1.5] text-muted">
+        $50 deposit holds the date. We'll text to confirm before we collect
+        it.
       </p>
     </form>
   );

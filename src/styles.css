@@ -16,7 +16,6 @@
   --color-paper: #f3ead6;
   --color-print: #3c1e14;
   --color-border: color-mix(in srgb, #ede3d0 22%, transparent);
-  --radius: 1.25rem;
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Playfair Display", ui-serif, Georgia, serif;
 }
@@ -27,6 +26,11 @@
     -moz-osx-font-smoothing: grayscale;
     scroll-behavior: smooth;
     color-scheme: dark;
+    /* Without this, any area outside body's own box — iOS rubber-band
+       overscroll at the top/bottom, or the gap that opens for a frame while
+       the URL bar hides/shows on scroll — falls back to the UA default for
+       color-scheme: dark, which paints a flat grey instead of the page. */
+    background-color: var(--color-bg);
   }
 
   /* Texture + a soft overhead key light. The grain is blended, never stacked
@@ -51,16 +55,37 @@
     overflow-x: hidden;
   }
 
+  /* background-attachment: fixed is unreliable below desktop: iOS Safari
+     never really supports it (the layer can detach from the viewport during
+     momentum scroll), and because this rule also carries
+     background-blend-mode, the browser can't hand the fixed layer to the
+     compositor — it has to repaint it on the main thread on every scroll
+     frame. On a phone GPU that shows up as a flat grey field instead of the
+     green while scrolling. Scroll-attached on mobile costs nothing visually
+     (there's no parallax to lose at this size) and removes the bug. */
+  @media (max-width: 48rem) {
+    body {
+      background-attachment: scroll, scroll;
+    }
+  }
+
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
 
   h1,
-  h2,
+  h2 {
+    text-wrap: balance;
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
   h3 {
     text-wrap: balance;
     font-family: var(--font-display);
+    font-weight: 500;
   }
 
   p {
@@ -100,6 +125,16 @@
 
   .edge-leaf {
     opacity: 0.32 !important;
+  }
+
+  .card-lift,
+  .btn-press {
+    transition: none !important;
+  }
+
+  .card-lift:hover,
+  .btn-press:active:not(:disabled) {
+    transform: none !important;
   }
 }
 
@@ -177,11 +212,26 @@
   animation: float-card 8s ease-in-out infinite;
 }
 
+/* letter-spacing emits a trailing space after the last glyph; the negative
+   margin cancels it so a centred kicker (.card-print) sits on true optical
+   centre instead of looking pushed left. */
 .kicker {
-  font-size: 0.7rem;
-  letter-spacing: 0.28em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.3em;
   text-transform: uppercase;
   color: var(--color-gold);
+  margin-inline-end: -0.3em;
+}
+
+/* Longest label is "Grand Forks · locally owned", ~298px at 0.75rem/0.3em —
+   wraps below a 360px viewport without this. */
+@media (max-width: 23.4375rem) {
+  .kicker {
+    letter-spacing: 0.22em;
+    margin-inline-end: -0.22em;
+  }
 }
 
 /* Keyboard focus. Nothing in the app defined one, and the form fields ship
@@ -194,9 +244,13 @@
 }
 
 .card-estimate :focus-visible,
-.card-print :focus-visible,
-.card-paper :focus-visible {
+.card-paper :focus-visible,
+.band-paper :focus-visible {
   outline-color: var(--color-mahogany);
+}
+
+.card-print :focus-visible {
+  outline-color: var(--color-paper);
 }
 
 /* Elevation ramp. The old card sat ~4% lighter than the page, which read as
@@ -217,10 +271,28 @@
     0 28px 56px -32px rgb(0 0 0 / 0.75);
 }
 
-/* Alternating band so consecutive sections don't melt together. */
+/* Alternating band. Was 62% bg-deep: because body's layers are
+   background-attachment: fixed (desktop), the same band measured 1.467:1
+   against the page under the sioux glow and 1.225:1 at the bottom of the
+   viewport — the separation moved as you scrolled. At 92% that drift
+   collapses to ~1.03:1, the fill reads at ~1.36:1, and .card-green lifts
+   from ~1.22:1 to ~1.65:1 against it. */
 .band {
-  background-color: color-mix(in srgb, var(--color-bg-deep) 62%, transparent);
-  border-block: 1px solid color-mix(in srgb, var(--color-fg) 9%, transparent);
+  background-color: color-mix(in srgb, var(--color-bg-deep) 92%, transparent);
+  border-block: 1px solid color-mix(in srgb, var(--color-fg) 14%, transparent);
+}
+
+/* Section rhythm. One scale — nothing else sets section vertical padding.
+   clamp() so no breakpoint variants are needed:
+   64px <=640 · 73px @768 · 97px @1024 · 122px @1280 · 137px @1440 · 140px cap. */
+@utility section-y {
+  padding-block: clamp(4rem, 9.5vw, 8.75rem);
+}
+
+/* Hero only: it sits under a 64px sticky header and must keep the estimate
+   card above the fold. 40/48px on mobile, 72px top + 80px bottom at 1440. */
+@utility section-y-lead {
+  padding-block: clamp(2.5rem, 5vw, 4.5rem) clamp(3rem, 6vw, 5rem);
 }
 
 /* grain.png is opaque RGB — no alpha, no tRNS. Painting it as a plain
@@ -241,6 +313,31 @@
 
 .card-paper .kicker {
   color: color-mix(in srgb, var(--color-mahogany) 72%, var(--color-gold));
+}
+
+/* The one cream field on the page (#block). background-blend-mode is
+   load-bearing here, not optional — see the .card-paper note above. Never
+   place text-fg, text-muted, text-gold, or bg-sioux inside this band; the
+   dark-on-cream tokens below are the only combinations verified AA on
+   #f3ead6. */
+.band-paper {
+  background-color: var(--color-paper);
+  background-image: url("/grain.png");
+  background-size: 300px 300px;
+  background-blend-mode: soft-light;
+  color: var(--color-print);
+  border-block: 1px solid color-mix(in srgb, var(--color-mahogany) 25%, transparent);
+  box-shadow:
+    inset 0 14px 26px -20px rgb(0 0 0 / 0.35),
+    inset 0 -14px 26px -20px rgb(0 0 0 / 0.35);
+}
+
+.band-paper .kicker {
+  color: color-mix(in srgb, var(--color-mahogany) 72%, var(--color-gold));
+}
+
+.band-paper p {
+  color: color-mix(in srgb, var(--color-print) 75%, var(--color-paper));
 }
 
 .card-print {
@@ -267,9 +364,19 @@
     border-color 200ms ease-out;
 }
 
-.card-lift:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 28px 56px -28px rgb(0 0 0 / 0.55);
+/* Gated to real pointer devices so a tap on a phone doesn't latch the
+   lifted state until the next tap elsewhere. Restores the full shadow
+   stack on lift instead of replacing it — the old single-layer hover
+   deleted .card-green's inset top hairline and contact shadow, so the card
+   read flatter exactly when it was supposed to look raised. */
+@media (hover: hover) and (pointer: fine) {
+  .card-lift:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--color-fg) 20%, transparent),
+      0 4px 8px -4px rgb(0 0 0 / 0.45),
+      0 34px 64px -28px rgb(0 0 0 / 0.6);
+  }
 }
 
 .btn-press {
