@@ -15,6 +15,7 @@ import { HeroQuoteTeaser } from "@/components/hero-quote-teaser";
 import { HaulOnScroll } from "@/components/haul-on-scroll";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { getOfferStatus } from "@/lib/bookings";
+import { BLOCK_TIERS, PROMO_DEADLINE_LABEL } from "@/lib/pricebook";
 import { FAQ, faqJsonLd, localBusinessJsonLd, SITE_URL } from "@/lib/seo";
 
 const TITLE =
@@ -268,13 +269,14 @@ function Home() {
           >
             <p className="kicker">Block deal</p>
             <h2 className="mt-3 font-display text-3xl leading-[1.05] tracking-[-0.01em] sm:text-4xl lg:text-5xl">
-              Get a neighbor on the same day. Both of you save $25.
+              Get your street together. Everybody saves.
             </h2>
             <p className="mx-auto mt-5 max-w-[34rem] text-base leading-[1.6]">
               One trip down your street costs us less than two, so we hand
-              that back. Book your cleanup, put your neighbor's address in
-              the form, and we take $25 off each bill when we do both houses
-              the same day.
+              that back. Two houses the same day and everyone takes $
+              {BLOCK_TIERS[0].credit} off. Three or more and it's $
+              {BLOCK_TIERS[1].credit} off each. You get whichever is bigger —
+              this or the {PROMO_DEADLINE_LABEL} rate — never both.
             </p>
           </section>
         </div>

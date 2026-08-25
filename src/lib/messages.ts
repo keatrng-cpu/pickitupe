@@ -7,7 +7,7 @@
  * instead of a blank text box at 6am.
  */
 
-import { PROMO_CAP, PROMO_PERCENT } from "@/lib/pricebook";
+import { BLOCK_TIERS, PROMO_CAP, PROMO_PERCENT } from "@/lib/pricebook";
 
 export const PHONE = "218-779-2553";
 export const TEL = "tel:2187792553";
@@ -91,7 +91,7 @@ export const TEMPLATES: MessageTemplate[] = [
     label: "Neighbor offer",
     stage: "done",
     build: (c) =>
-      `${firstName(c.name)} — if a neighbor books the same day we're on your block, you both get $25 off. Just have them mention your address when they call ${PHONE}. — Pick It Up E`,
+      `${firstName(c.name)} — if a neighbor books the same day we're on your block, you both get $${BLOCK_TIERS[0].credit} off — three or more houses and it's $${BLOCK_TIERS[1].credit} each. Just have them mention your address when they call ${PHONE}. — Pick It Up E`,
   },
 ];
 

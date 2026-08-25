@@ -51,6 +51,43 @@ export function isPromoActive(now: Date = new Date()): boolean {
 /** Never below this after discounts — a truck roll costs money. */
 const FLOOR = 55;
 
+/**
+ * Block deal — two or more houses on the same street, the same day. One trip
+ * down a street costs less than two, so we hand that back.
+ *
+ * This used to live only in marketing copy and get applied by hand on the
+ * invoice. That was a real defect: `estimate()` could not produce the number
+ * the site was advertising, and subtracting it after the fact walked straight
+ * through FLOOR. Traced on the live site: a small lot with the promo landed at
+ * $76, minus $25 by hand = $51, four dollars under the floor with nothing left
+ * to re-check it. It also inverted the ladder — a standard lot at $145 − $29
+ * promo − $25 block = $91, cheaper than a small lot's $95 list price.
+ *
+ * THE $40 IS DERIVED, NOT CHOSEN. The cheapest job the credit may touch lists
+ * at BLOCK_MIN_JOB_LOW ($95) and FLOOR is $55, so $95 − $55 = $40 is the
+ * largest per-house credit that can never breach the floor. Raising either
+ * bound without re-deriving this breaks that guarantee — the unit tests in
+ * scripts/pricebook.test.mjs assert it.
+ *
+ * Why $40 at three houses and not the $30 originally floated: the customer's
+ * own credit moving $25 → $30 pays them $5 for recruiting the second
+ * neighbour, after $25 bought the first. Neighbour #1 is the person you talk
+ * to over the fence; neighbour #2 is the house you only wave at. Paying $25
+ * for the easy ask and $5 for the hard one is a dead ladder. $25 → $40 pays
+ * $15 for the second recruit — the same order of magnitude as the first.
+ */
+export const BLOCK_TIERS: { households: number; credit: number }[] = [
+  { households: 2, credit: 25 },
+  { households: 3, credit: 40 },
+];
+
+/**
+ * The block credit is not offered on jobs listing below this. Without the
+ * gate a $59 one-item haul quotes $55–$76 after the promo and then goes to
+ * $30–$51 — both ends under the floor, on a single mattress.
+ */
+export const BLOCK_MIN_JOB_LOW = 95;
+
 export type Range = { low: number; high: number };
 
 export type ServiceKey =
@@ -225,14 +262,28 @@ export type EstimateInput = {
   addOns: AddOnKey[];
   earlyBird: boolean;
   notes?: string;
+  /**
+   * Houses on the same street booked for the same day, INCLUDING this one.
+   * 1 (or omitted) means no block deal.
+   */
+  households?: number;
 };
+
+/** Which credit actually got applied. Never both — see `estimate()`. */
+export type DiscountKind = "none" | "promo" | "block";
 
 export type Estimate = {
   /** Null when the job genuinely needs eyes on it before any number. */
   range: Range | null;
-  /** Range before the early-bird credit, for showing the strike-through. */
+  /** Range before any credit, for showing the strike-through. */
   beforeDiscount: Range | null;
   discount: number;
+  /**
+   * Which mechanism produced `discount`. The UI must read this rather than
+   * assuming the promo — quoting "book by Sept 20 to lock this rate" on a
+   * quote that actually won on the block credit is a false statement.
+   */
+  appliedDiscount: DiscountKind;
   deposit: number;
   lines: { label: string; range: Range }[];
   notes: string[];
@@ -253,6 +304,44 @@ function applyPromo(range: Range): Range {
   };
 }
 
+/** A flat dollar credit off each end, floored the same way the promo is. */
+function applyFlat(range: Range, credit: number): Range {
+  return {
+    low: Math.max(FLOOR, Math.round(range.low - credit)),
+    high: Math.max(FLOOR, Math.round(range.high - credit)),
+  };
+}
+
+/** Per-house block credit, or 0 when the job does not qualify. */
+export function blockCreditFor(households: number, jobLow: number): number {
+  if (!Number.isFinite(households) || households < 2) return 0;
+  if (jobLow < BLOCK_MIN_JOB_LOW) return 0;
+  const tier = [...BLOCK_TIERS]
+    .sort((a, b) => b.households - a.households)
+    .find((t) => households >= t.households);
+  return tier ? tier.credit : 0;
+}
+
+/**
+ * Which of two candidate quotes is better for the customer.
+ *
+ * Compared on the HIGH end, deliberately, and not on total dollars saved.
+ * Total-saved picks the flat block credit on a standard lot ($80 saved vs
+ * $78) even though it produces a HIGHER top-of-range number ($205 vs $196) —
+ * i.e. recruiting a neighbour would have made someone's quote worse at the
+ * number they actually plan around. Comparing the high end removes that.
+ *
+ * It is also safe in both directions: a flat credit that beats the percentage
+ * at the top of the range necessarily beats it at the bottom too, because the
+ * percentage cut shrinks with the number while the flat credit does not. So a
+ * winning block credit dominates on BOTH ends, and a losing one leaves the
+ * customer with exactly the promo they would have had anyway. Recruiting a
+ * neighbour can never make a quote worse than not recruiting.
+ */
+function isBetter(candidate: Range, incumbent: Range): boolean {
+  return candidate.high < incumbent.high;
+}
+
 export function estimate(input: EstimateInput): Estimate {
   const sizes = sizeOptionsFor(input.service);
   const size = sizes.find((s) => s.value === input.size) ?? sizes[0];
@@ -266,6 +355,7 @@ export function estimate(input: EstimateInput): Estimate {
       range: null,
       beforeDiscount: null,
       discount: 0,
+      appliedDiscount: "none",
       deposit: DEPOSIT,
       lines: [],
       notes: [
@@ -293,13 +383,34 @@ export function estimate(input: EstimateInput): Estimate {
   }
 
   const beforeDiscount = total;
-  const discounted = input.earlyBird ? applyPromo(total) : total;
+
+  // NON-STACKING, BY CONSTRUCTION. The customer gets whichever single credit
+  // saves them more — never both. Stacking them is what drove a small-lot
+  // block booking to $51 against a $55 floor, and what let a standard lot
+  // undercut the small-lot list price. Compare the two candidates on total
+  // dollars saved across the range, then commit to one mechanism for the
+  // whole quote so the number and the explanation always agree.
+  const promoApplied = input.earlyBird ? applyPromo(total) : total;
+  const blockCredit = blockCreditFor(input.households ?? 1, total.low);
+  const blockApplied =
+    blockCredit > 0 ? applyFlat(total, blockCredit) : total;
+
+  let appliedDiscount: DiscountKind = "none";
+  let discounted = total;
+  if (input.earlyBird && isBetter(promoApplied, discounted)) {
+    appliedDiscount = "promo";
+    discounted = promoApplied;
+  }
+  if (blockCredit > 0 && isBetter(blockApplied, discounted)) {
+    appliedDiscount = "block";
+    discounted = blockApplied;
+  }
+  const blockLost = blockCredit > 0 && appliedDiscount !== "block";
+
   // Dollars saved at the top of the range — the number worth putting in a
   // text message. The bottom of the range can save proportionally less (or
   // nothing, once the floor clamps it) — that's intentional, not a bug.
-  const discount = input.earlyBird
-    ? beforeDiscount.high - discounted.high
-    : 0;
+  const discount = beforeDiscount.high - discounted.high;
 
   const needsWalkthrough = size.value === "acreage";
   if (needsWalkthrough) {
@@ -307,9 +418,19 @@ export function estimate(input: EstimateInput): Estimate {
       "Acreage gets a free walk-through first — the range above is a starting point, not the quote.",
     );
   }
-  if (discount > 0) {
+  if (appliedDiscount === "promo" && discount > 0) {
     notes.push(
       `Book by ${PROMO_DEADLINE_LABEL} to lock this rate — ${Math.round(PROMO_PERCENT * 100)}% off (up to $${PROMO_CAP}) is already taken off this range.`,
+    );
+  }
+  if (appliedDiscount === "block" && discount > 0) {
+    notes.push(
+      `Block deal applied — $${blockCredit} off because we're doing ${input.households} houses on your street the same day. It beat the ${PROMO_DEADLINE_LABEL} rate, so you're getting the bigger of the two, not both.`,
+    );
+  }
+  if (appliedDiscount === "promo" && blockLost) {
+    notes.push(
+      `Your ${PROMO_DEADLINE_LABEL} rate is worth more than the $${blockCredit} block credit on a job this size, so we applied that instead. You get the better one, never both.`,
     );
   }
   notes.push(
@@ -323,6 +444,7 @@ export function estimate(input: EstimateInput): Estimate {
     range: discounted,
     beforeDiscount,
     discount,
+    appliedDiscount,
     deposit: DEPOSIT,
     lines,
     notes,

@@ -15,6 +15,7 @@ import { AddressField } from "@/components/address-field";
 import { estimateJob, submitBooking } from "@/lib/bookings";
 import {
   addOnsFor,
+  BLOCK_TIERS,
   estimate as computeEstimate,
   formatRange,
   PROMO_DEADLINE_LABEL,
@@ -48,6 +49,7 @@ const schema = z.object({
   preferredDate: z.string().optional(),
   urgency: z.enum(["before-vacuum", "this-week", "flexible"]),
   neighborOf: z.string().optional(),
+  households: z.number().int().min(1).max(6).optional(),
 });
 
 type Values = z.infer<typeof schema>;
@@ -145,12 +147,14 @@ export function QuoteForm({
       preferredDate: "",
       urgency: "before-vacuum",
       neighborOf: "",
+      households: 1,
     },
   });
 
   const service = form.watch("service") as ServiceKey;
   const notes = form.watch("notes") ?? "";
   const address = form.watch("address") ?? "";
+  const households = Number(form.watch("households") ?? 1) || 1;
 
   const sizes = useMemo(() => sizeOptionsFor(service), [service]);
   const availableAddOns = useMemo(() => addOnsFor(service), [service]);
@@ -169,8 +173,9 @@ export function QuoteForm({
         addOns: activeAddOns,
         earlyBird: promo.active,
         notes,
+        households,
       }),
-    [service, activeSize, activeAddOns, promo.active, notes],
+    [service, activeSize, activeAddOns, promo.active, notes, households],
   );
 
   const refused = refusedItemsIn(notes);
@@ -182,6 +187,7 @@ export function QuoteForm({
           ...values,
           jobSize: activeSize,
           addOns: activeAddOns,
+          households,
           estimateLow: quote.range?.low,
           estimateHigh: quote.range?.high,
           lat: geo?.lat,
@@ -427,10 +433,25 @@ export function QuoteForm({
           />
         </label>
         <label className="block">
-          <span className={labelClass}>Neighbor booking with you? (optional)</span>
+          <span className={labelClass}>Houses on your street, same day</span>
+          <select
+            className={field}
+            {...form.register("households", { valueAsNumber: true })}
+          >
+            <option value={1}>Just mine</option>
+            <option value={2}>2 houses — ${BLOCK_TIERS[0].credit} off each</option>
+            <option value={3}>3 or more — ${BLOCK_TIERS[1].credit} off each</option>
+          </select>
+          <span className="mt-1.5 block text-xs text-muted">
+            One trip down your street costs us less than two. You get whichever
+            is bigger — this or the {PROMO_DEADLINE_LABEL} rate — never both.
+          </span>
+        </label>
+        <label className="block">
+          <span className={labelClass}>Neighbor's address (optional)</span>
           <input
             className={field}
-            placeholder="Their address — you both get $25 off the same day"
+            placeholder="So we can put you on the same day"
             {...form.register("neighborOf")}
           />
         </label>

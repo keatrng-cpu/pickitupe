@@ -2,10 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import {
+  estimate,
   isPromoActive,
   PROMO_CAP,
   PROMO_DEADLINE_LABEL,
   PROMO_PERCENT,
+  type AddOnKey,
+  type ServiceKey,
 } from "@/lib/pricebook";
 import { z } from "zod";
 
@@ -36,6 +39,7 @@ const bookingInput = z.object({
   lon: z.number().min(-180).max(180).optional(),
   areaTier: z.enum(["core", "ring", "outside", "unknown"]).optional(),
   neighborOf: z.string().trim().max(200).optional().or(z.literal("")),
+  households: z.number().int().min(1).max(6).optional(),
 });
 
 export type BookingRow = {
@@ -59,6 +63,9 @@ export type BookingRow = {
   lon: number | null;
   area_tier: string | null;
   neighbor_of: string | null;
+  households: number | null;
+  applied_discount: string | null;
+  discount_amount: number | null;
 };
 
 /**
@@ -86,10 +93,25 @@ export const submitBooking = createServerFn({ method: "POST" })
     // client-supplied flag for something that changes the price.
     const earlyBird = isPromoActive();
 
+    // Same rule for the block credit. The client sends what the customer
+    // picked; the SERVER decides what it is worth, so a hand-edited request
+    // cannot mint a discount, and so the row records the number we are
+    // actually bound to rather than the one a browser claimed.
+    const households = data.households ?? 1;
+    const priced = estimate({
+      service: data.service as ServiceKey,
+      size: data.jobSize || "",
+      addOns: (data.addOns ?? []) as AddOnKey[],
+      earlyBird,
+      notes: data.notes || "",
+      households,
+    });
+
     const inserted = await sql<{ id: number }>`
       insert into bookings
         (name, phone, email, address, service, notes, preferred_date, early_bird, status,
-         urgency, job_size, add_ons, estimate_low, estimate_high, lat, lon, area_tier, neighbor_of)
+         urgency, job_size, add_ons, estimate_low, estimate_high, lat, lon, area_tier, neighbor_of,
+         households, applied_discount, discount_amount)
       values
         (
           ${data.name},
@@ -109,7 +131,10 @@ export const submitBooking = createServerFn({ method: "POST" })
           ${data.lat ?? null},
           ${data.lon ?? null},
           ${data.areaTier || null},
-          ${data.neighborOf || null}
+          ${data.neighborOf || null},
+          ${households},
+          ${priced.appliedDiscount},
+          ${priced.discount}
         )
       returning id
     `;
@@ -118,6 +143,8 @@ export const submitBooking = createServerFn({ method: "POST" })
       ok: true as const,
       id: inserted[0]?.id ?? 0,
       earlyBird,
+      appliedDiscount: priced.appliedDiscount,
+      discount: priced.discount,
     };
   });
 
@@ -129,7 +156,8 @@ export const listBookings = createServerFn({ method: "GET" })
       select id, name, phone, email, address, service, notes,
              preferred_date, early_bird, status, created_at,
              urgency, job_size, add_ons, estimate_low, estimate_high,
-             lat, lon, area_tier, neighbor_of
+             lat, lon, area_tier, neighbor_of,
+             households, applied_discount, discount_amount
       from bookings
       order by created_at desc
       limit 200

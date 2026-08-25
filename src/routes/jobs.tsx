@@ -95,7 +95,7 @@ function JobsPage() {
               ))}
             </ul>
             <p className="mt-2 text-xs text-muted">
-              Run these back to back. Offer each of them the $25 neighbor credit
+              Run these back to back. Offer each of them the neighbor credit
               to pull one more house onto the same block.
             </p>
           </div>
@@ -156,7 +156,7 @@ function JobsPage() {
                       ) : null}
                       {job.neighbor_of ? (
                         <p className="mt-2 text-sm text-gold">
-                          Neighbor of {job.neighbor_of} — $25 credit both ways
+                          Neighbor of {job.neighbor_of} — block credit both ways
                         </p>
                       ) : null}
                     </div>

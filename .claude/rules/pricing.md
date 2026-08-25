@@ -17,3 +17,26 @@ Pricing / quoting workstream. Money numbers live only in `src/lib/pricebook.ts`.
 Both estimate cards render the price at `font-display font-bold text-5xl` (48px, bold) with the savings pill at `text-sm font-semibold` — keep these two in sync if you retune either one, they're meant to read as siblings.
 
 `quote-form.tsx` field order is now: contact grid → size → add-ons → urgency → optional details (notes/neighbor/photo) → **estimate card** → refusal warning → submit. The estimate card moved to sit last, directly above the button — don't move it back above the optional-details block without a reason, that's a deliberate fix (the number the funnel exists to deliver used to be buried mid-form).
+
+**The block deal lives in `pricebook.ts` now, not on the invoice pad.** It was
+advertised in six copy sites with zero pricing logic behind it, which put a
+small-lot block booking at $51 against a $55 floor and let a standard lot
+undercut the small-lot list price. `estimate()` takes `households` and returns
+`appliedDiscount: "none" | "promo" | "block"`.
+
+- Tiers: 2 houses $25 each, 3+ $40 each. **$40 is derived**, `BLOCK_MIN_JOB_LOW
+  (95) − FLOOR (55)` — the largest credit that can never breach the floor. A
+  unit test asserts the identity; don't retune either bound alone.
+- **Never stacks.** Customer gets the promo or the block credit, whichever is
+  better, compared on the HIGH end of the range (not total saved — that picked
+  the flat credit while raising the top-of-range number, so recruiting a
+  neighbour made the quote worse).
+- Gated to jobs listing >= $95, so a one-item haul can't be discounted through
+  the floor.
+- The UI must read `appliedDiscount` rather than assuming the promo — saying
+  "book by Sept 20 to lock this rate" on a block-credit quote is a false
+  statement about why the number is what it is.
+- `submitBooking` recomputes the credit server-side, like it already does for
+  `earlyBird`. Never trust a client for something that changes the price.
+
+Run `node --test scripts/pricebook.test.mjs` after touching any of this.

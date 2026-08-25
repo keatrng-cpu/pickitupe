@@ -74,10 +74,62 @@ $211–$344 (avg $271), full truck $422–$550.
 - **Floor:** nothing prices below $55 after discounts — a truck roll costs money.
 - **Deposit:** $50 holds the date, comes off the invoice. Same for every
   booking, promo or not.
-- **Block deal:** two houses on one street the same day, $25 off each.
+- **Block deal:** two houses on one street the same day, $25 off each; three or
+  more, $40 off each (`BLOCK_TIERS` / `BLOCK_MIN_JOB_LOW`). **Never stacks with
+  the promo** — the customer gets whichever is bigger. See below.
 - **Scope change:** stop and re-quote before loading. Never load first, bill later.
 - **Refused loads:** paint, chemicals, oil, propane, concrete, dirt, roofing,
   asbestos. The estimator scans the notes field and warns before dispatch.
+
+### The block deal: why $40, and why it can't stack
+
+Shipped for weeks as marketing copy in six places and **zero lines of pricing
+logic**. `estimate()` had no household input and never subtracted anything, so
+the site advertised a credit its own estimator could not produce, and the owner
+applied it by hand on the invoice. Three defects followed, all verified against
+the real code before the fix:
+
+1. **It broke the floor.** Small lot with the promo: `cut(95) = 19` → $76, which
+   clears $55. Then $25 off by hand → **$51**, four dollars under the floor,
+   with nothing left to re-check it because `applyPromo` had already returned.
+2. **It inverted the ladder.** Standard lot: `145 − 29 promo − 25 block = $91`,
+   cheaper than the small city lot's $95 **list** price. A bigger job cost less
+   than a smaller one.
+3. **It wasn't gated to yard work.** A one-item haul quoted $55–$76 after the
+   promo, then $30–$51 after the credit — both ends under the floor, on a
+   single mattress.
+
+**$40 is derived, not chosen.** The cheapest job the credit may touch is
+`BLOCK_MIN_JOB_LOW` ($95) and `FLOOR` is $55, so **$95 − $55 = $40** is the
+largest per-house credit that can never breach the floor. Change either bound
+and the guarantee dies — `scripts/pricebook.test.mjs` asserts the identity so
+it fails loudly instead of silently.
+
+**Why not the $30 that was first floated.** The customer's own credit moving
+$25 → $30 pays them **$5** for recruiting the second neighbour, after $25 bought
+the first. Neighbour #1 is the person you talk to over the fence; neighbour #2
+is the house you only wave at. Paying $25 for the easy ask and $5 for the hard
+one is a dead ladder. $25 → $40 pays $15 for the second recruit — same order of
+magnitude as the first. (The behavioural claim is an assumption at n=0; the
+$5-vs-$15 arithmetic is not.)
+
+**Non-stacking, compared on the high end.** The customer gets the promo *or* the
+block credit, never both. The comparison is on the **top** of the range, not on
+total dollars saved — total-saved picks the flat credit on a standard lot ($80
+vs $78) while producing a *higher* top-of-range number ($205 vs $196), i.e.
+recruiting a neighbour would have made someone's quote worse at the number they
+plan around. Comparing the high end also happens to be safe in both directions:
+a flat credit that beats a percentage at the top necessarily beats it at the
+bottom too, so a winning block credit dominates on both ends, and a losing one
+leaves the customer exactly the promo they'd have had anyway. There is a unit
+test named for this: *recruiting a neighbour can NEVER make your own quote
+worse*.
+
+**Consequence worth knowing:** during promo season the block credit only wins on
+small lots — on standard and large jobs the capped 20% is worth more, so the
+promo simply applies and the block tier costs nothing extra. After September 20
+the promo is gone and the block credit becomes the primary acquisition lever.
+That is intended, not a bug.
 
 ### Why a date, not a count
 

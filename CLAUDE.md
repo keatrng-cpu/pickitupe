@@ -33,7 +33,7 @@ Path-scoped rules also live in [`.claude/rules/`](.claude/rules/).
 - Goal: book fall work before city leaf vacuum (typically mid-Oct to mid-Nov)
 - Pre-season promo: book by **September 20** for **20% off, up to $75**, any job (`PROMO_PERCENT` / `PROMO_CAP` / `PROMO_DEADLINE` in `src/lib/pricebook.ts`). Calendar deadline, not a job-count cap. Locks the **rate**, not the service date (leaves aren't down by Sept 20).
 - **$50 deposit** applied to invoice on every booking, promo or not
-- Block deal: two houses on one street the same day, **$25 off each**
+- Block deal: two houses on one street the same day **$25 off each**, three or more **$40 off each** (`BLOCK_TIERS` in `pricebook.ts`). **Never stacks with the promo** — customer gets the bigger of the two. $40 is derived as `BLOCK_MIN_JOB_LOW − FLOOR`, don't retune it by feel
 - Refuse: paint, chemicals, oil, propane, concrete, dirt, roofing, asbestos
 
 Legal: USPS mailboxes are off-limits (18 U.S.C. § 1725). Marketing = door hangers on knobs, handoffs, this site, texts.
