@@ -8,7 +8,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DoorHanger } from "@/components/door-hanger";
+import { HeroQuoteTeaser } from "@/components/hero-quote-teaser";
 import { HaulOnScroll } from "@/components/haul-on-scroll";
 import { QuoteForm } from "@/components/quote-form";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
@@ -120,7 +120,7 @@ function Home() {
             </p>
           </div>
           <div className="stagger-in" style={{ animationDelay: "180ms" }}>
-            <DoorHanger />
+            <HeroQuoteTeaser promo={offer} />
           </div>
         </section>
 

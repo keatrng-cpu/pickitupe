@@ -23,11 +23,12 @@ Path-scoped rules also live in [`.claude/rules/`](.claude/rules/).
 
 - Name: Pick It Up E (temporary)
 - Owner market: Grand Forks, ND / East Grand Forks
-- Phone: **218-779-2553** — show it in the **header and footer only**, plus the door-hanger print replica. Do not repeat it on every section.
+- Phone: **218-779-2553** — show it in the **header and footer only**. Do not repeat it on every section. (`door-hanger.tsx` also has it, but that component is not currently rendered on the page — see below.)
 - Services: fall leaf cleanup, junk/debris haul, garage & basement, furniture & appliances
 - Real truck: **2020 GMC Sierra 1500 Denali**, silver. Do not brand the company as GMC.
-- Marketing art: **vintage cream letterpress pickup** (right-facing, leaves in the bed). Owner replaced the silver photo. The haul scene uses the transparent cutouts `public/haul-truck.webp` + `public/haul-chair.webp`. Source sketch: `attachments/image.png`.
-- **Do not put `public/hero-truck.jpg` back on the page.** Its art is baked onto a near-black field, so on the Sioux-green background it renders as a dark hole instead of part of the design — the owner asked for it gone. The file is kept as source art and for `og.jpg`; it is not displayed. Any on-page art must be a transparent cutout.
+- Marketing art: **vintage cream letterpress pickup** (right-facing, leaves in the bed). Owner replaced the silver photo. `public/haul-truck.webp` is still used on `/login`; source sketch `attachments/image.png`.
+- The haul section on the home page is a **video**, not the illustrated scroll rig it used to be — `public/haul-crew.mp4` + poster `public/haul-crew-poster.jpg`, a Grok Imagine clip of a two-person crew (owner: "I may have a helper here and there, so the two-person crew is okay"). Autoplay is gated on IntersectionObserver (plays only while on screen); `prefers-reduced-motion` drops the `<video>` element entirely and shows the poster as a plain `<img>` — not a paused video, no motion mounted at all.
+- **Do not put `public/hero-truck.jpg` back on the page.** Its art is baked onto a near-black field, so on the Sioux-green background it renders as a dark hole instead of part of the design — the owner asked for it gone. The file is kept as source art and for `og.jpg`; it is not displayed. On-page art needs a transparent cutout (`haul-truck.webp`) **or** its own background close enough to `--color-bg` to blend, which is why `haul-crew-poster.jpg`/`haul-crew.mp4` are fine as an opaque rounded card — check that visually before shipping a new opaque asset, don't assume it from the rule alone.
 - Goal: book fall work before city leaf vacuum (typically mid-Oct to mid-Nov)
 - Pre-season promo: book by **September 20** for **20% off, up to $75**, any job (`PROMO_PERCENT` / `PROMO_CAP` / `PROMO_DEADLINE` in `src/lib/pricebook.ts`). Calendar deadline, not a job-count cap. Locks the **rate**, not the service date (leaves aren't down by Sept 20).
 - **$50 deposit** applied to invoice on every booking, promo or not
@@ -44,8 +45,8 @@ Pull before you start. Commit only the files you meant to change.
 
 | Area | Own these | Do not casually rewrite |
 |---|---|---|
-| **Visual / motion** | `src/components/falling-leaves.tsx`, `haul-on-scroll.tsx`, `door-hanger.tsx`, `src/styles.css`, `src/routes/__root.tsx`, `public/hero-truck.jpg`, `public/haul-*.webp`, `public/grain.png`, `public/og.jpg` | pricebook, bookings, jobs |
-| **Pricing / quoting** | `src/lib/pricebook.ts`, `PRICEBOOK.md`, `src/components/quote-form.tsx`, `address-field.tsx`, `src/lib/service-area.ts` | haul animation, leaf overlay |
+| **Visual / motion** | `src/components/falling-leaves.tsx`, `haul-on-scroll.tsx`, `door-hanger.tsx`, `src/styles.css`, `src/routes/__root.tsx`, `public/hero-truck.jpg`, `public/haul-*.webp`, `public/haul-crew.mp4`, `public/haul-crew-poster.jpg`, `public/grain.png`, `public/og.jpg` | pricebook, bookings, jobs |
+| **Pricing / quoting** | `src/lib/pricebook.ts`, `PRICEBOOK.md`, `src/components/quote-form.tsx`, `hero-quote-teaser.tsx`, `address-field.tsx`, `src/lib/service-area.ts` | haul animation, leaf overlay |
 | **Owner ops** | `src/routes/jobs.tsx`, `src/lib/messages.ts`, `src/lib/bookings.ts`, `migrations/` | marketing copy on the home hero |
 | **SEO / copy** | `src/lib/seo.ts` (FAQ on page **must match** JSON-LD), `src/routes/index.tsx` promo lines | don't invent prices — they live in pricebook.ts |
 | **Print** | `print/DOOR-HANGER.md`, `attachments/PickItUpE-DoorHanger.pdf`, `attachments/Ks1nw.jpg`, `door-hanger.tsx` | keep 4.25×11 knob hole, never mailbox |
@@ -58,7 +59,8 @@ If a task spans two columns, touch the minimum files and say so in the commit me
 ## What this app already does
 
 - Site-wide **scroll-driven edge leaves** (`falling-leaves.tsx`, mounted once in `__root.tsx`) — left and right gutters only, faster as you scroll
-- Mahogany **door-hanger card** + vintage **scroll-linked haul** (truck faces RIGHT, no `scale-x` flip; chair lifts into the bed)
+- Hero is a **live instant-estimate widget** (`hero-quote-teaser.tsx`) — service + size, real number from `pricebook.ts`, no name/phone/address collected there. Replaced the on-site door-hanger picture (owner: "get rid of the door hanger picture and replace it with the estimated quote section"). `door-hanger.tsx` still exists for the print replica but is not currently mounted anywhere on the page.
+- The haul section is a **video** of a two-person crew tarping and loading leaves (`haul-on-scroll.tsx` renders `public/haul-crew.mp4`), autoplay gated on IntersectionObserver, no `<video>` mounted under reduced motion
 - Quote / book form → `bookings` table
 - **Instant estimate** — deterministic flat-rate math, no API key (`pricebook.ts`, calibrate in `PRICEBOOK.md`)
 - **Address autocomplete + service-area verdict** — keyless OpenStreetMap, boxed to Greater Grand Forks
@@ -94,8 +96,10 @@ attachments/Ks1nw.jpg            mahogany flyer reference
 attachments/image.png            vintage cream truck source sketch
 
 public/hero-truck.jpg            source art + OG only — NOT displayed on the page
-public/haul-truck.webp           right-facing cutout (do not CSS-flip)
-public/haul-chair.webp
+public/haul-truck.webp           used on /login only; NOT the home haul scene anymore
+public/haul-chair.webp           unused — kept in case the illustrated scene ever comes back
+public/haul-crew.mp4             the home haul scene — two-person crew, IntersectionObserver-gated
+public/haul-crew-poster.jpg      video poster; also the whole image under reduced-motion
 public/grain.png
 public/og.jpg
 public/favicon.svg
@@ -107,9 +111,10 @@ src/routes/jobs.tsx              owner board
 src/routes/login.tsx
 src/routes/api/auth/$.ts         better-auth catch-all
 
-src/components/door-hanger.tsx   mahogany print replica
+src/components/door-hanger.tsx   mahogany print replica — not mounted on the page currently
+src/components/hero-quote-teaser.tsx  live 2-tap estimate, hero right column
 src/components/falling-leaves.tsx  edge leaves, scroll-boosted
-src/components/haul-on-scroll.tsx  vintage truck L→R + chair pickup
+src/components/haul-on-scroll.tsx  the crew video — not a scroll-driven illustration anymore
 src/components/quote-form.tsx    booking + instant estimate
 src/components/address-field.tsx autocomplete + "do you come out here?"
 src/components/site-header.tsx   header + footer (phone lives here)
