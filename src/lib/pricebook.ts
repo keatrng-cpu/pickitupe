@@ -167,6 +167,97 @@ const LOAD_SIZES: SizeOption[] = [
   },
 ];
 
+/**
+ * SPRING cleanup — dead thatch, winter street sand, matted leaves the fall
+ * missed, downed branches. Sized by the same lot tiers as fall so a customer
+ * answers one question, not two.
+ *
+ * DERIVED AT 0.80 x THE FALL BAND, and that ratio is sourced rather than
+ * picked: HomeGuide (2026-02-04) puts spring cleanup at $125-$300 against fall
+ * at $150-$400 — 0.833 at the low end, 0.75 at the high, 0.773 at midpoints.
+ * The local mechanism agrees: Lawn King of Grand Forks describes spring as one
+ * pass raking dead thatch, versus fall where they "make multiple passes."
+ *
+ * THIS REPLACED AN EARLIER 85% GUESS, which sat above HomeGuide's own
+ * high-end AND midpoint ratios — i.e. it would have priced spring above what
+ * the only sourced comparison supports.
+ *
+ * STILL AN ASSUMPTION IN ONE RESPECT: nobody has performed a spring cleanup
+ * for this business yet, so the RATIO is sourced but the underlying hours are
+ * not. PRICEBOOK.md's "what to check after a real season" list is where the
+ * measured numbers replace these.
+ */
+const SPRING_SIZES: SizeOption[] = [
+  {
+    value: "small",
+    label: "Small city lot",
+    hint: "One or two trees, light winter debris",
+    range: { low: 75, high: 125 },
+  },
+  {
+    value: "medium",
+    label: "Standard lot",
+    hint: "Full yard, thatch and street sand",
+    range: { low: 115, high: 195 },
+  },
+  {
+    value: "large",
+    label: "Large / corner lot",
+    hint: "Heavy thatch, mature trees",
+    range: { low: 195, high: 315 },
+  },
+  // Acreage deliberately absent — see PLAN_DISCOUNT_CAP below and
+  // `needsWalkthrough`. We do not sell a fixed annual price for the one tier
+  // the estimator already refuses to quote sight-unseen.
+];
+
+export function springSizeOptions(): SizeOption[] {
+  return SPRING_SIZES;
+}
+
+/**
+ * Seasonal plan discount — 20% off the two-visit pair, capped at $150.
+ *
+ * The percent is PROMO_PERCENT, reused on purpose: the plan and the Sept 20
+ * promo are then worth the same, so a customer is never worse off on one path
+ * than the other and there is no reason to let them stack.
+ *
+ * THE CAP IS DERIVED: a plan is TWO visits, so it is 2 x PROMO_CAP. Applying
+ * the single-job $75 cap to a two-job bundle would halve the effective
+ * discount on the largest tier — backwards for a subscription, where the big
+ * lots are the ones most worth locking in. At current tiers the cap never
+ * binds (largest cut is $115); it exists to bound a future acreage plan.
+ *
+ * NON-STACKING IS MANDATORY. Three things must never apply to a plan price:
+ *   1. PROMO_PERCENT / PROMO_CAP — same 20%, would double-discount.
+ *   2. BLOCK_TIERS — BLOCK_MIN_JOB_LOW is checked against a single job's
+ *      total.low and has no meaning against one flat annual price, so it
+ *      would silently pass the gate.
+ *   3. DEPOSIT — it is credited against a final invoice, and a fully prepaid
+ *      annual subscription has no invoice left to credit it to. Leaving it on
+ *      both paths produces a self-contradictory quote.
+ * `estimate()` is never called for plan pricing; the plan reads Stripe.
+ */
+export const PLAN_DISCOUNT_PERCENT = PROMO_PERCENT;
+export const PLAN_DISCOUNT_CAP = PROMO_CAP * 2;
+
+/** List price of a plan tier before the commitment discount. */
+export function planPairTotal(sizeValue: string): number | null {
+  const fall = LEAF_SIZES.find((s) => s.value === sizeValue);
+  const spring = SPRING_SIZES.find((s) => s.value === sizeValue);
+  if (!fall || !spring) return null;
+  const mid = (r: Range) => (r.low + r.high) / 2;
+  return Math.round(mid(fall.range) + mid(spring.range));
+}
+
+/** What a plan tier should cost per year. Stripe holds the sold price. */
+export function planPriceFor(sizeValue: string): number | null {
+  const pair = planPairTotal(sizeValue);
+  if (pair === null) return null;
+  const cut = Math.min(pair * PLAN_DISCOUNT_PERCENT, PLAN_DISCOUNT_CAP);
+  return Math.round(pair - cut);
+}
+
 /** Cleanouts price like haul work plus sort-and-carry labor. */
 const CLEANOUT_LABOR: Range = { low: 50, high: 100 };
 

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getStripe, stripeConfigured } from "@/lib/stripe.server";
+import { senderConfigured } from "@/lib/renewal-notice.server";
 import {
   PLAN_TIERS,
   planConfigured,
@@ -20,7 +21,13 @@ const SITE = "https://pickitupe.com";
  */
 export const getPlanStatus = createServerFn({ method: "GET" }).handler(
   async () => {
-    if (!stripeConfigured() || !planConfigured()) {
+    // HARD INTERLOCK. An auto-renewing plan may not be offered unless the
+    // statutory pre-renewal notice can actually be sent. NDCC ch. 51-37
+    // requires written notice 30-60 days before every renewal, and Stripe
+    // cannot produce it — invoice.upcoming fires days out, not weeks. Selling
+    // first and wiring the notice "later" means the obligation attaches to
+    // real customers before the mechanism exists, so the code refuses.
+    if (!stripeConfigured() || !planConfigured() || !senderConfigured()) {
       return { available: false as const, tiers: [] };
     }
 
@@ -79,7 +86,10 @@ export const startPlanCheckout = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    if (!stripeConfigured() || !planConfigured()) {
+    // Same interlock on the write path, not just the read path — a stale
+    // page or a hand-crafted POST must not be able to open a checkout the
+    // status endpoint would have refused to advertise.
+    if (!stripeConfigured() || !planConfigured() || !senderConfigured()) {
       return { ok: false as const, error: "The plan isn't available yet." };
     }
 

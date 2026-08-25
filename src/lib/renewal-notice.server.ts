@@ -33,7 +33,7 @@ export type NoticeResult = {
   failures: { subscriptionId: string; reason: string }[];
 };
 
-function senderConfigured(): boolean {
+export function senderConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY && process.env.RENEWAL_FROM_EMAIL);
 }
 

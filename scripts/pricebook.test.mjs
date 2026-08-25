@@ -11,9 +11,13 @@ const {
   estimate,
   blockCreditFor,
   sizeOptionsFor,
+  springSizeOptions,
+  planPairTotal,
+  planPriceFor,
   BLOCK_TIERS,
   BLOCK_MIN_JOB_LOW,
   PROMO_CAP,
+  PLAN_DISCOUNT_CAP,
 } = await import("../src/lib/pricebook.ts");
 
 const FLOOR = 55;
@@ -234,4 +238,55 @@ test("no households / no promo is plain list price", () => {
   assert.equal(q.appliedDiscount, "none");
   assert.equal(q.discount, 0);
   assert.deepEqual(q.range, q.beforeDiscount);
+});
+
+test("seasonal plan prices match the Stripe prices that are live", () => {
+  // These three integers are what customers are actually charged. If this
+  // test fails, either the pricebook drifted or a Stripe price was archived
+  // and replaced — reconcile before shipping, do not just update the numbers.
+  assert.equal(planPriceFor("small"), 180);
+  assert.equal(planPriceFor("medium"), 280);
+  assert.equal(planPriceFor("large"), 460);
+});
+
+test("plan pair totals are fall midpoint + spring midpoint", () => {
+  assert.equal(planPairTotal("small"), 225);
+  assert.equal(planPairTotal("medium"), 350);
+  assert.equal(planPairTotal("large"), 575);
+  // Acreage has no spring band and therefore no plan price, on purpose.
+  assert.equal(planPairTotal("acreage"), null);
+  assert.equal(planPriceFor("acreage"), null);
+});
+
+test("spring is priced BELOW fall on every tier, at the sourced 0.80 ratio", () => {
+  const fall = sizeOptionsFor("leaf-cleanup");
+  for (const spring of springSizeOptions()) {
+    const f = fall.find((x) => x.value === spring.value);
+    assert.ok(f, `no fall tier matching spring tier ${spring.value}`);
+    assert.ok(
+      spring.range.low < f.range.low && spring.range.high < f.range.high,
+      `spring ${spring.value} must sit under fall on both ends`,
+    );
+    const ratio = (spring.range.low + spring.range.high) / (f.range.low + f.range.high);
+    assert.ok(
+      ratio > 0.75 && ratio < 0.85,
+      `spring/fall ratio for ${spring.value} is ${ratio.toFixed(3)}, outside the sourced 0.75-0.83 band`,
+    );
+  }
+});
+
+test("the plan discount cap is derived as two single-visit caps", () => {
+  assert.equal(PLAN_DISCOUNT_CAP, PROMO_CAP * 2);
+  // And it must not bind at any current tier — if it does, the largest lots
+  // are being under-discounted relative to the small ones, which is backwards.
+  for (const tier of ["small", "medium", "large"]) {
+    const pair = planPairTotal(tier);
+    assert.ok(pair * 0.2 < PLAN_DISCOUNT_CAP, `cap binds on ${tier}`);
+  }
+});
+
+test("no plan price can fall below the single-job floor", () => {
+  for (const tier of ["small", "medium", "large"]) {
+    assert.ok(planPriceFor(tier) >= 55);
+  }
 });
