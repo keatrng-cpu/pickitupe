@@ -12,7 +12,8 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AddressField } from "@/components/address-field";
-import { estimateJob, submitBooking } from "@/lib/bookings";
+import { submitBooking } from "@/lib/bookings";
+import { assessJob } from "@/lib/assess-actions";
 import {
   addOnsFor,
   BLOCK_TIERS,
@@ -138,8 +139,15 @@ export function QuoteForm({
   initialAddOns?: AddOnKey[];
 }) {
   const [done, setDone] = useState<{ earlyBird: boolean } | null>(null);
-  const [aiEstimate, setAiEstimate] = useState<string | null>(null);
   const [estimating, setEstimating] = useState(false);
+  const [assessment, setAssessment] = useState<{
+    size: string | null;
+    sizeLabel: string | null;
+    addOns: AddOnKey[];
+    refused: string[];
+    reasoning: string;
+    confidence: "high" | "medium" | "low";
+  } | null>(null);
   const [photo, setPhoto] = useState<string>("");
   const [size, setSize] = useState<string>(initialSize ?? "medium");
   // Array.isArray, not `?? []`: this value originates in a URL, and a
@@ -233,25 +241,41 @@ export function QuoteForm({
     }
   }
 
-  async function onEstimate() {
+  /**
+   * Reads the description and/or photo and recommends PRICEBOOK INPUTS — a
+   * size tier and add-ons. It never returns a price: `estimate()` computes
+   * that from the inputs, exactly as it does when the customer picks by hand.
+   * The suggestion is applied only if they press Apply, so the model can
+   * inform the quote but never silently change it.
+   */
+  async function onAssess() {
     setEstimating(true);
-    setAiEstimate(null);
+    setAssessment(null);
     try {
-      const values = form.getValues();
-      const result = await estimateJob({
+      const v = form.getValues();
+      const res = await assessJob({
         data: {
-          service: values.service,
-          notes: values.notes,
-          photoDataUrl: photo,
+          service: v.service as "leaf-cleanup" | "junk-removal" | "furniture-appliances" | "other",
+          notes: [v.notes, v.otherDescription].filter(Boolean).join("\n\n"),
+          photoDataUrl: photo || undefined,
         },
       });
-      if (result.ok) setAiEstimate(result.text);
-      else toast.error(result.error);
+      if (res.ok) setAssessment(res);
+      else toast.error(res.error);
     } catch {
-      toast.error("Estimate unavailable — the range above still stands.");
+      toast.error("Couldn't size it up. Call or text 218-779-2553.");
     } finally {
       setEstimating(false);
     }
+  }
+
+  /** Applies the recommendation to the real form inputs. */
+  function applyAssessment() {
+    if (!assessment) return;
+    if (assessment.size) setSize(assessment.size);
+    if (assessment.addOns.length) setAddOns(assessment.addOns);
+    setAssessment(null);
+    toast.success("Updated your estimate to match.");
   }
 
   if (done) {
@@ -533,29 +557,106 @@ export function QuoteForm({
               reader.readAsDataURL(file);
             }}
           />
-          {photo ? (
-            <button
-              type="button"
-              onClick={onEstimate}
-              disabled={estimating}
-              className="btn-press mt-3 inline-flex items-center gap-2 text-sm underline decoration-gold/50 underline-offset-4 disabled:opacity-50"
-            >
-              {estimating ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Sparkles className="size-4" />
-              )}
-              Check this photo
-            </button>
-          ) : null}
         </label>
-      </div>
 
-      {aiEstimate ? (
-        <p className="mt-4 rounded-2xl border border-border bg-bg-deep/40 p-4 text-sm">
-          {aiEstimate}
-        </p>
-      ) : null}
+        {/* One assessor for both inputs. It reads whatever is there — the
+            note, the photo, or both — and recommends a size tier and add-ons.
+            It never returns a price; estimate() still computes that from the
+            inputs it suggests, which is why the customer can safely be shown
+            an Apply button rather than having the quote change under them. */}
+        <div className="rounded-xl border border-border bg-bg-deep/30 p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-fg">
+            Not sure which size fits?
+          </p>
+          <p className="mt-1.5 text-sm leading-[1.5] text-fg/90">
+            Describe the job above or add a photo, and we'll size it against
+            what these jobs actually run in Grand Forks.
+          </p>
+
+          <button
+            type="button"
+            onClick={onAssess}
+            disabled={estimating || service === "other"}
+            className="btn-press mt-3 inline-flex min-h-11 items-center gap-2 rounded-full border border-border px-4 text-sm text-fg transition hover:border-gold/50 disabled:opacity-50"
+          >
+            {estimating ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Sparkles className="size-4 text-gold" />
+            )}
+            Size up my job
+          </button>
+
+          {assessment ? (
+            <div className="mt-4 border-t border-border pt-4">
+              {assessment.reasoning ? (
+                <p className="text-sm leading-[1.6] text-fg/90">
+                  {assessment.reasoning}
+                </p>
+              ) : null}
+
+              {assessment.sizeLabel || assessment.addOns.length ? (
+                <ul className="mt-3 space-y-1 text-sm text-fg/90">
+                  {assessment.sizeLabel ? (
+                    <li>
+                      Size: <strong>{assessment.sizeLabel}</strong>
+                    </li>
+                  ) : null}
+                  {assessment.addOns.length ? (
+                    <li>
+                      Add-ons:{" "}
+                      <strong>
+                        {assessment.addOns
+                          .map(
+                            (k) =>
+                              availableAddOns.find((a) => a.key === k)?.label ?? k,
+                          )
+                          .join(", ")}
+                      </strong>
+                    </li>
+                  ) : null}
+                </ul>
+              ) : null}
+
+              {assessment.refused.length ? (
+                <p className="mt-3 flex items-start gap-2 rounded-xl border border-gold/40 bg-gold/10 p-3 text-xs">
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0 text-gold" />
+                  <span>
+                    We can't take {assessment.refused.join(", ")}. Leave those
+                    out and we'll haul the rest.
+                  </span>
+                </p>
+              ) : null}
+
+              {assessment.confidence === "low" ? (
+                <p className="mt-3 text-xs text-muted">
+                  Low confidence on this one — a photo, or a text to
+                  218-779-2553, will get you a firmer number.
+                </p>
+              ) : null}
+
+              {assessment.size || assessment.addOns.length ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={applyAssessment}
+                    className="btn-press inline-flex min-h-11 items-center rounded-full bg-fg px-4 text-sm font-medium text-ink hover:bg-gold"
+                  >
+                    Use this
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAssessment(null)}
+                    className="btn-press inline-flex min-h-11 items-center rounded-full border border-border px-4 text-sm text-muted hover:text-fg"
+                  >
+                    Keep what I picked
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </div>
 
       {/* Instant number. Computed on the spot from the pricebook — no waiting,
           no API key, same answer every time. Sits last, right above the

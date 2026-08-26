@@ -89,7 +89,7 @@ CLAUDE.md                        this file — start here
 README.md                        human overview
 DEPLOY.md                        Netlify + env
 PRICEBOOK.md                     why the numbers are what they are
-.env.example                     DATABASE_URL, auth, optional XAI_API_KEY
+.env.example                     DATABASE_URL, auth, Stripe, Resend, ANTHROPIC_API_KEY
 netlify.toml                     build = vite only, no migrate on CI
 package.json                     scripts, no second package manager
 

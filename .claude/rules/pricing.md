@@ -70,3 +70,18 @@ lands in a column that already exists and gets scanned by `refusedItemsIn`.
 The estimator returns `range: null` for that service — the description IS the
 request, and without it the owner gets a booking saying only "something else"
 and has to phone back, which is the callback this form exists to prevent.
+
+**The job assessor recommends INPUTS, never a price.** `src/lib/assess-actions.ts`
+reads the notes and/or photo and returns a size tier plus add-on keys; `estimate()`
+still computes the number from them, exactly as when a customer picks by hand.
+That split is deliberate and load-bearing — a model emitting a dollar figure is
+guessing at the one thing this site refuses to guess at.
+
+Everything the model returns is validated against the pricebook before it leaves
+the server: an unknown size value or add-on key is dropped, and refused items are
+re-derived with `refusedItemsIn()` so a model that misses one still cannot let it
+through. The suggestion is applied only when the customer presses "Use this" —
+the quote never changes under them.
+
+The old `XAI_API_KEY` photo path is deleted. It was never configured in prod, so
+its only live behaviour was an error toast.
