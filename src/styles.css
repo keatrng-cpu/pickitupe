@@ -30,43 +30,19 @@
        overscroll at the top/bottom, or the gap that opens for a frame while
        the URL bar hides/shows on scroll — falls back to the UA default for
        color-scheme: dark, which paints a flat grey instead of the page. */
-    background-color: var(--color-bg);
+    background-color: #064e2a;
   }
 
-  /* Texture + a soft overhead key light. The grain is blended, never stacked
-     opaque — grain.png has no alpha channel (see .card-print below). */
+  /* grain.png is opaque RGB with no alpha. iOS Safari often drops
+     background-blend-mode on the body, so the grain layer replaces the
+     forest green with a flat grey field — that's the phone mismatch.
+     Keep the page a solid brand green on every breakpoint. */
   body {
-    background-color: var(--color-bg);
-    background-image:
-      radial-gradient(
-        120% 70% at 50% -10%,
-        color-mix(in srgb, var(--color-sioux) 26%, transparent),
-        transparent 68%
-      ),
-      url("/grain.png");
-    background-size:
-      100% 100%,
-      300px 300px;
-    background-repeat: no-repeat, repeat;
-    background-attachment: fixed, fixed;
-    background-blend-mode: normal, soft-light;
+    background-color: #064e2a;
+    background-image: none;
     color: var(--color-fg);
     font-family: var(--font-sans);
     overflow-x: hidden;
-  }
-
-  /* background-attachment: fixed is unreliable below desktop: iOS Safari
-     never really supports it (the layer can detach from the viewport during
-     momentum scroll), and because this rule also carries
-     background-blend-mode, the browser can't hand the fixed layer to the
-     compositor — it has to repaint it on the main thread on every scroll
-     frame. On a phone GPU that shows up as a flat grey field instead of the
-     green while scrolling. Scroll-attached on mobile costs nothing visually
-     (there's no parallax to lose at this size) and removes the bug. */
-  @media (max-width: 48rem) {
-    body {
-      background-attachment: scroll, scroll;
-    }
   }
 
   button:not(:disabled),
@@ -106,6 +82,18 @@
   option {
     background: var(--color-bg-deep);
     color: var(--color-fg);
+  }
+
+  .card-estimate input,
+  .card-estimate select,
+  .card-estimate textarea,
+  .card-paper input,
+  .card-paper select,
+  .card-paper textarea,
+  .band-paper input,
+  .band-paper select,
+  .band-paper textarea {
+    color-scheme: light;
   }
 }
 
@@ -278,7 +266,7 @@
    collapses to ~1.03:1, the fill reads at ~1.36:1, and .card-green lifts
    from ~1.22:1 to ~1.65:1 against it. */
 .band {
-  background-color: color-mix(in srgb, var(--color-bg-deep) 92%, transparent);
+  background-color: var(--color-bg-deep);
   border-block: 1px solid color-mix(in srgb, var(--color-fg) 14%, transparent);
 }
 
@@ -308,9 +296,7 @@
    the colour instead of replacing it. Never drop the blend mode from these. */
 .card-paper {
   background-color: var(--color-paper);
-  background-image: url("/grain.png");
-  background-size: 192px 192px;
-  background-blend-mode: soft-light;
+  background-image: none;
   color: var(--color-print);
   border: 1px solid color-mix(in srgb, var(--color-mahogany) 16%, transparent);
   box-shadow:
@@ -329,9 +315,7 @@
    #f3ead6. */
 .band-paper {
   background-color: var(--color-paper);
-  background-image: url("/grain.png");
-  background-size: 300px 300px;
-  background-blend-mode: soft-light;
+  background-image: none;
   color: var(--color-print);
   border-block: 1px solid color-mix(in srgb, var(--color-mahogany) 25%, transparent);
   box-shadow:
@@ -349,9 +333,7 @@
 
 .card-print {
   background-color: var(--color-mahogany);
-  background-image: url("/grain.png");
-  background-size: 160px 160px;
-  background-blend-mode: soft-light;
+  background-image: none;
   color: var(--color-paper);
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--color-paper) 32%, transparent),
@@ -444,9 +426,7 @@
    printed estimate slip and ties back to the door hanger. */
 .card-estimate {
   background-color: var(--color-paper);
-  background-image: url("/grain.png");
-  background-size: 220px 220px;
-  background-blend-mode: soft-light;
+  background-image: none;
   color: var(--color-print);
   border: 1px solid color-mix(in srgb, var(--color-mahogany) 22%, transparent);
   box-shadow:

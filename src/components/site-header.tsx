@@ -22,7 +22,7 @@ export function SiteHeader() {
   const { user, isPending } = useCurrentUserState();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-bg/80 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-border bg-bg">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
         <Link to="/" className="flex items-center gap-2.5 text-fg">
           <Mark />
