@@ -10,6 +10,13 @@ import {
   type AddOnKey,
   type ServiceKey,
 } from "@/lib/pricebook";
+import {
+  DAILY_SLOTS,
+  firstOpenDay,
+  slotsFor,
+  todayISO,
+  type DayFill,
+} from "@/lib/schedule";
 import { z } from "zod";
 import { notifyOwnerOfBooking } from "@/lib/booking-alert.server";
 
@@ -40,6 +47,7 @@ const bookingInput = z.object({
   areaTier: z.enum(["core", "ring", "outside", "unknown"]).optional(),
   neighborOf: z.string().trim().max(200).optional().or(z.literal("")),
   households: z.number().int().min(1).max(6).optional(),
+  asap: z.boolean().optional(),
 });
 
 export type BookingRow = {
@@ -85,6 +93,33 @@ export const getOfferStatus = createServerFn({ method: "GET" }).handler(
   },
 );
 
+async function loadFill(): Promise<DayFill[]> {
+  try {
+    const sql = await getSql();
+    const rows = await sql<{ preferred_date: string | null; job_size: string | null; service: string }>`
+      select preferred_date, job_size, service
+      from bookings
+      where preferred_date is not null
+        and preferred_date >= ${todayISO()}
+        and status not in ('cancelled', 'done')
+    `;
+    const used = new Map<string, number>();
+    for (const r of rows) {
+      const day = (r.preferred_date || "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) continue;
+      const need = slotsFor((r.service as ServiceKey) || "junk-removal", r.job_size || "single");
+      used.set(day, (used.get(day) ?? 0) + need);
+    }
+    return [...used.entries()].map(([day, usedSlots]) => ({ day, used: usedSlots }));
+  } catch {
+    return [];
+  }
+}
+
+export const getScheduleFill = createServerFn({ method: "GET" }).handler(
+  async () => loadFill(),
+);
+
 export const submitBooking = createServerFn({ method: "POST" })
   .validator((input: unknown) => bookingInput.parse(input))
   .handler(async ({ data }) => {
@@ -108,6 +143,24 @@ export const submitBooking = createServerFn({ method: "POST" })
       urgency: data.urgency || undefined,
     });
 
+    const need = slotsFor(data.service as ServiceKey, data.jobSize || "single");
+    const fill = await loadFill();
+    let preferredDate = data.preferredDate || null;
+    if (data.asap || preferredDate === "asap") {
+      preferredDate = firstOpenDay(fill, need);
+    }
+    if (preferredDate && /^\d{4}-\d{2}-\d{2}$/.test(preferredDate)) {
+      const used = fill.find((f) => f.day === preferredDate)?.used ?? 0;
+      if (used + need > DAILY_SLOTS) {
+        const next = firstOpenDay(fill, need);
+        throw new Error(
+          next
+            ? `That day is full. Next open is ${next}.`
+            : "That day is full.",
+        );
+      }
+    }
+
     const inserted = await sql<{ id: number }>`
       insert into bookings
         (name, phone, email, address, service, notes, preferred_date, early_bird, status,
@@ -121,7 +174,7 @@ export const submitBooking = createServerFn({ method: "POST" })
           ${data.address},
           ${data.service},
           ${data.notes || null},
-          ${data.preferredDate || null},
+          ${preferredDate},
           ${earlyBird},
           ${"new"},
           ${data.urgency || null},
@@ -156,7 +209,7 @@ export const submitBooking = createServerFn({ method: "POST" })
       estimateLow: priced.range?.low ?? data.estimateLow ?? null,
       estimateHigh: priced.range?.high ?? data.estimateHigh ?? null,
       urgency: data.urgency || null,
-      preferredDate: data.preferredDate || null,
+      preferredDate,
       notes: data.notes || null,
       neighborOf: data.neighborOf || null,
       households,
@@ -172,6 +225,7 @@ export const submitBooking = createServerFn({ method: "POST" })
       appliedDiscount: priced.appliedDiscount,
       discount: priced.discount,
       ownerAlerted: alert.sent,
+      preferredDate,
     };
   });
 

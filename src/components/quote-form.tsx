@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AddressField } from "@/components/address-field";
+import { DateField } from "@/components/date-field";
 import { submitBooking } from "@/lib/bookings";
 import { assessJob } from "@/lib/assess-actions";
 import {
@@ -152,6 +153,7 @@ export function QuoteForm({
   } | null>(null);
   const [photo, setPhoto] = useState<string>("");
   const [size, setSize] = useState<string>(initialSize ?? "medium");
+  const [asap, setAsap] = useState(true);
   // Array.isArray, not `?? []`: this value originates in a URL, and a
   // hand-edited ?addons=bogus arrives as a string. book.tsx sanitises it, but
   // a second guard here is what keeps a bad link from white-screening the one
@@ -229,6 +231,7 @@ export function QuoteForm({
           jobSize: activeSize,
           addOns: activeAddOns,
           households,
+          asap,
           estimateLow: quote.range?.low,
           estimateHigh: quote.range?.high,
           lat: geo?.lat,
@@ -354,14 +357,18 @@ export function QuoteForm({
           />
           {err.email ? <FieldError message={err.email.message!} /> : null}
         </label>
-        <label className="block">
-          <span className={labelClass}>Preferred date (optional)</span>
-          <input
-            className={field}
-            type="date"
-            {...form.register("preferredDate")}
+        <div className="sm:col-span-2">
+          <DateField
+            service={service}
+            size={activeSize}
+            day={form.watch("preferredDate") || ""}
+            asap={asap}
+            onChange={({ day, asap: nextAsap }) => {
+              setAsap(nextAsap);
+              form.setValue("preferredDate", nextAsap ? "asap" : day);
+            }}
           />
-        </label>
+        </div>
 
         <div className="sm:col-span-2">
           <label htmlFor="address" className={labelClass}>
