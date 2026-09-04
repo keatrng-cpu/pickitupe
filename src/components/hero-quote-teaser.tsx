@@ -14,8 +14,7 @@ import { askQuestion } from "@/lib/chat-actions";
 
 const SERVICES = [
   { value: "leaf-cleanup", label: "Fall leaf cleanup" },
-  { value: "junk-removal", label: "Junk removal" },
-  { value: "furniture-appliances", label: "Furniture & appliances" },
+  { value: "junk-removal", label: "Junk & furniture" },
   { value: "gutter-cleaning", label: "Gutter cleaning" },
   { value: "other", label: "Something else" },
 ] as const;
@@ -116,7 +115,7 @@ export function HeroQuoteTeaser({ promo }: { promo: PromoStatus }) {
               ? "Yard size"
               : service === "gutter-cleaning"
                 ? "Home"
-                : "How much"}
+                : "How much is there?"}
             <select
               className={field}
               value={activeSize}

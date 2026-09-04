@@ -4,6 +4,7 @@ import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { getOfferStatus } from "@/lib/bookings";
 import {
   addOnsFor,
+  canonicalService,
   sizeOptionsFor,
   type AddOnKey,
   type ServiceKey,
@@ -35,7 +36,7 @@ export type BookSearch = {
 export function sanitizeBookSearch(search: Record<string, unknown>): BookSearch {
   const serviceRaw = String(search.service ?? "");
   if (!SERVICE_KEYS.includes(serviceRaw as ServiceKey)) return {};
-  const service = serviceRaw as ServiceKey;
+  const service = canonicalService(serviceRaw as ServiceKey);
 
   const sizeRaw = String(search.size ?? "");
   const size = sizeOptionsFor(service).some((s) => s.value === sizeRaw)

@@ -1,7 +1,8 @@
-import { Armchair, ArrowRight, Droplets, Leaf, Trash2 } from "lucide-react";
+import { ArrowRight, Droplets, Leaf, Trash2 } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import {
+  canonicalService,
   estimate,
   formatRange,
   isPromoActive,
@@ -10,17 +11,12 @@ import {
 } from "@/lib/pricebook";
 
 const JOBS: {
-  value: Exclude<ServiceKey, "other">;
+  value: Exclude<ServiceKey, "other" | "furniture-appliances">;
   label: string;
   icon: ReactNode;
 }[] = [
   { value: "leaf-cleanup", label: "Leaves", icon: <Leaf className="size-6" /> },
   { value: "junk-removal", label: "Junk", icon: <Trash2 className="size-6" /> },
-  {
-    value: "furniture-appliances",
-    label: "Furniture",
-    icon: <Armchair className="size-6" />,
-  },
   { value: "gutter-cleaning", label: "Gutters", icon: <Droplets className="size-6" /> },
 ];
 
@@ -41,13 +37,21 @@ export function QuickQuote() {
   );
 
   function pick(next: ServiceKey) {
-    setService(next);
-    setSize(sizeOptionsFor(next)[0]?.value ?? "");
+    const s = canonicalService(next);
+    setService(s);
+    setSize(sizeOptionsFor(s)[0]?.value ?? "");
   }
 
   const current = sizes.some((s) => s.value === size)
     ? size
     : (sizes[0]?.value ?? "");
+  const currentHint = sizes.find((s) => s.value === current)?.hint;
+  const sizeHeading =
+    service === "leaf-cleanup"
+      ? "Yard size"
+      : service === "gutter-cleaning"
+        ? "What kind of home?"
+        : "How much is there?";
 
   return (
     <section id="haul" className="section-y mx-auto max-w-6xl px-4">
@@ -56,7 +60,11 @@ export function QuickQuote() {
         What are we taking?
       </h2>
 
-      <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4" role="listbox" aria-label="Service">
+      <div
+        className="mt-8 grid grid-cols-3 gap-3"
+        role="listbox"
+        aria-label="Service"
+      >
         {JOBS.map((job) => {
           const on = service === job.value;
           return (
@@ -77,8 +85,10 @@ export function QuickQuote() {
         })}
       </div>
 
-      <p className="mt-8 text-xs font-medium uppercase tracking-widest text-gold">Size</p>
-      <div className="mt-3 flex gap-2 overflow-x-auto pb-2">
+      <p className="mt-8 text-xs font-medium uppercase tracking-widest text-gold">
+        {sizeHeading}
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
         {sizes.map((s) => {
           const on = current === s.value;
           return (
@@ -86,7 +96,7 @@ export function QuickQuote() {
               key={s.value}
               type="button"
               onClick={() => setSize(s.value)}
-              className={`btn-press inline-flex h-12 shrink-0 items-center rounded-full px-5 text-sm ${
+              className={`btn-press inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm ${
                 on ? "bg-gold text-ink" : "border border-border text-fg hover:bg-fg/8"
               }`}
             >
@@ -95,6 +105,7 @@ export function QuickQuote() {
           );
         })}
       </div>
+      {currentHint ? <p className="mt-3 text-sm text-muted">{currentHint}</p> : null}
 
       <div className="card-estimate relative mt-8 overflow-hidden rounded-2xl p-6">
         <p className="kicker">Your range</p>

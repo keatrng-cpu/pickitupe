@@ -17,6 +17,7 @@ import { assessJob } from "@/lib/assess-actions";
 import {
   addOnsFor,
   BLOCK_TIERS,
+  canonicalService,
   estimate as computeEstimate,
   formatRange,
   PROMO_DEADLINE_LABEL,
@@ -80,8 +81,7 @@ type Values = z.infer<typeof schema>;
 
 const SERVICES = [
   { value: "leaf-cleanup", label: "Fall leaf cleanup" },
-  { value: "junk-removal", label: "Junk removal" },
-  { value: "furniture-appliances", label: "Furniture & appliances" },
+  { value: "junk-removal", label: "Junk & furniture" },
   { value: "gutter-cleaning", label: "Gutter cleaning" },
   { value: "other", label: "Something else" },
 ] as const;
@@ -172,7 +172,7 @@ export function QuoteForm({
       phone: "",
       email: "",
       address: "",
-      service: initialService ?? "leaf-cleanup",
+      service: canonicalService(initialService ?? "leaf-cleanup"),
       notes: "",
       preferredDate: "",
       urgency: "before-vacuum",

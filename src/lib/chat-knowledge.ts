@@ -174,7 +174,7 @@ AREA SERVED: ${AREA_SERVED_TEXT}
 FALL LEAF CLEANUP (price ranges, trip + labor + haul included):
 ${leaf}
 
-JUNK / HAUL WORK (sized by how much of the truck bed it fills):
+JUNK / HAUL WORK (furniture and appliances are the same service — sized by how much is there):
 ${load}
 Garage or basement cleanouts add $50-$100 of sort-and-carry labor on top.
 

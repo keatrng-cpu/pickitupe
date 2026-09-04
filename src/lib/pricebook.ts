@@ -110,6 +110,11 @@ export type ServiceKey =
   | "gutter-cleaning"
   | "other";
 
+/** Old links used furniture-appliances; that job is junk removal. */
+export function canonicalService(service: ServiceKey): ServiceKey {
+  return service === "furniture-appliances" ? "junk-removal" : service;
+}
+
 export type SizeOption = {
   value: string;
   label: string;
@@ -154,10 +159,58 @@ const LEAF_SIZES: SizeOption[] = [
  */
 const LOAD_SIZES: SizeOption[] = [
   {
+    value: "bags",
+    label: "A few bags",
+    hint: "Contractor bags or a small pile at the curb",
+    range: { low: 59, high: 95 },
+  },
+  {
+    value: "small-item",
+    label: "One small piece",
+    hint: "Chair, nightstand, microwave, lamp",
+    range: { low: 59, high: 89 },
+  },
+  {
     value: "single",
     label: "One item",
-    hint: "Couch, mattress, treadmill",
+    hint: "Anything we can carry in one trip to the truck",
     range: { low: 59, high: 95 },
+  },
+  {
+    value: "dresser",
+    label: "Dresser, table, bed frame",
+    hint: "One mid-size furniture piece",
+    range: { low: 75, high: 99 },
+  },
+  {
+    value: "sofa",
+    label: "Couch or mattress",
+    hint: "One bulky living-room piece",
+    range: { low: 59, high: 95 },
+  },
+  {
+    value: "appliance",
+    label: "Washer, dryer, or stove",
+    hint: "One large appliance, no stairs",
+    range: { low: 85, high: 130 },
+  },
+  {
+    value: "fridge",
+    label: "Refrigerator",
+    hint: "Refrigerant drop is an add-on if it still has freon",
+    range: { low: 85, high: 130 },
+  },
+  {
+    value: "two",
+    label: "Two bulky items",
+    hint: "Same stop, same truck",
+    range: { low: 85, high: 130 },
+  },
+  {
+    value: "three",
+    label: "Three mixed items",
+    hint: "Furniture, appliances, bags, or both",
+    range: { low: 125, high: 195 },
   },
   {
     value: "quarter",
@@ -176,6 +229,12 @@ const LOAD_SIZES: SizeOption[] = [
     label: "Full load",
     hint: "Bed full and strapped",
     range: { low: 175, high: 265 },
+  },
+  {
+    value: "overflow",
+    label: "Overflowing / two trips",
+    hint: "More than one pickup bed",
+    range: { low: 245, high: 365 },
   },
 ];
 
@@ -313,11 +372,9 @@ const GUTTER_SIZES: SizeOption[] = [
 const CLEANOUT_LABOR: Range = { low: 50, high: 100 };
 
 export function sizeOptionsFor(service: ServiceKey): SizeOption[] {
-  if (service === "leaf-cleanup") return LEAF_SIZES;
-  if (service === "gutter-cleaning") return GUTTER_SIZES;
-  if (service === "furniture-appliances") {
-    return LOAD_SIZES.slice(0, 3);
-  }
+  const s = canonicalService(service);
+  if (s === "leaf-cleanup") return LEAF_SIZES;
+  if (s === "gutter-cleaning") return GUTTER_SIZES;
   return LOAD_SIZES;
 }
 
