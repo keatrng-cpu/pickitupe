@@ -42,6 +42,7 @@ const schema = z.object({
     "leaf-cleanup",
     "junk-removal",
     "furniture-appliances",
+    "gutter-cleaning",
     "other",
   ]),
   notes: z.string().optional(),
@@ -81,6 +82,7 @@ const SERVICES = [
   { value: "leaf-cleanup", label: "Fall leaf cleanup" },
   { value: "junk-removal", label: "Junk removal" },
   { value: "furniture-appliances", label: "Furniture & appliances" },
+  { value: "gutter-cleaning", label: "Gutter cleaning" },
   { value: "other", label: "Something else" },
 ] as const;
 
@@ -255,7 +257,12 @@ export function QuoteForm({
       const v = form.getValues();
       const res = await assessJob({
         data: {
-          service: v.service as "leaf-cleanup" | "junk-removal" | "furniture-appliances" | "other",
+          service: v.service as
+            | "leaf-cleanup"
+            | "junk-removal"
+            | "furniture-appliances"
+            | "gutter-cleaning"
+            | "other",
           notes: [v.notes, v.otherDescription].filter(Boolean).join("\n\n"),
           photoDataUrl: photo || undefined,
         },
@@ -413,7 +420,11 @@ export function QuoteForm({
       {service !== "other" ? (
         <fieldset className="mt-10">
           <legend className={labelClass}>
-            {service === "leaf-cleanup" ? "How big is the yard?" : "How much is there?"}
+            {service === "leaf-cleanup"
+              ? "How big is the yard?"
+              : service === "gutter-cleaning"
+                ? "What kind of home?"
+                : "How much is there?"}
           </legend>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {sizes.map((s) => (

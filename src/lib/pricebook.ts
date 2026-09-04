@@ -107,6 +107,7 @@ export type ServiceKey =
   | "leaf-cleanup"
   | "junk-removal"
   | "furniture-appliances"
+  | "gutter-cleaning"
   | "other";
 
 export type SizeOption = {
@@ -269,11 +270,51 @@ export function planPriceFor(sizeValue: string): number | null {
   return Math.round(pair - cut);
 }
 
+/**
+ * GUTTER CLEANING — single-storey only, cleaned from the GROUND.
+ *
+ * PRICED BELOW THE OWNER'S FIRST PROPOSAL, ON PURPOSE. The original idea was
+ * $175-$225 flat, described as "competitive". It is not: homeyou models
+ * $160-$205 for Grand Forks and a local operator publicly quotes $125 for
+ * one-storey. PRICEBOOK.md's standing position is that every tier sits under a
+ * named local comparable, and $175 does not. $135-$165 does.
+ *
+ * NO TWO-STOREY TIER, AT ANY PRICE. The equipment is a ground-based vacuum
+ * with 20 ft of pole — that covers a single-storey gutter (~10-12 ft)
+ * comfortably and a two-storey run (~18-20 ft) only marginally. Selling work
+ * the equipment cannot reliably reach is how someone ends up on a ladder they
+ * bought this business to avoid. Longer pole sets exist; add the tier when the
+ * poles are actually in the truck, not before.
+ *
+ * NO PER-LINEAR-FOOT OPTION. Published beside a flat price it creates adverse
+ * selection: at Grand Forks' typical ~215 linear feet, $1.25-$1.75/ft yields
+ * $269-$376, so its LOW end beats the flat price's HIGH end and every customer
+ * who can multiply picks the cheaper method.
+ */
+const GUTTER_SIZES: SizeOption[] = [
+  {
+    value: "standard",
+    label: "Single-story home",
+    hint: "Standard ranch or rambler, straightforward roofline",
+    range: { low: 135, high: 165 },
+  },
+  {
+    // ASSUMPTION, not a measured figure: derived at ~1.3x the standard tier
+    // for the extra runs, corners and setups a complex roofline adds. Replace
+    // it once a few of these have actually been timed.
+    value: "complex",
+    label: "Large or complex single-story",
+    hint: "Long runs, multiple corners, wraparound or split level",
+    range: { low: 175, high: 215 },
+  },
+];
+
 /** Cleanouts price like haul work plus sort-and-carry labor. */
 const CLEANOUT_LABOR: Range = { low: 50, high: 100 };
 
 export function sizeOptionsFor(service: ServiceKey): SizeOption[] {
   if (service === "leaf-cleanup") return LEAF_SIZES;
+  if (service === "gutter-cleaning") return GUTTER_SIZES;
   if (service === "furniture-appliances") {
     return LOAD_SIZES.slice(0, 3);
   }
@@ -286,7 +327,8 @@ export type AddOnKey =
   | "long-carry"
   | "appliance-freon"
   | "wet-heavy"
-  | "cleanout";
+  | "cleanout"
+  | "downspout";
 
 export const ADD_ONS: {
   key: AddOnKey;
@@ -315,6 +357,17 @@ export const ADD_ONS: {
     hint: "Anything not at ground level",
     range: { low: 30, high: 60 },
     appliesTo: ["junk-removal", "furniture-appliances"],
+  },
+  {
+    // The one real gutter add-on. A blocked downspout is a separate job from
+    // clearing the trough — it needs flushing and sometimes snaking, and it is
+    // where the callback comes from if it is skipped and the gutter overflows
+    // anyway. Priced per visit, not per downspout, to keep the quote one number.
+    key: "downspout",
+    label: "Downspouts are draining slow",
+    hint: "We flush them out, not just the gutters",
+    range: { low: 25, high: 50 },
+    appliesTo: ["gutter-cleaning"],
   },
   {
     key: "long-carry",

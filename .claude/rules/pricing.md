@@ -85,3 +85,11 @@ the quote never changes under them.
 
 The old `XAI_API_KEY` photo path is deleted. It was never configured in prod, so
 its only live behaviour was an error toast.
+
+**Gutter cleaning is a ServiceKey, single-story only.** `GUTTER_SIZES` has two
+tiers (standard $135-$165, complex $175-$215 — the complex tier is a marked
+ASSUMPTION at ~1.3x, re-time it). The `downspout` add-on applies to
+`gutter-cleaning` only. The chat agent and the job assessor are both told the
+limit explicitly: ground vacuum, no ladder, two-story homes are handed off to a
+gutter company. If a two-story tier is ever added, the equipment has to change
+first — the price is downstream of the vacuum's reach, not the other way round.

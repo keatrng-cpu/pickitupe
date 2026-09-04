@@ -368,3 +368,39 @@ test("a single item is still priceable — it is a SIZE, not a service", () => {
   });
   assert.deepEqual(q.range, { low: 59, high: 95 });
 });
+
+test("gutter cleaning is single-story only and sits under the 1-story comparable", () => {
+  const tiers = sizeOptionsFor("gutter-cleaning");
+  assert.deepEqual(tiers.map((t) => t.value), ["standard", "complex"]);
+  // The owner's competitor table put a single-story gutter clean at $175-$225.
+  // The standard tier must sit UNDER that band, not inside it, or the whole
+  // reason to offer the service (undercut with a ground vacuum) is gone.
+  assert.ok(tiers[0].range.high < 175, "standard gutter tier must beat the $175 comparable");
+  assert.ok(tiers[0].range.low >= FLOOR);
+  for (const t of tiers) {
+    assert.ok(
+      t.range.low >= BLOCK_MIN_JOB_LOW,
+      `gutter tier "${t.label}" must clear the block-deal gate so two neighbours can be routed together`,
+    );
+  }
+  const q = estimate({
+    service: "gutter-cleaning", size: "standard", addOns: ["downspout"],
+    earlyBird: false, notes: "",
+  });
+  assert.deepEqual(q.range, { low: 160, high: 215 });
+});
+
+test("the downspout add-on applies to gutters only", () => {
+  const d = ADD_ONS.find((a) => a.key === "downspout");
+  assert.ok(d, "downspout add-on must exist");
+  assert.deepEqual(d.appliesTo, ["gutter-cleaning"]);
+  // Passing it on a leaf job must be ignored, not billed.
+  const q = estimate({
+    service: "leaf-cleanup", size: "medium", addOns: ["downspout"],
+    earlyBird: false, notes: "",
+  });
+  assert.ok(
+    !q.lines.some((l) => /downspout/i.test(l.label)),
+    "downspout must not appear on a non-gutter estimate",
+  );
+});

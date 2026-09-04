@@ -16,6 +16,7 @@ const SERVICES = [
   { value: "leaf-cleanup", label: "Fall leaf cleanup" },
   { value: "junk-removal", label: "Junk removal" },
   { value: "furniture-appliances", label: "Furniture & appliances" },
+  { value: "gutter-cleaning", label: "Gutter cleaning" },
   { value: "other", label: "Something else" },
 ] as const;
 
@@ -111,7 +112,11 @@ export function HeroQuoteTeaser({ promo }: { promo: PromoStatus }) {
 
         {service !== "other" ? (
           <label className="block text-xs font-medium text-print/70">
-            {service === "leaf-cleanup" ? "Yard size" : "How much"}
+            {service === "leaf-cleanup"
+              ? "Yard size"
+              : service === "gutter-cleaning"
+                ? "Home"
+                : "How much"}
             <select
               className={field}
               value={activeSize}

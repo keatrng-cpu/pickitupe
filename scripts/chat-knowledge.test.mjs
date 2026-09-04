@@ -43,6 +43,12 @@ test("every published price band appears verbatim in the model's facts", () => {
       `load tier "${s.label}" missing from chat facts`,
     );
   }
+  for (const s of sizeOptionsFor("gutter-cleaning")) {
+    assert.ok(
+      K.includes(formatRange(s.range)),
+      `gutter tier "${s.label}" missing from chat facts`,
+    );
+  }
   for (const s of springSizeOptions()) {
     assert.ok(
       K.includes(formatRange(s.range)),
@@ -90,16 +96,21 @@ test("deposit, promo cap and both block tiers are present and correct", () => {
   assert.ok(/does NOT stack/i.test(K));
 });
 
-test("services the business does NOT offer are named explicitly", () => {
+test("services the business does NOT offer are named, and gutters are single-story only", () => {
   // Naming them is what lets the model refuse instead of improvising. Gutters
-  // matter most: "spring cleanup" normally bundles them and this business owns
-  // no ladder.
-  for (const no of ["gutter", "mowing", "snow removal"]) {
+  // used to be on this list; they are offered now (ground vacuum, single-story
+  // only, no ladder), so the thing to pin is the LIMIT — a model that hears
+  // "gutters" and books a two-story is worse than one that refused outright.
+  for (const no of ["mowing", "snow removal", "two-story"]) {
     assert.ok(
       K.toLowerCase().includes(no),
       `"${no}" must be named as NOT offered`,
     );
   }
+  assert.ok(K.includes("GUTTER CLEANING"), "gutter facts block missing");
+  assert.ok(/single-story homes ONLY/.test(K), "single-story limit missing from facts");
+  assert.ok(/Gutters ARE offered/.test(SYSTEM), "system prompt must say gutters are offered");
+  assert.ok(/ONLY on single-story/.test(SYSTEM), "system prompt must carry the single-story limit");
 });
 
 test("the hard rules survive in the system prompt", () => {
@@ -128,6 +139,7 @@ test("the facts contain no price that the pricebook does not produce", () => {
   };
   for (const s of sizeOptionsFor("leaf-cleanup")) addRange(s.range);
   for (const s of sizeOptionsFor("junk-removal")) addRange(s.range);
+  for (const s of sizeOptionsFor("gutter-cleaning")) addRange(s.range);
   for (const s of springSizeOptions()) addRange(s.range);
   for (const a of ADD_ONS) addRange(a.range);
   for (const t of BLOCK_TIERS) legal.add(String(t.credit));

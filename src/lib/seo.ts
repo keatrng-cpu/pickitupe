@@ -28,6 +28,7 @@ const SERVICES = [
   "Leaf raking and hauling",
   "Junk removal",
   "Yard debris hauling",
+  "Gutter cleaning",
   "Garage cleanout",
   "Basement cleanout",
   "Furniture removal",

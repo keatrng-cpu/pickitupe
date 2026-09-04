@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
   Armchair,
-  Boxes,
+  Droplets,
   CalendarCheck,
   Camera,
   Leaf,
@@ -20,9 +20,9 @@ import { BLOCK_TIERS, PROMO_DEADLINE_LABEL } from "@/lib/pricebook";
 import { FAQ, faqJsonLd, localBusinessJsonLd, SITE_URL } from "@/lib/seo";
 
 const TITLE =
-  "Leaf Cleanup & Junk Removal in Grand Forks, ND | Pick It Up E";
+  "Leaf Cleanup, Gutters & Junk Removal in Grand Forks, ND | Pick It Up E";
 const DESCRIPTION =
-  "Fall leaf cleanup and junk hauling in Grand Forks and East Grand Forks. We rake, blow, and haul it — you never touch a bag. Book by September 20 for 20% off, up to $75. 218-779-2553.";
+  "Fall leaf cleanup, gutter cleaning and junk hauling in Grand Forks and East Grand Forks. We rake, blow, and haul it — you never touch a bag. Book by September 20 for 20% off, up to $75. 218-779-2553.";
 
 export const Route = createFileRoute("/")({
   loader: () => getOfferStatus(),
@@ -66,12 +66,12 @@ const SERVICES = [
   {
     icon: Trash2,
     title: "Junk removal",
-    copy: "Yard debris, storm fall, and the pile you've been walking past.",
+    copy: "Yard debris, storm fall, garage and basement cleanouts — the pile you've been walking past.",
   },
   {
-    icon: Boxes,
-    title: "Garage & basement",
-    copy: "Cleanouts and move-out / rental turnovers without the dump-run.",
+    icon: Droplets,
+    title: "Gutter cleaning",
+    copy: "Single-story homes, cleaned from the ground. After the leaves drop, before the freeze.",
   },
   {
     icon: Armchair,

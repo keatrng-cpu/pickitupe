@@ -55,6 +55,32 @@ volume. That means:
 Local Grand Forks reference points: ¼ truck $111–$164 (avg $133), ½ truck
 $211–$344 (avg $271), full truck $422–$550.
 
+## Gutter cleaning — single-story, from the ground
+
+Cleaned with a 120V gutter vacuum on a pole from the ground (Cyclone 2200W kit,
+"Path B" in the equipment plan). No ladder on the roofline, which is the whole
+reason the price can sit where it does — a ladder crew's time and insurance are
+what the market rate is paying for.
+
+| Tier | What it means | Our range | Market comparable |
+|---|---|---|---|
+| Single-story home | Standard ranch or rambler, straightforward roofline | **$135–$165** | Owner-supplied comparison table: 1-story $175–$225 |
+| Large or complex single-story | Long runs, several corners, wraparound or split level | **$175–$215** | **ASSUMPTION** — ~1.3× standard for the extra setups; re-time after a few jobs |
+
+**Two-story and multi-story homes are not offered.** The ground vacuum reaches a
+single-story eave; anything higher needs a ladder crew, and both the chat agent
+and the job assessor are told to say so and hand off. Downspout flushing is an
+add-on (below), priced per visit rather than per downspout so the quote stays
+one number.
+
+Both tiers clear the $95 block-deal gate, so two neighbours can book gutters
+together and take the credit — deliberate: gutters on one street the same
+afternoon is exactly the routing the block deal exists for.
+
+The comparable is the owner's table, not a fetched local page. Until a sourced
+Grand Forks / Fargo gutter figure is in `COMPETITOR_BENCHMARKS`, the chat agent
+cannot argue gutter price against a competitor — it just states ours.
+
 ## Add-ons
 
 | Add-on | Applies to | Range | Why |
@@ -64,6 +90,7 @@ $211–$344 (avg $271), full truck $422–$550.
 | Stairs or basement carry | Haul work | $30–$60 | |
 | Long carry (>75 ft) | Everything | $20–$40 | |
 | Fridge, freezer, or AC | Haul work | $25–$45 | Refrigerant units carry a real disposal fee |
+| Downspouts draining slow | Gutter cleaning | $25–$50 | Flushed per visit, not per spout — keeps the quote one number |
 
 ## Rules
 
@@ -200,6 +227,8 @@ modes worth naming:
 3. What did the dump actually charge per load? That is the floor under the haul
    ranges, and the one number no competitor's website will tell you.
 4. Re-pull the benchmarks below — a year-old comparable is not a comparable.
+5. Time the first three gutter jobs. The complex tier is an assumption (~1.3×
+   standard) — replace it with the measured ratio.
 
 ## Sources
 
@@ -209,3 +238,4 @@ modes worth naming:
 - [LawnStarter — Leaf removal cost, 2026](https://www.lawnstarter.com/blog/cost/leaf-removal-price/)
 - [Angi — Junk removal cost, 2026](https://www.angi.com/articles/how-much-does-junk-removal-cost.htm)
 - [HireAHelper — Junk removal cost](https://blog.hireahelper.com/how-much-does-junk-removal-cost/) — per-cubic-yard and truck capacity
+- Gutter comparables: owner-supplied table (Sept 2026) — 1-story $175–$225, 2-story $250–$350+, $1.25–$1.75 per linear ft, bundle discount $50–$100. Not a fetched page; replace with a sourced local figure before the agent argues gutter price.

@@ -24,7 +24,7 @@ Path-scoped rules also live in [`.claude/rules/`](.claude/rules/).
 - Name: Pick It Up E (temporary)
 - Owner market: Grand Forks, ND / East Grand Forks
 - Phone: **218-779-2553** — show it in the **header and footer only**. Do not repeat it on every section. (`door-hanger.tsx` also has it, but that component is not currently rendered on the page — see below.)
-- Services: fall leaf cleanup, junk/debris haul, garage & basement, furniture & appliances
+- Services: fall leaf cleanup, junk/debris haul, furniture & appliances, gutter cleaning (**single-story only** — 120V ground vacuum, no ladder work; two-story is handed off). Garage & basement cleanouts survive as the `cleanout` add-on, not a service.
 - Real truck: **2020 GMC Sierra 1500 Denali**, silver. Do not brand the company as GMC.
 - Marketing art: **vintage cream letterpress pickup** (right-facing, leaves in the bed). Owner replaced the silver photo. `public/haul-truck.webp` is still used on `/login`; source sketch `attachments/image.png`.
 - Site mark / favicon: cream pickup on a maple leaf, rounded forest tile — `public/logo.png`, `public/favicon.svg`. Source: `attachments/logo-source.png`.

@@ -154,6 +154,9 @@ export function knowledge(): string {
   const spring = springSizeOptions()
     .map((s) => `  - ${s.label}: ${formatRange(s.range)}`)
     .join("\n");
+  const gutter = sizeOptionsFor("gutter-cleaning")
+    .map((s) => `  - ${s.label} (${s.hint}): ${formatRange(s.range)}`)
+    .join("\n");
   const addons = ADD_ONS.map(
     (a) => `  - ${a.label} (${a.hint}): ${formatRange(a.range)}`,
   ).join("\n");
@@ -177,6 +180,10 @@ Garage or basement cleanouts add $50-$100 of sort-and-carry labor on top.
 
 SPRING CLEANUP (thatch, winter street sand, matted leaves, branches):
 ${spring}
+
+GUTTER CLEANING (single-story homes ONLY — cleaned from the ground with a gutter vacuum, no ladder on the roofline):
+${gutter}
+Slow or overflowing downspouts are an add-on, listed below. Two-story and multi-story homes are NOT offered — say so and suggest a gutter company. Why it matters here: leaves left in a gutter freeze solid in November and back up as ice when the melt starts in March; the job is to clear them after the leaves drop and before hard freeze.
 
 ADD-ONS:
 ${addons}
@@ -205,14 +212,14 @@ ${COMPETITOR_BENCHMARKS.map((b) => `  - ${b.who}, ${b.what}: ${b.price}  [${b.so
 
 WE REFUSE THESE LOADS: ${REFUSED.join(", ")}.
 
-WE DO NOT OFFER: gutter cleaning, mowing, snow removal, tree removal, stump grinding, landscaping design. Do not imply otherwise.
+WE DO NOT OFFER: mowing, snow removal, tree removal, stump grinding, landscaping design, roof work, or gutter cleaning on two-story / multi-story homes (gutters are single-story only, from the ground). Do not imply otherwise.
 
 FREQUENTLY ASKED QUESTIONS (these answers are already approved — prefer them verbatim):
 ${faq}
 `.trim();
 }
 
-export const SYSTEM = `You answer questions for a small leaf-cleanup and junk-removal business in Grand Forks, North Dakota. You are on the company's own website, talking to a potential customer.
+export const SYSTEM = `You answer questions for a small leaf-cleanup, gutter-cleaning and junk-removal business in Grand Forks, North Dakota. You are on the company's own website, talking to a potential customer.
 
 HARD RULES — these are not style preferences:
 
@@ -222,7 +229,7 @@ HARD RULES — these are not style preferences:
 
 3. NEVER agree to haul anything on the refused list, and never say "we can probably make an exception."
 
-4. NEVER claim a service the business does not offer. Gutters, mowing and snow removal are NOT offered — say so plainly and, for gutters, suggest they call a gutter company.
+4. NEVER claim a service the business does not offer. Mowing, snow removal and roof work are NOT offered — say so plainly. Gutters ARE offered, but ONLY on single-story homes, cleaned from the ground with a vacuum; for a two-story home say so plainly and suggest a gutter company.
 
 5. If the answer is not in the FACTS below, say you're not sure and give the phone number. That is a correct, complete answer — do not pad it with a guess. It is always better to say "I don't know, text ${BUSINESS.phone}" than to be approximately right.
 
