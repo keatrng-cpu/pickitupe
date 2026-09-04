@@ -50,6 +50,7 @@ export function HaulVideo({ className, overlay = true }: Props) {
           preload="metadata"
         />
       )}
+      <div className="hero-blend" />
       {overlay ? <div className="hero-scrim" /> : null}
     </div>
   );
