@@ -13,7 +13,7 @@ import type { PromoStatus } from "@/components/quote-form";
 import { askQuestion } from "@/lib/chat-actions";
 
 const SERVICES = [
-  { value: "leaf-cleanup", label: "Fall leaf cleanup" },
+  { value: "leaf-cleanup", label: "Fall leaf & yard cleanup" },
   { value: "junk-removal", label: "Junk & furniture" },
   { value: "gutter-cleaning", label: "Gutter cleaning" },
   { value: "other", label: "Something else" },

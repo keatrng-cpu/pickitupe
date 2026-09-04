@@ -87,6 +87,6 @@ test("sparse bookings render without blanks or crashes", () => {
 });
 
 test("unknown service keys fall back to the raw key rather than throwing", () => {
-  assert.equal(serviceLabel("leaf-cleanup"), "Fall leaf cleanup");
+  assert.equal(serviceLabel("leaf-cleanup"), "Fall leaf & yard cleanup");
   assert.equal(serviceLabel("something-new"), "something-new");
 });

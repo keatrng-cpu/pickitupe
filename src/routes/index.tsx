@@ -15,7 +15,7 @@ import { faqJsonLd, localBusinessJsonLd, SITE_URL } from "@/lib/seo";
 const TITLE =
   "Leaf Cleanup, Gutters & Junk Removal in Grand Forks, ND | Pick It Up E";
 const DESCRIPTION =
-  "Fall leaf cleanup, gutter cleaning and junk hauling in Grand Forks and East Grand Forks. We rake, blow, and haul it — you never touch a bag. Book by September 20 for 20% off, up to $75. 701-213-3969.";
+  "Fall leaf & yard cleanup, gutter cleaning and junk hauling in Grand Forks and East Grand Forks. We rake, blow, and haul it — you never touch a bag. Book by September 20 for 20% off, up to $75. 701-213-3969.";
 
 export const Route = createFileRoute("/")({
   loader: () => getOfferStatus(),

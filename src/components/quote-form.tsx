@@ -80,7 +80,7 @@ const schema = z.object({
 type Values = z.infer<typeof schema>;
 
 const SERVICES = [
-  { value: "leaf-cleanup", label: "Fall leaf cleanup" },
+  { value: "leaf-cleanup", label: "Fall leaf & yard cleanup" },
   { value: "junk-removal", label: "Junk & furniture" },
   { value: "gutter-cleaning", label: "Gutter cleaning" },
   { value: "other", label: "Something else" },

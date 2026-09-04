@@ -34,7 +34,7 @@ export type BookingAlertInput = {
 };
 
 const SERVICE_LABEL: Record<string, string> = {
-  "leaf-cleanup": "Fall leaf cleanup",
+  "leaf-cleanup": "Fall leaf & yard cleanup",
   "junk-removal": "Junk & furniture",
   "furniture-appliances": "Junk & furniture",
   "gutter-cleaning": "Gutter cleaning",

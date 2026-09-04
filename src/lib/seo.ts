@@ -24,7 +24,7 @@ export const SITE_URL =
   "https://pickitupe.com";
 
 const SERVICES = [
-  "Fall leaf cleanup",
+  "Fall leaf & yard cleanup",
   "Leaf raking and hauling",
   "Junk removal",
   "Yard debris hauling",
@@ -61,7 +61,7 @@ export function localBusinessJsonLd() {
     "@type": "HomeAndConstructionBusiness",
     name: BUSINESS.name,
     description:
-      "Fall leaf cleanup and junk removal in Grand Forks, ND and East Grand Forks, MN. We rake, blow, bag, and haul — the customer never touches a bag.",
+      "Fall leaf & yard cleanup and junk removal in Grand Forks, ND and East Grand Forks, MN. We rake, blow, bag, and haul — the customer never touches a bag.",
     telephone: BUSINESS.telE164,
     url: SITE_URL,
     image: `${SITE_URL}/og.jpg`,
