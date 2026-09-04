@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, CalendarCheck, Camera, Truck } from "lucide-react";
+import { ArrowRight, CalendarCheck, Receipt, Truck } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { FinePrint } from "@/components/fine-print";
 import { HaulTicker } from "@/components/haul-ticker";
@@ -109,9 +109,9 @@ function Home() {
         <section className="section-y mx-auto max-w-6xl px-4">
           <p className="kicker">The trip</p>
           <ol className="mt-8 grid gap-6 sm:grid-cols-3">
-            <Beat n="01" icon={<Camera className="size-6 text-gold" />} title="Photo" />
+            <Beat n="01" icon={<Receipt className="size-6 text-gold" />} title="Estimate" />
             <Beat n="02" icon={<CalendarCheck className="size-6 text-gold" />} title="Date" />
-            <Beat n="03" icon={<Truck className="size-6 text-gold" />} title="Gone" />
+            <Beat n="03" icon={<Truck className="size-6 text-gold" />} title="Hauled" />
           </ol>
         </section>
 
