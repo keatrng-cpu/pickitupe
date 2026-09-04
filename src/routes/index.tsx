@@ -59,9 +59,9 @@ function Home() {
     <div className="page-home relative z-10 min-h-screen bg-bg text-fg">
       <SiteHeader />
       <main>
-        <section className="hero-frame relative flex flex-col">
-          <HaulVideo className="absolute inset-0" />
-          <div className="relative z-10 mt-auto w-full px-4 pb-8 pt-16 sm:px-8 lg:pb-12">
+        <section className="hero-frame">
+          <HaulVideo />
+          <div className="hero-copy">
             <div className="mx-auto w-full max-w-6xl">
               {last ? (
                 <Link

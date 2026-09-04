@@ -35,17 +35,13 @@ export function HaulVideo({ className, overlay = true }: Props) {
   }, [reduced]);
 
   return (
-    <div ref={wrapRef} className={`overflow-hidden bg-bg-deep ${className ?? "relative"}`}>
+    <div ref={wrapRef} className={`hero-media ${className ?? ""}`}>
       {reduced ? (
-        <img
-          src="/haul-junk-poster.jpg"
-          alt=""
-          className="absolute inset-0 size-full object-cover"
-        />
+        <img src="/haul-junk-poster.jpg" alt="" className="hero-fill" />
       ) : (
         <video
           ref={videoRef}
-          className="absolute inset-0 size-full object-cover"
+          className="hero-fill"
           src="/haul-junk.mp4"
           poster="/haul-junk-poster.jpg"
           muted
