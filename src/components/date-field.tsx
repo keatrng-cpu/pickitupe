@@ -5,7 +5,6 @@ import {
   dayOptions,
   firstOpenDay,
   formatDayLong,
-  isSingleItem,
   slotsFor,
 } from "@/lib/schedule";
 import type { ServiceKey } from "@/lib/pricebook";
@@ -30,7 +29,6 @@ export function DateField({ service, size, day, asap, onChange }: Props) {
   }, []);
 
   const need = slotsFor(service, size);
-  const single = isSingleItem(service, size);
   const options = useMemo(() => dayOptions(fill, need), [fill, need]);
   const asapDay = useMemo(() => firstOpenDay(fill, need), [fill, need]);
   const visible = options.slice(0, 10);
@@ -75,7 +73,7 @@ export function DateField({ service, size, day, asap, onChange }: Props) {
             <>
               First open day:{" "}
               <span className="font-medium text-gold">{formatDayLong(asapDay)}</span>
-              {single ? " — typical for a single-item haul." : null}
+              . We'll text if the crew needs to shift it.
             </>
           ) : loaded ? (
             "We're booked out on the days we publish. Text us and we'll find a gap."
