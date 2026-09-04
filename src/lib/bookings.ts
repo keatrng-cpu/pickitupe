@@ -11,6 +11,7 @@ import {
   type ServiceKey,
 } from "@/lib/pricebook";
 import { z } from "zod";
+import { notifyOwnerOfBooking } from "@/lib/booking-alert.server";
 
 const bookingInput = z.object({
   name: z.string().trim().min(2).max(80),
@@ -138,13 +139,39 @@ export const submitBooking = createServerFn({ method: "POST" })
         )
       returning id
     `;
+    const id = inserted[0]?.id ?? 0;
+
+    // The row is saved. Now tell the owner — this cannot throw and cannot
+    // fail the booking (see booking-alert.server.ts). Awaited on purpose: a
+    // serverless instance may be frozen the moment the response goes out.
+    const alert = await notifyOwnerOfBooking({
+      id,
+      name: data.name,
+      phone: data.phone,
+      email: data.email || null,
+      address: data.address,
+      service: data.service,
+      jobSize: data.jobSize || null,
+      addOns: data.addOns ?? [],
+      estimateLow: priced.range?.low ?? data.estimateLow ?? null,
+      estimateHigh: priced.range?.high ?? data.estimateHigh ?? null,
+      urgency: data.urgency || null,
+      preferredDate: data.preferredDate || null,
+      notes: data.notes || null,
+      neighborOf: data.neighborOf || null,
+      households,
+      appliedDiscount: priced.appliedDiscount,
+      discount: priced.discount,
+      areaTier: data.areaTier ?? null,
+    });
 
     return {
       ok: true as const,
-      id: inserted[0]?.id ?? 0,
+      id,
       earlyBird,
       appliedDiscount: priced.appliedDiscount,
       discount: priced.discount,
+      ownerAlerted: alert.sent,
     };
   });
 

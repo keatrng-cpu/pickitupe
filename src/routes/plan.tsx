@@ -47,7 +47,7 @@ function PlanPage() {
       if (res.ok) window.location.href = res.url;
       else toast.error(res.error);
     } catch {
-      toast.error("Could not start checkout. Call or text 218-779-2553.");
+      toast.error("Could not start checkout. Call or text 701-213-3969.");
     } finally {
       setBusy(null);
     }
@@ -61,7 +61,7 @@ function PlanPage() {
       if (res.ok) window.location.href = res.url;
       else toast.error(res.error);
     } catch {
-      toast.error("Could not open billing. Call or text 218-779-2553.");
+      toast.error("Could not open billing. Call or text 701-213-3969.");
     } finally {
       setPortalBusy(false);
     }
@@ -153,8 +153,8 @@ function PlanPage() {
               <div className="card-green mt-10 rounded-2xl p-8">
                 <p className="text-base leading-[1.6]">
                   The seasonal plan isn't open for signups yet. Text{" "}
-                  <a className="underline decoration-gold/50 underline-offset-4" href="sms:2187792553">
-                    218-779-2553
+                  <a className="underline decoration-gold/50 underline-offset-4" href="sms:7012133969">
+                    701-213-3969
                   </a>{" "}
                   and we'll hold your spring slot at this year's rate with the
                   same $50 deposit as any booking.

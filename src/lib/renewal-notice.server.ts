@@ -82,7 +82,7 @@ function noticeBody(sub: SubscriptionRow, renewsOn: string): string {
     `Don't want to renew? Cancel in one click here — no phone call, no reason needed:`,
     `https://pickitupe.com/plan`,
     ``,
-    `Cancel before ${renewsOn} and you won't be charged again. Questions: call or text 218-779-2553.`,
+    `Cancel before ${renewsOn} and you won't be charged again. Questions: call or text 701-213-3969.`,
     ``,
     `— Pick It Up E, Grand Forks ND`,
   ].join("\n");

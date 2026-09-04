@@ -62,7 +62,7 @@ export function AskBox() {
         {
           role: "assistant",
           content:
-            "Couldn't reach the answer service. Call or text 218-779-2553.",
+            "Couldn't reach the answer service. Call or text 701-213-3969.",
         },
       ]);
     } finally {
@@ -157,9 +157,9 @@ export function AskBox() {
         specific yard, text a photo to
         <a
           className="text-fg underline decoration-gold/50 underline-offset-4"
-          href="sms:2187792553"
+          href="sms:7012133969"
         >
-          218-779-2553
+          701-213-3969
         </a>
         and the owner will reply the same day.
       </p>

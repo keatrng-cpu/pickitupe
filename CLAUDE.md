@@ -23,7 +23,7 @@ Path-scoped rules also live in [`.claude/rules/`](.claude/rules/).
 
 - Name: Pick It Up E (temporary)
 - Owner market: Grand Forks, ND / East Grand Forks
-- Phone: **218-779-2553** — show it in the **header and footer only**. Do not repeat it on every section. (`door-hanger.tsx` also has it, but that component is not currently rendered on the page — see below.)
+- Phone — TWO numbers, both the owner's, split on purpose so print response can be measured apart from web: **701-213-3969 is the SITE number** (header + footer only, plus error toasts / emails / JSON-LD — do not repeat it on every section). **218-779-2553 is the PRINT number** — door hanger only (`door-hanger.tsx`, `print/DOOR-HANGER.md`, the printed artwork). Never swap them and never put both on one surface.
 - Services: fall leaf cleanup, junk/debris haul, furniture & appliances, gutter cleaning (**single-story only** — 120V ground vacuum, no ladder work; two-story is handed off). Garage & basement cleanouts survive as the `cleanout` add-on, not a service.
 - Real truck: **2020 GMC Sierra 1500 Denali**, silver. Do not brand the company as GMC.
 - Marketing art: **vintage cream letterpress pickup** (right-facing, leaves in the bed). Owner replaced the silver photo. `public/haul-truck.webp` is still used on `/login`; source sketch `attachments/image.png`.
@@ -163,7 +163,7 @@ Not in git (on purpose): `.env`, `node_modules`, Grok sandbox `AGENTS.md`, VIN p
 ## When changing marketing
 
 - Update the live door hanger **and** `print/DOOR-HANGER.md`
-- Phone stays `218-779-2553` / `tel:2187792553`
+- Site phone stays `701-213-3969` / `tel:7012133969`; print (door hanger) phone stays `218-779-2553` / `tel:2187792553`
 - Keep the illustrated cream truck unless the owner says otherwise
 
 ## Do not

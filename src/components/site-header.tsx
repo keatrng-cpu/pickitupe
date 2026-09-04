@@ -4,7 +4,7 @@ import { SignedIn, SignedOut, UserButton } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { Button } from "@/components/ui/button";
 
-const PHONE = "218-779-2553";
+const PHONE = "701-213-3969";
 
 function Mark() {
   return (
@@ -106,8 +106,8 @@ export function SiteFooter() {
             <p className="mt-1 text-sm text-muted">Grand Forks, ND</p>
           </div>
         </div>
-        <a className="text-fg hover:text-gold" href="tel:2187792553">
-          218-779-2553
+        <a className="text-fg hover:text-gold" href="tel:7012133969">
+          701-213-3969
         </a>
       </div>
     </footer>

@@ -10,9 +10,9 @@
 
 export const BUSINESS = {
   name: "Pick It Up E",
-  phone: "218-779-2553",
-  telHref: "tel:2187792553",
-  telE164: "+1-218-779-2553",
+  phone: "701-213-3969",
+  telHref: "tel:7012133969",
+  telE164: "+1-701-213-3969",
   city: "Grand Forks",
   region: "ND",
 } as const;
@@ -104,7 +104,7 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "How fast can you come out?",
-    a: "Text a photo of the pile to 218-779-2553 and you'll get a number the same day. A $50 deposit holds your date and comes off the invoice.",
+    a: "Text a photo of the pile to 701-213-3969 and you'll get a number the same day. A $50 deposit holds your date and comes off the invoice.",
   },
 ];
 

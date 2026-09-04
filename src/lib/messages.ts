@@ -9,8 +9,8 @@
 
 import { BLOCK_TIERS, PROMO_CAP, PROMO_PERCENT } from "@/lib/pricebook";
 
-export const PHONE = "218-779-2553";
-export const TEL = "tel:2187792553";
+export const PHONE = "701-213-3969";
+export const TEL = "tel:7012133969";
 
 export type MessageKind =
   | "callback"

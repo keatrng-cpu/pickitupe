@@ -81,7 +81,7 @@ export function verdictForDistance(miles: number): AreaVerdict {
   return {
     tier: "outside",
     miles,
-    message: `That's about ${Math.round(miles)} miles out. Call 218-779-2553 — we'll tell you straight whether we can make it work.`,
+    message: `That's about ${Math.round(miles)} miles out. Call 701-213-3969 — we'll tell you straight whether we can make it work.`,
   };
 }
 

@@ -57,7 +57,7 @@ export function HeroQuoteTeaser({ promo }: { promo: PromoStatus }) {
       const res = await askQuestion({ data: { question: q } });
       setAnswer(res.ok ? res.answer : res.error);
     } catch {
-      setAnswer("Couldn't reach us just now — text 218-779-2553 and we'll answer.");
+      setAnswer("Couldn't reach us just now — text 701-213-3969 and we'll answer.");
     } finally {
       setAsking(false);
     }

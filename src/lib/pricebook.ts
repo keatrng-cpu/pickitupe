@@ -529,7 +529,7 @@ export function estimate(input: EstimateInput): Estimate {
       deposit: DEPOSIT,
       lines: [],
       notes: [
-        "Tell us what it is and we'll price it the same day — call or text 218-779-2553.",
+        "Tell us what it is and we'll price it the same day — call or text 701-213-3969.",
       ],
       refused: refusedItemsIn(input.notes ?? ""),
       needsWalkthrough: true,

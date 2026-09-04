@@ -239,7 +239,7 @@ export function QuoteForm({
       setDone({ earlyBird: result.earlyBird });
       toast.success("Request received — we'll text you back.");
     } catch {
-      toast.error("Could not send. Call or text 218-779-2553.");
+      toast.error("Could not send. Call or text 701-213-3969.");
     }
   }
 
@@ -270,7 +270,7 @@ export function QuoteForm({
       if (res.ok) setAssessment(res);
       else toast.error(res.error);
     } catch {
-      toast.error("Couldn't size it up. Call or text 218-779-2553.");
+      toast.error("Couldn't size it up. Call or text 701-213-3969.");
     } finally {
       setEstimating(false);
     }
@@ -297,7 +297,7 @@ export function QuoteForm({
         </p>
         <a
           className="mt-6 inline-flex text-sm underline decoration-gold/50 underline-offset-4"
-          href="sms:2187792553"
+          href="sms:7012133969"
         >
           Text a photo of the pile now
         </a>
@@ -642,7 +642,7 @@ export function QuoteForm({
               {assessment.confidence === "low" ? (
                 <p className="mt-3 text-xs text-muted">
                   Low confidence on this one — a photo, or a text to
-                  218-779-2553, will get you a firmer number.
+                  701-213-3969, will get you a firmer number.
                 </p>
               ) : null}
 

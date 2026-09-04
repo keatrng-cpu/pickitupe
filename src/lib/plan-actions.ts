@@ -171,7 +171,7 @@ export const openBillingPortal = createServerFn({ method: "POST" })
       return {
         ok: false as const,
         error:
-          "We couldn't find a plan for that email. Text 218-779-2553 and we'll sort it out.",
+          "We couldn't find a plan for that email. Text 701-213-3969 and we'll sort it out.",
       };
     }
 
