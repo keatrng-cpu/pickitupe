@@ -11,7 +11,7 @@ import {
   type ServiceKey,
 } from "@/lib/pricebook";
 import { dayOptions, firstOpenDay, formatDayLong, slotsFor } from "@/lib/schedule";
-import { bookJob, jobsForPhone, loadFill } from "@/lib/bookings";
+import { jobsForPhone, loadFill, submitBooking } from "@/lib/bookings";
 import { digitsPhone, isUsPhone } from "@/lib/phone";
 import { optionalSession } from "@/lib/optional-session";
 import { PHONE } from "@/lib/messages";
@@ -243,16 +243,18 @@ async function runTool(name: string, raw: string, lead: ShopLead, email: string 
       return JSON.stringify({ ok: false, missing: gap, ask: nextAsk(gap, lead) });
     }
     try {
-      const held = await bookJob({
-        name: nameOnJob,
-        phone,
-        address,
-        email: String(args.email || lead.email || email || ""),
-        service,
-        jobSize: size || "single",
-        preferredDate: String(args.day || lead.day || ""),
-        asap: Boolean(args.asap ?? lead.asap ?? true) && !args.day && !lead.day,
-        notes: "Shop line",
+      const held = await submitBooking({
+        data: {
+          name: nameOnJob,
+          phone,
+          address,
+          email: String(args.email || lead.email || email || ""),
+          service,
+          jobSize: size || "single",
+          preferredDate: String(args.day || lead.day || ""),
+          asap: Boolean(args.asap ?? lead.asap ?? true) && !args.day && !lead.day,
+          notes: "Shop line",
+        },
       });
       return JSON.stringify({
         ok: true,
@@ -454,16 +456,18 @@ async function fallbackReply(
 
   if (wantBook && missing.length === 0) {
     try {
-      const held = await bookJob({
-        name: next.name as string,
-        phone: next.phone as string,
-        address: next.address as string,
-        email: next.email || email || "",
-        service: next.service as ServiceKey,
-        jobSize: next.size,
-        preferredDate: next.day || "",
-        asap: next.asap !== false,
-        notes: "Shop line",
+      const held = await submitBooking({
+        data: {
+          name: next.name as string,
+          phone: next.phone as string,
+          address: next.address as string,
+          email: next.email || email || "",
+          service: next.service as ServiceKey,
+          jobSize: next.size,
+          preferredDate: next.day || "",
+          asap: next.asap !== false,
+          notes: "Shop line",
+        },
       });
       const q = estimate({
         service: next.service as ServiceKey,

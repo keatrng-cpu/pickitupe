@@ -124,9 +124,7 @@ export const getScheduleFill = createServerFn({ method: "GET" }).handler(
 
 export const submitBooking = createServerFn({ method: "POST" })
   .validator((input: unknown) => bookingInput.parse(input))
-  .handler(async ({ data }) => bookJob(data));
-
-export async function bookJob(data: z.infer<typeof bookingInput>) {
+  .handler(async ({ data }) => {
     const sql = await getSql();
     // Recomputed server-side from the server clock — never trust a
     // client-supplied flag for something that changes the price.
@@ -231,7 +229,7 @@ export async function bookJob(data: z.infer<typeof bookingInput>) {
       ownerAlerted: alert.sent,
       preferredDate,
     };
-}
+  });
 
 export const listBookings = createServerFn({ method: "GET" })
   .middleware([sessionEmail])
