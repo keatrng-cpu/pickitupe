@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { Phone } from "lucide-react";
+import { Menu, Phone, X } from "lucide-react";
+import { useState } from "react";
 import { HaulTicker } from "@/components/haul-ticker";
 import { SignedIn, SignedOut, UserButton } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -7,6 +8,15 @@ import { looksLikeOwner } from "@/lib/owner";
 import { Button } from "@/components/ui/button";
 
 const PHONE = "701-213-3969";
+
+const NAV = [
+  { href: "/#haul", label: "Haul" },
+  { href: "/#rates", label: "Rates" },
+  { href: "/about", label: "About" },
+  { href: "/landlords", label: "Landlords" },
+  { href: "/plan", label: "Plan" },
+  { href: "/#faq", label: "FAQ" },
+] as const;
 
 function Mark() {
   return (
@@ -22,6 +32,7 @@ function Mark() {
 
 export function SiteHeader() {
   const { user, isPending } = useCurrentUserState();
+  const [open, setOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-bg">
@@ -38,24 +49,11 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm text-muted md:flex" aria-label="Primary">
-          <a href="/#haul" className="hover:text-fg">
-            Haul
-          </a>
-          <a href="/#rates" className="hover:text-fg">
-            Rates
-          </a>
-          <Link to="/about" className="hover:text-fg">
-            About
-          </Link>
-          <Link to="/landlords" className="hover:text-fg">
-            Landlords
-          </Link>
-          <Link to="/plan" className="hover:text-fg">
-            Plan
-          </Link>
-          <a href="/#faq" className="hover:text-fg">
-            FAQ
-          </a>
+          {NAV.map((l) => (
+            <a key={l.href} href={l.href} className="hover:text-fg">
+              {l.label}
+            </a>
+          ))}
           <Link to="/call" className="hover:text-fg">
             Shop line
           </Link>
@@ -78,7 +76,7 @@ export function SiteHeader() {
         <div className="flex items-center gap-2">
           <a
             href={`tel:${PHONE.replaceAll("-", "")}`}
-            className="hidden h-11 items-center gap-2 rounded-full border border-border px-3 text-sm text-fg hover:bg-fg/8 sm:inline-flex"
+            className="hidden h-11 items-center gap-2 rounded-full border border-border px-3 text-sm text-fg hover:bg-fg/8 lg:inline-flex"
           >
             <Phone className="size-4" />
             {PHONE}
@@ -99,16 +97,70 @@ export function SiteHeader() {
               <SignedOut>
                 <Link
                   to="/login"
-                  className="hidden text-sm text-muted hover:text-fg md:inline"
+                  className="inline-flex h-11 items-center rounded-full border border-border px-3 text-sm text-fg hover:bg-fg/8"
                 >
                   Sign in
                 </Link>
               </SignedOut>
             </>
           )}
+          <button
+            type="button"
+            className="grid size-11 place-items-center rounded-full border border-border text-fg md:hidden"
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+            aria-controls="mobile-nav"
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
         </div>
       </div>
       <HaulTicker />
+      {open ? (
+        <div id="mobile-nav" className="border-t border-border bg-bg px-4 py-4 md:hidden">
+          <nav className="flex flex-col gap-1">
+            {NAV.map((l) => (
+              <a
+                key={l.href}
+                href={l.href}
+                className="rounded-xl px-3 py-3 text-fg hover:bg-fg/8"
+                onClick={() => setOpen(false)}
+              >
+                {l.label}
+              </a>
+            ))}
+            <Link
+              to="/call"
+              className="rounded-xl px-3 py-3 text-gold hover:bg-fg/8"
+              onClick={() => setOpen(false)}
+            >
+              Shop line
+            </Link>
+            <Link
+              to="/login"
+              className="rounded-xl px-3 py-3 text-fg hover:bg-fg/8"
+              onClick={() => setOpen(false)}
+            >
+              Sign in
+            </Link>
+            <Link
+              to="/status"
+              className="rounded-xl px-3 py-3 text-fg hover:bg-fg/8"
+              onClick={() => setOpen(false)}
+            >
+              Your hauls
+            </Link>
+            <Link
+              to="/book"
+              className="rounded-xl px-3 py-3 text-fg hover:bg-fg/8"
+              onClick={() => setOpen(false)}
+            >
+              Form
+            </Link>
+          </nav>
+        </div>
+      ) : null}
     </header>
   );
 }

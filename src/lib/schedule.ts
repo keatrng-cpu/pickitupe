@@ -120,3 +120,74 @@ export function dayOptions(fill: DayFill[], need: number, from = todayISO()) {
     };
   });
 }
+
+export function parseSpokenDay(
+  text: string,
+  from = todayISO(),
+): { day?: string; asap?: boolean } | null {
+  const t = text.toLowerCase();
+  if (/\basap\b|soonest|as soon as|first open/.test(t)) return { asap: true };
+  if (/\btoday\b/.test(t)) {
+    if (isWorkday(from)) return { day: from, asap: false };
+    const next = workdaysFrom(shiftISO(from, 1), 1)[0];
+    return next ? { day: next, asap: false } : { asap: true };
+  }
+  if (/\btomorrow\b/.test(t)) {
+    const next = workdaysFrom(shiftISO(from, 1), 1)[0];
+    return next ? { day: next, asap: false } : { asap: true };
+  }
+  const iso = t.match(/\b(20\d{2}-\d{2}-\d{2})\b/);
+  if (iso) return { day: iso[1], asap: false };
+
+  const monthHit = t.match(
+    /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sept?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(\d{1,2})(?:st|nd|rd|th)?\b/,
+  );
+  if (monthHit) {
+    const MONTHS: Record<string, string> = {
+      jan: "01",
+      feb: "02",
+      mar: "03",
+      apr: "04",
+      may: "05",
+      jun: "06",
+      jul: "07",
+      aug: "08",
+      sep: "09",
+      oct: "10",
+      nov: "11",
+      dec: "12",
+    };
+    const mm = MONTHS[monthHit[1].slice(0, 3)];
+    const n = Number(monthHit[2]);
+    if (mm && n >= 1 && n <= 31) {
+      const year = Number(from.slice(0, 4));
+      const dd = String(n).padStart(2, "0");
+      let day = `${year}-${mm}-${dd}`;
+      if (day < from) day = `${year + 1}-${mm}-${dd}`;
+      return { day, asap: false };
+    }
+  }
+
+  const weekdays = [
+    "sunday",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+  ];
+  const wd = t.match(
+    /\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/,
+  );
+  if (wd) {
+    const want = weekdays.indexOf(wd[1]);
+    if (want === 0) {
+      const monday = workdaysFrom(shiftISO(from, 1), 7).find((d) => weekday(d) === 1);
+      return monday ? { day: monday, asap: false } : { asap: true };
+    }
+    const hit = workdaysFrom(shiftISO(from, 1), 14).find((d) => weekday(d) === want);
+    if (hit) return { day: hit, asap: false };
+  }
+  return null;
+}

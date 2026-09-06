@@ -10,7 +10,7 @@ import {
   type AddOnKey,
   type ServiceKey,
 } from "@/lib/pricebook";
-import { dayOptions, firstOpenDay, formatDayLong, slotsFor } from "@/lib/schedule";
+import { dayOptions, firstOpenDay, formatDayLong, parseSpokenDay, slotsFor } from "@/lib/schedule";
 import { jobsForPhone, loadFill, submitBooking } from "@/lib/bookings";
 import { digitsPhone, isUsPhone } from "@/lib/phone";
 import { optionalSession } from "@/lib/optional-session";
@@ -87,7 +87,9 @@ HOW TO TALK
 - book_stop REQUIRES name, 10-digit phone, and a street address. If any are missing, ask for that one thing. Do not book.
 - When booked, read back: what's hauled, the dollar range, the actual day, the job number. Then stop selling.
 - Customers look up jobs with the phone they booked.
-- Keep replies under 45 words, spoken out loud. Straight. No "great question", no "I'd be happy to".`;
+- Keep replies under 45 words, spoken out loud. Straight. No "great question", no "I'd be happy to".
+- Short answers fill the missing field. "Pat" is a name. "123 Main" is the address. "tomorrow" or "Monday" is a day.
+- If they dump several facts ("couch, Pat, 701-555-0100, 12 3rd St, ASAP"), grab them all, confirm in one line, ask only what's still missing.`;
 
 const tools = [
   {
@@ -147,7 +149,7 @@ const tools = [
     type: "function",
     function: {
       name: "find_job",
-      description: "Look up bookings by the phone they booked with.",
+      description: "Look up bookings by the phone they booked with, or a job number.",
       parameters: {
         type: "object",
         properties: { phone: { type: "string" } },
@@ -187,6 +189,59 @@ function nextAsk(missing: string[], lead: ShopLead): string {
   if (first === "address") return "Street address for the stop?";
   if (first === "day") return "Tap a day on the board or say ASAP and I'll lock the first open one.";
   return "Want me to lock that day?";
+}
+
+function looksLikeName(text: string): string | undefined {
+  const t = text.trim().replace(/[.!?,]+$/g, "");
+  if (t.length < 2 || t.length > 42) return;
+  if (/\d/.test(t)) return;
+  const words = t.split(/\s+/).filter(Boolean);
+  if (words.length < 1 || words.length > 3) return;
+  if (!words.every((w) => /^[A-Za-z][A-Za-z'-]*$/.test(w))) return;
+  if (
+    /^(yes|yeah|yep|ok|okay|please|thanks|thank you|hi|hello|hey|no|nope|asap|today|tomorrow|leaves|leaf|junk|gutters?|couch|sofa|book|lock|sure|correct|right|name|phone|address|it|me)$/i.test(
+      t,
+    )
+  ) {
+    return;
+  }
+  return words.map((w) => w[0].toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+}
+
+function applyToolToLead(lead: ShopLead, tool: string, raw: string, result: string): ShopLead {
+  let args: Record<string, unknown> = {};
+  try {
+    args = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+  } catch {
+    args = {};
+  }
+  const next: ShopLead = { ...lead };
+  if (args.service) next.service = asService(args.service);
+  if (typeof args.size === "string" && args.size) next.size = args.size;
+  if (typeof args.name === "string" && args.name.trim().length >= 2) next.name = args.name.trim();
+  if (typeof args.phone === "string" && isUsPhone(args.phone)) next.phone = digitsPhone(args.phone);
+  if (typeof args.address === "string" && args.address.trim().length >= 5) {
+    next.address = args.address.trim();
+  }
+  if (typeof args.day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(args.day)) {
+    next.day = args.day;
+    next.asap = false;
+  }
+  if (args.asap === true) next.asap = true;
+  if (tool === "book_stop") {
+    try {
+      const parsed = JSON.parse(result) as { ok?: boolean; day?: string | null; code?: string };
+      if (parsed.ok && parsed.day && parsed.code) {
+        next.booked = true;
+        next.day = parsed.day;
+        next.bookedDay = parsed.day;
+        next.code = parsed.code;
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  return next;
 }
 
 async function runTool(name: string, raw: string, lead: ShopLead, email: string | null): Promise<string> {
@@ -318,13 +373,14 @@ async function grokLoop(
   turns: ChatTurn[],
   lead: ShopLead,
   email: string | null,
-): Promise<{ text: string; booked?: { day: string; code: string } }> {
+): Promise<{ text: string; booked?: { day: string; code: string }; lead: ShopLead }> {
   const apiKey = process.env.XAI_API_KEY;
-  if (!apiKey) return { text: "" };
+  if (!apiKey) return { text: "", lead };
 
+  let current = { ...lead };
   const messages: GrokMessage[] = [
     { role: "system", content: SYSTEM },
-    { role: "system", content: deskSnapshot(lead) },
+    { role: "system", content: deskSnapshot(current) },
     ...turns.map((t) => ({ role: t.role, content: t.content }) as GrokMessage),
   ];
 
@@ -339,20 +395,22 @@ async function grokLoop(
       },
       body: JSON.stringify({
         model: "grok-4.5",
-        temperature: 0.25,
+        temperature: 0.2,
         max_tokens: 220,
         tools,
         messages,
       }),
+      signal: AbortSignal.timeout(12000),
     });
-    if (!res.ok) return { text: "", booked };
+    if (!res.ok) return { text: "", booked, lead: current };
     const body = (await res.json()) as { choices: { message: GrokMessage }[] };
     const msg = body.choices[0]?.message;
-    if (!msg) return { text: "", booked };
+    if (!msg) return { text: "", booked, lead: current };
     if (msg.tool_calls?.length) {
       messages.push(msg);
       for (const call of msg.tool_calls) {
-        const result = await runTool(call.function.name, call.function.arguments || "{}", lead, email);
+        const result = await runTool(call.function.name, call.function.arguments || "{}", current, email);
+        current = applyToolToLead(current, call.function.name, call.function.arguments || "{}", result);
         if (call.function.name === "book_stop") {
           try {
             const parsed = JSON.parse(result) as { ok?: boolean; day?: string | null; code?: string };
@@ -365,9 +423,9 @@ async function grokLoop(
       }
       continue;
     }
-    return { text: (msg.content || "").trim(), booked };
+    return { text: (msg.content || "").trim(), booked, lead: current };
   }
-  return { text: "", booked };
+  return { text: "", booked, lead: current };
 }
 
 function guessService(text: string): ServiceKey | undefined {
@@ -387,18 +445,21 @@ function guessSize(service: ServiceKey, text: string): string | undefined {
     if (t.includes(s.value) || t.includes(s.label.toLowerCase())) return s.value;
   }
   if (service === "junk-removal" || service === "furniture-appliances") {
-    if (/(couch|sofa|mattress)/.test(t)) return "sofa";
-    if (/(fridge|refrigerator)/.test(t)) return "fridge";
-    if (/(washer|dryer|stove|appliance)/.test(t)) return "appliance";
-    if (/(full load|whole truck|overflow)/.test(t)) return "full";
+    if (/(couch|sofa|mattress|recliner|loveseat|sectional|sleeper)/.test(t)) return "sofa";
+    if (/(fridge|refrigerator|freezer)/.test(t)) return "fridge";
+    if (/(washer|dryer|stove|oven|dishwasher|appliance)/.test(t)) return "appliance";
+    if (/(dresser|table|bed frame|headboard|nightstand)/.test(t)) return "dresser";
+    if (/(grill|tv|bicycle|bike|treadmill|microwave|chair)/.test(t)) return "small-item";
+    if (/(full load|whole truck|overflow|whole garage|whole house|estate)/.test(t)) return "full";
     if (/(half)/.test(t)) return "half";
-    if (/(few bags|bags)/.test(t)) return "bags";
+    if (/(few bags|bags of)/.test(t)) return "bags";
+    if (/\bbags\b/.test(t) && !/leaf|leaves|yard/.test(t)) return "bags";
   }
   if (service === "leaf-cleanup") {
     if (/(acreage|acre)/.test(t)) return "acreage";
-    if (/(large|corner)/.test(t)) return "large";
-    if (/(small|tiny)/.test(t)) return "small";
-    if (/(standard|regular|normal)/.test(t)) return "medium";
+    if (/(large|corner|huge|big yard)/.test(t)) return "large";
+    if (/(small|tiny|townhouse)/.test(t)) return "small";
+    if (/(standard|regular|normal|city lot|my yard)/.test(t)) return "medium";
   }
   return undefined;
 }
@@ -419,7 +480,23 @@ function absorb(lead: ShopLead, text: string): ShopLead {
     /\d{1,5}\s+[A-Za-z0-9.'-]+(?:\s+[A-Za-z0-9.'-]+){0,4}\s+(?:st|street|ave|avenue|rd|road|blvd|ln|lane|dr|drive|way|ct|court|pl|place|n|s|e|w|north|south|east|west)\b\.?/i,
   );
   if (addr) next.address = addr[0].trim();
-  if (/\basap\b|soonest|first open/.test(text.toLowerCase())) next.asap = true;
+  const spoken = parseSpokenDay(text);
+  if (spoken?.asap) next.asap = true;
+  if (spoken?.day) {
+    next.day = spoken.day;
+    next.asap = false;
+  }
+
+  const missing = missingOf(next);
+  if (missing.includes("name") && !next.name) {
+    const before = phone && phone.index != null ? text.slice(0, phone.index) : text;
+    const guessed = looksLikeName(before) || looksLikeName(text);
+    if (guessed) next.name = guessed;
+  }
+  if (missing.includes("address") && !next.address) {
+    const loose = text.match(/\b\d{1,5}\s+[A-Za-z0-9.'-]+(?:\s+[A-Za-z0-9.'-]+){0,6}\b/);
+    if (loose && !isUsPhone(loose[0]) && loose[0].length >= 5) next.address = loose[0].trim();
+  }
   return next;
 }
 
@@ -454,7 +531,10 @@ async function fallbackReply(
   const missing = missingOf(next);
   const wantBook = /(book|schedule|come|lock|yes|yeah|yep|do it|asap|today|tomorrow)/.test(t);
 
-  if (wantBook && missing.length === 0) {
+  if (wantBook && missing.includes("day")) next.asap = true;
+  const gap = missingOf(next);
+
+  if (wantBook && gap.length === 0) {
     try {
       const held = await submitBooking({
         data: {
@@ -486,7 +566,7 @@ async function fallbackReply(
     }
   }
 
-  if (next.service && next.size && missing.length) {
+  if (next.service && next.size && gap.length) {
     const q = estimate({
       service: next.service,
       size: next.size,
@@ -496,7 +576,7 @@ async function fallbackReply(
     const fill = await loadFill();
     const asap = firstOpenDay(fill, slotsFor(next.service, next.size));
     const range = q.range ? formatRange(q.range) : "we'll quote after a look";
-    const ask = nextAsk(missing, next);
+    const ask = nextAsk(gap, next);
     if (!lead.service || !lead.size) {
       return {
         text: `${serviceLabel(next.service)} runs ${range}. First open is ${asap ? formatDayLong(asap) : "a text away"}. ${ask}`,
@@ -506,7 +586,7 @@ async function fallbackReply(
     return { text: ask, lead: next };
   }
 
-  return { text: nextAsk(missing, next), lead: next };
+  return { text: nextAsk(gap, next), lead: next };
 }
 
 export const talkShop = createServerFn({ method: "POST" })
@@ -527,15 +607,19 @@ export const talkShop = createServerFn({ method: "POST" })
     const lastUser = data.turns.filter((t) => t.role === "user").at(-1)?.content ?? "";
     const merged = absorb(incoming, lastUser);
     const ai = await grokLoop(data.turns, merged, context.email).catch(
-      (): { text: string; booked?: { day: string; code: string } } => ({ text: "" }),
+      (): { text: string; booked?: { day: string; code: string }; lead: ShopLead } => ({
+        text: "",
+        lead: merged,
+      }),
     );
+    const leadOut = { ...merged, ...ai.lead };
     if (ai.booked) {
       const text =
         ai.text || `Locked ${formatDayLong(ai.booked.day)}. ${ai.booked.code}. We'll text the morning of.`;
       return {
         text,
         lead: {
-          ...merged,
+          ...leadOut,
           booked: true,
           code: ai.booked.code,
           bookedDay: ai.booked.day,
@@ -543,8 +627,8 @@ export const talkShop = createServerFn({ method: "POST" })
         } satisfies ShopLead,
       };
     }
-    if (ai.text) return { text: ai.text, lead: merged };
-    return fallbackReply(data.turns, merged, context.email);
+    if (ai.text) return { text: ai.text, lead: leadOut };
+    return fallbackReply(data.turns, leadOut, context.email);
   });
 
 export const speakShop = createServerFn({ method: "POST" })

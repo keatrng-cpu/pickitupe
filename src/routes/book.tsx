@@ -1,4 +1,4 @@
-import { createFileRoute, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 import { QuoteForm } from "@/components/quote-form";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { getOfferStatus } from "@/lib/bookings";
@@ -85,6 +85,13 @@ function BookPage() {
           <h1 className="mt-3 font-display text-5xl leading-[0.95] tracking-[-0.02em] sm:text-6xl">
             Book a haul.
           </h1>
+          <p className="mt-4 text-base leading-[1.6] text-muted">
+            Shop line is the main way to book — tap a day on the crew calendar or talk it through.{" "}
+            <Link to="/call" className="text-gold hover:underline">
+              Open the shop line
+            </Link>
+            . This form writes to the same board.
+          </p>
           <p className="mt-4 text-base leading-[1.6] text-muted">
             Send the form and we'll text you back.
             {offer.active

@@ -5,6 +5,7 @@ import { FinePrint } from "@/components/fine-print";
 import { HaulVideo } from "@/components/haul-video";
 import { QuickQuote } from "@/components/quick-quote";
 import { RateReel } from "@/components/rate-reel";
+import { DateField } from "@/components/date-field";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { StickyDock } from "@/components/sticky-dock";
 import { getOfferStatus } from "@/lib/bookings";
@@ -49,6 +50,8 @@ export const Route = createFileRoute("/")({
 function Home() {
   const offer = Route.useLoaderData();
   const [last, setLast] = useState<SavedBooking | null>(null);
+  const [boardDay, setBoardDay] = useState("");
+  const [boardAsap, setBoardAsap] = useState(true);
 
   useEffect(() => {
     setLast(readLastBooking());
@@ -77,7 +80,7 @@ function Home() {
                 We haul it.
                 <span className="mt-1 block italic text-gold">You don't.</span>
               </h1>
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Link
                   to="/call"
                   className="btn-press inline-flex h-12 items-center gap-2 rounded-full bg-fg px-7 text-base font-medium text-ink hover:bg-gold"
@@ -85,11 +88,8 @@ function Home() {
                   Shop line
                   <ArrowRight className="size-4" />
                 </Link>
-                <Link
-                  to="/book"
-                  className="btn-press inline-flex h-12 items-center rounded-full border border-fg/40 px-7 text-base text-fg"
-                >
-                  Book the form
+                <Link to="/book" className="text-sm text-fg/80 underline-offset-4 hover:text-gold hover:underline">
+                  Prefer a form?
                 </Link>
               </div>
               {offer.active ? (
@@ -103,6 +103,38 @@ function Home() {
 
         <QuickQuote />
         <RateReel />
+
+        <section className="section-y mx-auto max-w-6xl px-4">
+          <div className="card-green rounded-3xl p-5 sm:p-8">
+            <p className="kicker">Crew board</p>
+            <h2 className="mt-2 font-display text-3xl leading-none sm:text-4xl">
+              Same calendar the shop line books on.
+            </h2>
+            <p className="mt-3 max-w-xl text-sm text-muted">
+              Four slots a day, Monday through Saturday. When someone locks a stop — chat or form —
+              these numbers move.
+            </p>
+            <div className="mt-6">
+              <DateField
+                service="junk-removal"
+                size="sofa"
+                day={boardDay}
+                asap={boardAsap}
+                onChange={(next) => {
+                  setBoardDay(next.day);
+                  setBoardAsap(next.asap);
+                }}
+              />
+            </div>
+            <Link
+              to="/call"
+              className="btn-press mt-6 inline-flex h-12 items-center gap-2 rounded-full bg-fg px-6 text-sm font-medium text-ink hover:bg-gold"
+            >
+              Shop line — lock it
+              <ArrowRight className="size-4" />
+            </Link>
+          </div>
+        </section>
 
         <section className="section-y mx-auto max-w-6xl px-4">
           <p className="kicker">The trip</p>
