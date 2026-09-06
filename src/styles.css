@@ -369,14 +369,18 @@
 
   .ticker {
     position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
     overflow: hidden;
     border-top: 1px solid var(--color-border);
     background: var(--color-bg-deep);
-    padding-block: 0.5rem;
     padding-inline: 0 2.75rem;
   }
 
   .ticker-clip {
+    flex: 1;
+    min-width: 0;
     overflow: hidden;
     -webkit-mask-image: linear-gradient(
       90deg,
@@ -396,6 +400,7 @@
 
   .ticker-track {
     display: flex;
+    flex-wrap: nowrap;
     width: max-content;
     gap: 2.25rem;
     animation: ticker 18s linear infinite;
