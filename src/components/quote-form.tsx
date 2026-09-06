@@ -317,8 +317,15 @@ export function QuoteForm({
       onSubmit={form.handleSubmit(onSubmit)}
       className="card-green rounded-2xl p-6 sm:p-8"
     >
-      <p className="kicker">Free estimate</p>
+      <p className="kicker">Form</p>
       <h3 className="mt-2 font-display text-3xl">Hold your date</h3>
+      <p className="mt-2 text-sm text-muted">
+        Prefer to talk it through?{" "}
+        <a href="/call" className="text-gold hover:underline">
+          Shop line is the main way to book
+        </a>
+        — same calendar.
+      </p>
       <p className="mt-2 text-sm text-muted">
         {promo.active
           ? `Book by ${promo.deadlineLabel} for ${Math.round(promo.percent * 100)}% off, up to $${promo.cap}.`

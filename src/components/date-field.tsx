@@ -15,18 +15,20 @@ type Props = {
   day: string;
   asap: boolean;
   onChange: (next: { day: string; asap: boolean }) => void;
+  refreshKey?: number;
 };
 
-export function DateField({ service, size, day, asap, onChange }: Props) {
+export function DateField({ service, size, day, asap, onChange, refreshKey = 0 }: Props) {
   const [fill, setFill] = useState<{ day: string; used: number }[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    setLoaded(false);
     getScheduleFill()
       .then((rows) => setFill(rows))
       .catch(() => setFill([]))
       .finally(() => setLoaded(true));
-  }, []);
+  }, [refreshKey, service, size]);
 
   const need = slotsFor(service, size);
   const options = useMemo(() => dayOptions(fill, need), [fill, need]);
@@ -36,11 +38,12 @@ export function DateField({ service, size, day, asap, onChange }: Props) {
   return (
     <div>
       <p className="text-xs font-medium text-muted">Preferred date</p>
-      <div className="mt-2 flex flex-wrap gap-2">
+      <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Date mode">
         <button
           type="button"
           onClick={() => onChange({ day: asapDay ?? "", asap: true })}
           disabled={loaded && !asapDay}
+          aria-pressed={asap}
           className={`btn-press inline-flex min-h-11 items-center rounded-full px-4 text-sm ${
             asap
               ? "bg-gold text-ink"
@@ -57,6 +60,7 @@ export function DateField({ service, size, day, asap, onChange }: Props) {
               asap: false,
             })
           }
+          aria-pressed={!asap}
           className={`btn-press inline-flex min-h-11 items-center rounded-full px-4 text-sm ${
             !asap
               ? "bg-gold text-ink"
@@ -73,7 +77,7 @@ export function DateField({ service, size, day, asap, onChange }: Props) {
             <>
               First open day:{" "}
               <span className="font-medium text-gold">{formatDayLong(asapDay)}</span>
-              . We'll text if the crew needs to shift it.
+              . Tap a chip to lock a different one.
             </>
           ) : loaded ? (
             "We're booked out on the days we publish. Text us and we'll find a gap."
@@ -81,34 +85,44 @@ export function DateField({ service, size, day, asap, onChange }: Props) {
             "Checking the crew calendar…"
           )}
         </p>
-      ) : (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {visible.map((d) => (
+      ) : null}
+
+      <div
+        className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4"
+        role="listbox"
+        aria-label="Open days"
+      >
+        {visible.map((d) => {
+          const selected = !asap && day === d.day;
+          const openLeft = Math.max(0, DAILY_SLOTS - d.used);
+          return (
             <button
               key={d.day}
               type="button"
+              role="option"
+              aria-selected={selected}
               disabled={!d.open}
               onClick={() => onChange({ day: d.day, asap: false })}
-              className={`btn-press inline-flex min-h-11 flex-col items-start rounded-xl px-3 py-2 text-left text-sm ${
+              className={`btn-press inline-flex min-h-14 flex-col items-start justify-center rounded-2xl px-3 py-2 text-left text-sm ${
                 !d.open
                   ? "cursor-not-allowed border border-border/50 text-muted line-through opacity-60"
-                  : day === d.day
+                  : selected
                     ? "bg-gold text-ink"
                     : "border border-border text-fg hover:bg-fg/8"
               }`}
             >
               <span>{d.label}</span>
               <span
-                className={`text-[10px] uppercase tracking-wider ${
-                  day === d.day && d.open ? "text-ink/70" : "text-muted"
+                className={`text-[10px] font-semibold uppercase tracking-wider ${
+                  selected ? "text-ink/70" : "text-muted"
                 }`}
               >
-                {d.open ? `${DAILY_SLOTS - d.used} open` : "Full"}
+                {d.open ? `${openLeft} OPEN` : "Full"}
               </span>
             </button>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
     </div>
   );
 }

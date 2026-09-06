@@ -93,10 +93,10 @@ function AboutPage() {
             </dl>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
-                to="/book"
+                to="/call"
                 className="btn-press inline-flex h-12 items-center rounded-full bg-fg px-6 text-sm font-medium text-ink hover:bg-gold"
               >
-                Book a haul
+                Shop line
               </Link>
               <a
                 href={TEL}

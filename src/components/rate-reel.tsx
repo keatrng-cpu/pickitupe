@@ -44,7 +44,7 @@ export function RateReel() {
       </div>
       <div className="mx-auto mt-6 max-w-6xl px-4">
         <Link
-          to="/book"
+          to="/call"
           search={{ service: "junk-removal", size: "sofa" }}
           className="btn-press inline-flex h-12 items-center gap-2 rounded-full bg-fg px-6 text-sm font-medium text-ink hover:bg-gold"
         >

@@ -124,7 +124,7 @@ export function QuickQuote() {
           ) : null}
         </div>
         <Link
-          to="/book"
+          to="/call"
           search={{ service, size: current }}
           className="btn-press mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-mahogany text-sm font-medium text-paper hover:bg-mahogany-deep sm:w-auto sm:px-8"
         >

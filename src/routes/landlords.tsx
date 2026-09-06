@@ -92,7 +92,8 @@ function LandlordsPage() {
           </div>
 
           <Link
-            to="/book"
+            to="/call"
+            search={{ service: "junk-removal", size: "full", src: "landlord" }}
             className="btn-press mt-12 inline-flex h-12 items-center rounded-full bg-fg px-7 text-sm font-medium text-ink hover:bg-gold"
           >
             Book a portfolio week

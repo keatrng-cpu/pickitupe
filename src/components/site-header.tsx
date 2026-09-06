@@ -3,6 +3,7 @@ import { Phone } from "lucide-react";
 import { HaulTicker } from "@/components/haul-ticker";
 import { SignedIn, SignedOut, UserButton } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { looksLikeOwner } from "@/lib/owner";
 import { Button } from "@/components/ui/button";
 
 const PHONE = "701-213-3969";
@@ -55,13 +56,22 @@ export function SiteHeader() {
           <a href="/#faq" className="hover:text-fg">
             FAQ
           </a>
+          <Link to="/call" className="hover:text-fg">
+            Shop line
+          </Link>
           <Link to="/book" className="hover:text-fg">
-            Book
+            Form
           </Link>
           {user ? (
-            <Link to="/jobs" className="hover:text-fg">
-              Jobs
-            </Link>
+            looksLikeOwner(user.primaryEmail) ? (
+              <Link to="/jobs" className="hover:text-fg">
+                Jobs
+              </Link>
+            ) : (
+              <Link to="/status" className="hover:text-fg">
+                Hauls
+              </Link>
+            )
           ) : null}
         </nav>
 
@@ -74,7 +84,10 @@ export function SiteHeader() {
             {PHONE}
           </a>
           <Button asChild size="md" variant="cream">
-            <Link to="/book">Book</Link>
+            <Link to="/call">
+              <Phone className="size-4" />
+              Shop line
+            </Link>
           </Button>
           {isPending ? (
             <div className="size-8 animate-pulse rounded-full bg-fg/10" aria-hidden="true" />
@@ -88,7 +101,7 @@ export function SiteHeader() {
                   to="/login"
                   className="hidden text-sm text-muted hover:text-fg md:inline"
                 >
-                  Owner
+                  Sign in
                 </Link>
               </SignedOut>
             </>
@@ -123,6 +136,15 @@ export function SiteFooter() {
           </Link>
           <Link to="/landlords" className="text-muted hover:text-gold">
             Landlords
+          </Link>
+          <Link to="/call" className="text-muted hover:text-gold">
+            Shop line
+          </Link>
+          <Link to="/status" className="text-muted hover:text-gold">
+            Your hauls
+          </Link>
+          <Link to="/login" className="text-muted hover:text-gold">
+            Sign in
           </Link>
           <Link to="/plan" className="text-muted hover:text-gold">
             Plan

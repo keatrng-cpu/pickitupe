@@ -1,23 +1,21 @@
 import { Phone } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { PHONE } from "@/lib/messages";
 
 export function StickyDock() {
-  const tel = PHONE.replaceAll("-", "");
   return (
-    <nav className="dock" aria-label="Book or call">
-      <a
-        href={`tel:${tel}`}
-        className="btn-press inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full border border-border text-sm font-medium text-fg"
+    <nav className="dock" aria-label="Shop line or form">
+      <Link
+        to="/call"
+        className="btn-press inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-fg text-sm font-medium text-ink"
       >
         <Phone className="size-4" />
-        Call
-      </a>
+        Shop line
+      </Link>
       <Link
         to="/book"
-        className="btn-press inline-flex h-12 flex-1 items-center justify-center rounded-full bg-fg text-sm font-medium text-ink"
+        className="btn-press inline-flex h-12 flex-1 items-center justify-center rounded-full border border-border text-sm font-medium text-fg"
       >
-        Book
+        Form
       </Link>
     </nav>
   );

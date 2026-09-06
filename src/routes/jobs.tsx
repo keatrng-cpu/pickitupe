@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { MapPin, MessageSquare, Navigation } from "lucide-react";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { RedirectToSignIn } from "@/lib/auth/gates";
@@ -31,13 +31,16 @@ function estimateText(job: BookingRow): string {
 function JobsPage() {
   const { user, isPending } = useCurrentUserState();
   const [rows, setRows] = useState<BookingRow[] | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!user) return;
     listBookings()
       .then(setRows)
-      .catch(() => setRows([]));
-  }, [user]);
+      .catch(() => {
+        void navigate({ to: "/status" });
+      });
+  }, [user, navigate]);
 
   // Same-day clusters. Two jobs on one date is one drive, not two — this is
   // where a solo truck makes its margin back.

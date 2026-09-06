@@ -64,7 +64,7 @@ function Home() {
             <div className="mx-auto w-full max-w-6xl">
               {last ? (
                 <Link
-                  to="/book"
+                  to="/call"
                   search={{ service: last.service, size: last.size }}
                   className="card-paper mb-6 inline-flex max-w-full items-center gap-3 rounded-full px-4 py-2 text-sm text-print"
                 >
@@ -79,18 +79,18 @@ function Home() {
               </h1>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
-                  to="/book"
+                  to="/call"
                   className="btn-press inline-flex h-12 items-center gap-2 rounded-full bg-fg px-7 text-base font-medium text-ink hover:bg-gold"
                 >
-                  Book in 30 seconds
+                  Shop line
                   <ArrowRight className="size-4" />
                 </Link>
-                <a
-                  href="/#haul"
+                <Link
+                  to="/book"
                   className="btn-press inline-flex h-12 items-center rounded-full border border-fg/40 px-7 text-base text-fg"
                 >
-                  See a price
-                </a>
+                  Book the form
+                </Link>
               </div>
               {offer.active ? (
                 <p className="mt-4 text-xs text-fg/80">

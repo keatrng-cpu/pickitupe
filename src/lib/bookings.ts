@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSql } from "@/lib/db";
-import { authMiddleware } from "@/lib/auth/middleware";
 import {
   estimate,
   isPromoActive,
@@ -19,6 +18,9 @@ import {
 } from "@/lib/schedule";
 import { z } from "zod";
 import { notifyOwnerOfBooking } from "@/lib/booking-alert.server";
+import { sessionEmail } from "@/lib/optional-session";
+import { isOwnerEmail } from "@/lib/owner";
+import { digitsPhone, isUsPhone } from "@/lib/phone";
 
 const bookingInput = z.object({
   name: z.string().trim().min(2).max(80),
@@ -93,7 +95,7 @@ export const getOfferStatus = createServerFn({ method: "GET" }).handler(
   },
 );
 
-async function loadFill(): Promise<DayFill[]> {
+export async function loadFill(): Promise<DayFill[]> {
   try {
     const sql = await getSql();
     const rows = await sql<{ preferred_date: string | null; job_size: string | null; service: string }>`
@@ -122,7 +124,9 @@ export const getScheduleFill = createServerFn({ method: "GET" }).handler(
 
 export const submitBooking = createServerFn({ method: "POST" })
   .validator((input: unknown) => bookingInput.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data }) => bookJob(data));
+
+export async function bookJob(data: z.infer<typeof bookingInput>) {
     const sql = await getSql();
     // Recomputed server-side from the server clock — never trust a
     // client-supplied flag for something that changes the price.
@@ -227,11 +231,14 @@ export const submitBooking = createServerFn({ method: "POST" })
       ownerAlerted: alert.sent,
       preferredDate,
     };
-  });
+}
 
 export const listBookings = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
-  .handler(async () => {
+  .middleware([sessionEmail])
+  .handler(async ({ context }) => {
+    if (!isOwnerEmail(context.email)) {
+      throw new Error("Forbidden");
+    }
     const sql = await getSql();
     return sql<BookingRow>`
       select id, name, phone, email, address, service, notes,
@@ -246,7 +253,7 @@ export const listBookings = createServerFn({ method: "GET" })
   });
 
 export const updateBookingStatus = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
+  .middleware([sessionEmail])
   .validator((input: unknown) =>
     z
       .object({
@@ -255,11 +262,122 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    if (!isOwnerEmail(context.email)) {
+      throw new Error("Forbidden");
+    }
     const sql = await getSql();
     await sql`
       update bookings set status = ${data.status} where id = ${data.id}
     `;
     return { ok: true as const };
+  });
+
+const phoneInput = z.object({ phone: z.string().min(7).max(24) });
+
+export async function jobsForPhone(raw: string) {
+  const phone = digitsPhone(raw);
+  if (!isUsPhone(phone)) return [] as BookingRow[];
+  const sql = await getSql();
+  const rows = await sql<BookingRow>`
+    select id, name, phone, email, address, service, notes,
+           preferred_date, early_bird, status, created_at,
+           urgency, job_size, add_ons, estimate_low, estimate_high,
+           lat, lon, area_tier, neighbor_of,
+           households, applied_discount, discount_amount
+    from bookings
+    order by created_at desc
+    limit 200
+  `;
+  return rows.filter((r) => digitsPhone(r.phone).slice(-10) === phone).slice(0, 20);
+}
+
+export const lookupByPhone = createServerFn({ method: "POST" })
+  .validator((input: unknown) => phoneInput.parse(input))
+  .handler(async ({ data }) => jobsForPhone(data.phone));
+
+export const listMyBookings = createServerFn({ method: "GET" })
+  .middleware([sessionEmail])
+  .handler(async ({ context }) => {
+    const email = context.email?.trim().toLowerCase();
+    if (!email) return [] as BookingRow[];
+    const sql = await getSql();
+    return sql<BookingRow>`
+      select id, name, phone, email, address, service, notes,
+             preferred_date, early_bird, status, created_at,
+             urgency, job_size, add_ons, estimate_low, estimate_high,
+             lat, lon, area_tier, neighbor_of,
+             households, applied_discount, discount_amount
+      from bookings
+      where lower(coalesce(email, '')) = ${email}
+      order by created_at desc
+      limit 40
+    `;
+  });
+
+export const claimByPhone = createServerFn({ method: "POST" })
+  .middleware([sessionEmail])
+  .validator((input: unknown) => z.object({ phone: z.string().min(7).max(24) }).parse(input))
+  .handler(async ({ data, context }) => {
+    const email = context.email?.trim();
+    const phone = digitsPhone(data.phone);
+    if (!email || !isUsPhone(phone)) return { ok: false as const, n: 0 };
+    const sql = await getSql();
+    const rows = await sql<{ id: number; phone: string; email: string | null }>`
+      select id, phone, email from bookings
+    `;
+    let n = 0;
+    for (const r of rows) {
+      if (digitsPhone(r.phone) !== phone) continue;
+      if (r.email && r.email.toLowerCase() !== email.toLowerCase()) continue;
+      await sql`update bookings set email = ${email} where id = ${r.id}`;
+      n += 1;
+    }
+    return { ok: true as const, n };
+  });
+
+export const completeByPhone = createServerFn({ method: "POST" })
+  .validator((input: unknown) =>
+    z.object({ id: z.number().int().positive(), phone: z.string().min(7).max(24) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const phone = digitsPhone(data.phone);
+    if (!isUsPhone(phone)) return null;
+    const sql = await getSql();
+    const rows = await sql<BookingRow>`
+      update bookings
+      set status = 'done'
+      where id = ${data.id}
+        and regexp_replace(phone, '[^0-9]', '', 'g') = ${phone}
+        and status not in ('done', 'cancelled')
+      returning id, name, phone, email, address, service, notes,
+                preferred_date, early_bird, status, created_at,
+                urgency, job_size, add_ons, estimate_low, estimate_high,
+                lat, lon, area_tier, neighbor_of,
+                households, applied_discount, discount_amount
+    `;
+    return rows[0] ?? null;
+  });
+
+export const completeMyBooking = createServerFn({ method: "POST" })
+  .middleware([sessionEmail])
+  .validator((input: unknown) => z.object({ id: z.number().int().positive() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const email = context.email?.trim().toLowerCase();
+    if (!email) return null;
+    const sql = await getSql();
+    const rows = await sql<BookingRow>`
+      update bookings
+      set status = 'done'
+      where id = ${data.id}
+        and lower(coalesce(email, '')) = ${email}
+        and status not in ('done', 'cancelled')
+      returning id, name, phone, email, address, service, notes,
+                preferred_date, early_bird, status, created_at,
+                urgency, job_size, add_ons, estimate_low, estimate_high,
+                lat, lon, area_tier, neighbor_of,
+                households, applied_discount, discount_amount
+    `;
+    return rows[0] ?? null;
   });
 

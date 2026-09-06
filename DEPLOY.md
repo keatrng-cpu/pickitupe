@@ -85,10 +85,10 @@ Generate the auth secret:
 node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 ```
 
-Leave `VITE_AUTH_ENABLED` unset. Auth stays on, and with no OAuth provider
-configured `/jobs` simply cannot be signed into — which keeps customer records
-off the public internet. Setting it to `false` would make `/jobs` readable by
-anyone who visits the URL.
+Leave `VITE_AUTH_ENABLED` unset. Auth stays on. Customers can create an
+email/password account on `/login` and land on `/status` (their own hauls).
+The owner board at `/jobs` only returns rows for `pickitupe@gmail.com` (or
+`OWNER_NOTIFY_EMAIL`). A customer session cannot read the full booking list.
 
-Read incoming bookings from the Supabase table editor until Google OAuth is set
-up.
+Shop line (`/call`) writes into the same `bookings` table as the form — the
+crew calendar, `/status` lookup, and `/jobs` board all share it.

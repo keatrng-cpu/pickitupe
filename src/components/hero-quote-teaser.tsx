@@ -246,11 +246,10 @@ export function HeroQuoteTeaser({ promo }: { promo: PromoStatus }) {
       )}
 
       <Link
-        to="/book"
+        to="/call"
         search={{
           service,
           size: activeSize,
-          addons: activeAddOns.length > 0 ? activeAddOns : undefined,
         }}
         className="btn-press mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-mahogany px-5 py-3 text-sm font-medium text-paper hover:bg-mahogany-deep"
       >
