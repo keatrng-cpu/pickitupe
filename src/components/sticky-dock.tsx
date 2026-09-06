@@ -5,7 +5,7 @@ import { PHONE } from "@/lib/messages";
 export function StickyDock() {
   const tel = PHONE.replaceAll("-", "");
   return (
-    <div className="dock">
+    <nav className="dock" aria-label="Book or call">
       <a
         href={`tel:${tel}`}
         className="btn-press inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full border border-border text-sm font-medium text-fg"
@@ -19,6 +19,6 @@ export function StickyDock() {
       >
         Book
       </Link>
-    </div>
+    </nav>
   );
 }

@@ -20,7 +20,12 @@ export function RateReel() {
           Priced under the apps.
         </h2>
       </div>
-      <div className="reel mt-8 gap-4 px-4">
+      <div
+        className="reel mt-8 gap-4 px-4"
+        role="region"
+        aria-label="Single-item pickup rates"
+        tabIndex={0}
+      >
         {ROWS.map((row) => (
           <article key={row.item} className="reel-card card-paper rounded-2xl p-5">
             <h3 className="font-display text-2xl leading-tight text-print">{row.item}</h3>

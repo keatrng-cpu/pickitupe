@@ -62,7 +62,7 @@ export function QuickQuote() {
 
       <div
         className="mt-8 grid grid-cols-3 gap-3"
-        role="listbox"
+        role="radiogroup"
         aria-label="Service"
       >
         {JOBS.map((job) => {
@@ -71,8 +71,8 @@ export function QuickQuote() {
             <button
               key={job.value}
               type="button"
-              role="option"
-              aria-selected={on}
+              role="radio"
+              aria-checked={on}
               onClick={() => pick(job.value)}
               className={`btn-press flex min-h-24 flex-col items-start gap-3 rounded-2xl p-4 text-left ring-1 transition-[transform,background-color,box-shadow] duration-200 ${
                 on ? "bg-fg text-ink ring-gold" : "card-green text-fg ring-transparent"

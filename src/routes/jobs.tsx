@@ -68,7 +68,7 @@ function JobsPage() {
   return (
     <div className="relative z-10 min-h-screen">
       <SiteHeader />
-      <main className="mx-auto max-w-5xl px-4 py-12">
+      <main id="main" className="mx-auto max-w-5xl px-4 py-12">
         <p className="text-xs tracking-[0.28em] text-gold">OWNER BOARD</p>
         <h1 className="mt-2 font-display text-4xl">Incoming jobs</h1>
         <p className="mt-2 text-sm text-muted">

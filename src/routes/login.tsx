@@ -11,7 +11,7 @@ function Login() {
     <div className="relative z-10 flex min-h-screen flex-col">
       <SiteHeader />
 
-      <main className="mx-auto flex w-full max-w-5xl flex-1 items-center px-4 py-16">
+      <main id="main" className="mx-auto flex w-full max-w-5xl flex-1 items-center px-4 py-16">
         <div className="grid w-full items-center gap-10 lg:grid-cols-[1fr_0.85fr]">
           {/* The page was a lone card floating in flat green. Anchor it with
               the same art the rest of the site is built on. */}

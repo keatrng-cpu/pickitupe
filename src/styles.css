@@ -368,17 +368,43 @@
   }
 
   .ticker {
+    position: relative;
     overflow: hidden;
-    border-block: 1px solid var(--color-border);
+    border-top: 1px solid var(--color-border);
     background: var(--color-bg-deep);
-    padding-block: 0.85rem;
+    padding-block: 0.5rem;
+    padding-inline: 0 2.75rem;
+  }
+
+  .ticker-clip {
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      transparent,
+      #000 1.25rem,
+      #000 calc(100% - 0.75rem),
+      transparent
+    );
+    mask-image: linear-gradient(
+      90deg,
+      transparent,
+      #000 1.25rem,
+      #000 calc(100% - 0.75rem),
+      transparent
+    );
   }
 
   .ticker-track {
     display: flex;
     width: max-content;
-    gap: 2.5rem;
-    animation: ticker 28s linear infinite;
+    gap: 2.25rem;
+    animation: ticker 18s linear infinite;
+  }
+
+  .ticker-track.is-paused,
+  .ticker:hover .ticker-track,
+  .ticker:focus-within .ticker-track {
+    animation-play-state: paused;
   }
 
   .ticker-item {
@@ -389,6 +415,27 @@
     font-size: 0.85rem;
     letter-spacing: 0.18em;
     text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .ticker-pause {
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+    right: 0.15rem;
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    transform: translateY(-50%);
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-gold);
+  }
+
+  .ticker-pause:hover {
+    color: var(--color-fg);
   }
 
   .fine-print summary {
@@ -449,6 +496,27 @@
     animation: none !important;
   }
 
+  .ticker {
+    padding-inline: 0.75rem;
+  }
+
+  .ticker-clip {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .ticker-track {
+    flex-wrap: wrap;
+    width: 100%;
+    justify-content: center;
+    row-gap: 0.4rem;
+    column-gap: 1.25rem;
+  }
+
+  .ticker-pause {
+    display: none;
+  }
+
   .card-lift,
   .btn-press {
     transition: none !important;
@@ -475,7 +543,7 @@
     transform: translateX(0);
   }
   to {
-    transform: translateX(-33.333%);
+    transform: translateX(-50%);
   }
 }
 

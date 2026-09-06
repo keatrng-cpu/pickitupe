@@ -71,7 +71,7 @@ function PlanPage() {
     <div className="relative z-10 min-h-screen">
       <SiteHeader />
 
-      <main>
+      <main id="main">
         <section className="section-y-lead mx-auto max-w-6xl px-4">
           <p className="kicker">Seasonal plan</p>
           <h1 className="mt-3 font-display text-5xl leading-[0.95] tracking-[-0.02em] sm:text-6xl">

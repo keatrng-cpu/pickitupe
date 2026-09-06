@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, CalendarCheck, Receipt, Truck } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { FinePrint } from "@/components/fine-print";
-import { HaulTicker } from "@/components/haul-ticker";
 import { HaulVideo } from "@/components/haul-video";
 import { QuickQuote } from "@/components/quick-quote";
 import { RateReel } from "@/components/rate-reel";
@@ -58,7 +57,7 @@ function Home() {
   return (
     <div className="page-home relative z-10 min-h-screen bg-bg text-fg">
       <SiteHeader />
-      <main>
+      <main id="main">
         <section className="hero-frame">
           <HaulVideo />
           <div className="hero-copy">
@@ -102,17 +101,46 @@ function Home() {
           </div>
         </section>
 
-        <HaulTicker />
         <QuickQuote />
         <RateReel />
 
         <section className="section-y mx-auto max-w-6xl px-4">
           <p className="kicker">The trip</p>
-          <ol className="mt-8 grid gap-6 sm:grid-cols-3">
-            <Beat n="01" icon={<Receipt className="size-6 text-gold" />} title="Estimate" />
-            <Beat n="02" icon={<CalendarCheck className="size-6 text-gold" />} title="Date" />
-            <Beat n="03" icon={<Truck className="size-6 text-gold" />} title="Hauled" />
+          <ol className="mt-8 grid gap-8 sm:grid-cols-3">
+            <Beat
+              n="01"
+              icon={<Receipt className="size-6 text-gold" />}
+              title="Estimate"
+              copy="Photo or tap. Range on screen before we roll."
+            />
+            <Beat
+              n="02"
+              icon={<CalendarCheck className="size-6 text-gold" />}
+              title="Date"
+              copy="First open day on the crew board — not a guess."
+            />
+            <Beat
+              n="03"
+              icon={<Truck className="size-6 text-gold" />}
+              title="Hauled"
+              copy="We show up. You don't lift."
+            />
           </ol>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 py-8">
+          <Link
+            to="/landlords"
+            className="card-green flex items-center justify-between gap-4 rounded-2xl p-5"
+          >
+            <div>
+              <p className="kicker">Landlords</p>
+              <p className="mt-2 font-display text-2xl">
+                Investor special — 2+ complexes, one week, one code.
+              </p>
+            </div>
+            <ArrowRight className="size-5 shrink-0 text-gold" />
+          </Link>
         </section>
 
         <FinePrint />
@@ -123,14 +151,27 @@ function Home() {
   );
 }
 
-function Beat({ n, icon, title }: { n: string; icon: ReactNode; title: string }) {
+function Beat({
+  n,
+  icon,
+  title,
+  copy,
+}: {
+  n: string;
+  icon: ReactNode;
+  title: string;
+  copy: string;
+}) {
   return (
-    <li className="flex items-center gap-4">
-      <span className="grid size-14 place-items-center rounded-full bg-bg-deep font-display text-xl text-gold ring-1 ring-gold/35">
-        {n}
-      </span>
-      {icon}
-      <span className="font-display text-3xl leading-none">{title}</span>
+    <li>
+      <div className="flex items-center gap-4">
+        <span className="grid size-14 place-items-center rounded-full bg-bg-deep font-display text-xl text-gold ring-1 ring-gold/35">
+          {n}
+        </span>
+        {icon}
+        <span className="font-display text-3xl leading-none">{title}</span>
+      </div>
+      <p className="mt-3 text-sm text-muted">{copy}</p>
     </li>
   );
 }

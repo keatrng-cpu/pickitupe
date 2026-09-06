@@ -14,6 +14,8 @@ import { Route as BookRouteImport } from './routes/book'
 import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PlanRouteImport } from './routes/plan'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as LandlordsRouteImport } from './routes/landlords'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiCronRenewalNoticesRouteImport } from './routes/api/cron/renewal-notices'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe/webhook'
@@ -43,6 +45,16 @@ const PlanRoute = PlanRouteImport.update({
   path: '/plan',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LandlordsRoute = LandlordsRouteImport.update({
+  id: '/landlords',
+  path: '/landlords',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -65,6 +77,8 @@ export interface FileRoutesByFullPath {
   '/jobs': typeof JobsRoute
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
+  '/about': typeof AboutRoute
+  '/landlords': typeof LandlordsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -75,6 +89,8 @@ export interface FileRoutesByTo {
   '/jobs': typeof JobsRoute
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
+  '/about': typeof AboutRoute
+  '/landlords': typeof LandlordsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -86,6 +102,8 @@ export interface FileRoutesById {
   '/jobs': typeof JobsRoute
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
+  '/about': typeof AboutRoute
+  '/landlords': typeof LandlordsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -98,6 +116,8 @@ export interface FileRouteTypes {
     | '/jobs'
     | '/login'
     | '/plan'
+    | '/about'
+    | '/landlords'
     | '/api/auth/$'
     | '/api/cron/renewal-notices'
     | '/api/stripe/webhook'
@@ -108,6 +128,8 @@ export interface FileRouteTypes {
     | '/jobs'
     | '/login'
     | '/plan'
+    | '/about'
+    | '/landlords'
     | '/api/auth/$'
     | '/api/cron/renewal-notices'
     | '/api/stripe/webhook'
@@ -118,6 +140,8 @@ export interface FileRouteTypes {
     | '/jobs'
     | '/login'
     | '/plan'
+    | '/about'
+    | '/landlords'
     | '/api/auth/$'
     | '/api/cron/renewal-notices'
     | '/api/stripe/webhook'
@@ -129,6 +153,8 @@ export interface RootRouteChildren {
   JobsRoute: typeof JobsRoute
   LoginRoute: typeof LoginRoute
   PlanRoute: typeof PlanRoute
+  AboutRoute: typeof AboutRoute
+  LandlordsRoute: typeof LandlordsRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCronRenewalNoticesRoute: typeof ApiCronRenewalNoticesRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
@@ -171,6 +197,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlanRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/landlords': {
+      id: '/landlords'
+      path: '/landlords'
+      fullPath: '/landlords'
+      preLoaderRoute: typeof LandlordsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -201,6 +241,8 @@ const rootRouteChildren: RootRouteChildren = {
   JobsRoute: JobsRoute,
   LoginRoute: LoginRoute,
   PlanRoute: PlanRoute,
+  AboutRoute: AboutRoute,
+  LandlordsRoute: LandlordsRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCronRenewalNoticesRoute: ApiCronRenewalNoticesRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
