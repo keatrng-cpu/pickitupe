@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, useRouterState } from "@tanstack/react-router";
 import { ArrowRight, CalendarCheck, Check, Loader2, Snowflake } from "lucide-react";
 import { toast } from "sonner";
@@ -12,17 +12,9 @@ const DESCRIPTION =
   "One price, two visits a year. We clean up after snow melt and again after leaf fall in Grand Forks and East Grand Forks. Cancel any time.";
 
 export const Route = createFileRoute("/plan")({
-  // No validateSearch here — deliberately. See src/routes/book.tsx: the router
-  // merges keys a validator does not return back out of the raw query string,
-  // so a sanitised result can never match a hostile URL and it 307s to itself
-  // forever. Read the raw search in the component instead.
-  loader: async () => {
-    try {
-      return await getPlanStatus();
-    } catch {
-      return { available: false as const, tiers: [] };
-    }
-  },
+  // No validateSearch here — deliberately. See src/routes/book.tsx.
+  // No loader: a Stripe/mailer miss used to 502 the whole tab. The page
+  // always renders; checkout buttons appear only after status comes back.
   head: () => ({
     meta: [
       { title: TITLE },
@@ -35,16 +27,25 @@ export const Route = createFileRoute("/plan")({
 });
 
 function PlanPage() {
-  const status = Route.useLoaderData();
   const search = useRouterState({
     select: (s) => s.location.search as Record<string, unknown>,
   });
   const welcomed = Boolean(search.welcome);
   const cancelled = Boolean(search.cancelled);
 
+  const [status, setStatus] = useState<{
+    available: boolean;
+    tiers: { tier: PlanTier; label: string; hint: string; amount: number; interval: string }[];
+  }>({ available: false, tiers: [] });
   const [busy, setBusy] = useState<PlanTier | null>(null);
   const [portalEmail, setPortalEmail] = useState("");
   const [portalBusy, setPortalBusy] = useState(false);
+
+  useEffect(() => {
+    getPlanStatus()
+      .then(setStatus)
+      .catch(() => setStatus({ available: false, tiers: [] }));
+  }, []);
 
   async function join(tier: PlanTier) {
     setBusy(tier);
