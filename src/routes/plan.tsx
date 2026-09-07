@@ -16,7 +16,13 @@ export const Route = createFileRoute("/plan")({
   // merges keys a validator does not return back out of the raw query string,
   // so a sanitised result can never match a hostile URL and it 307s to itself
   // forever. Read the raw search in the component instead.
-  loader: () => getPlanStatus(),
+  loader: async () => {
+    try {
+      return await getPlanStatus();
+    } catch {
+      return { available: false as const, tiers: [] };
+    }
+  },
   head: () => ({
     meta: [
       { title: TITLE },

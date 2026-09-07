@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Menu, Phone, X } from "lucide-react";
 import { useState } from "react";
+import { HashScroll, scrollToHash } from "@/components/hash-scroll";
 import { HaulTicker } from "@/components/haul-ticker";
 import { SignedIn, SignedOut, UserButton } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -9,14 +10,20 @@ import { Button } from "@/components/ui/button";
 
 const PHONE = "701-213-3969";
 
-const NAV = [
-  { href: "/#haul", label: "Haul" },
-  { href: "/#rates", label: "Rates" },
-  { href: "/about", label: "About" },
-  { href: "/landlords", label: "Landlords" },
-  { href: "/plan", label: "Plan" },
-  { href: "/#faq", label: "FAQ" },
-] as const;
+type NavItem =
+  | { to: "/"; hash: "haul" | "rates" | "faq"; label: string }
+  | { to: "/about" | "/landlords" | "/plan" | "/call" | "/book"; label: string };
+
+const NAV: NavItem[] = [
+  { to: "/", hash: "haul", label: "Haul" },
+  { to: "/", hash: "rates", label: "Rates" },
+  { to: "/about", label: "About" },
+  { to: "/landlords", label: "Landlords" },
+  { to: "/plan", label: "Plan" },
+  { to: "/", hash: "faq", label: "FAQ" },
+  { to: "/call", label: "Shop line" },
+  { to: "/book", label: "Form" },
+];
 
 function Mark() {
   return (
@@ -30,12 +37,38 @@ function Mark() {
   );
 }
 
+function NavLink({
+  item,
+  className,
+  onClick,
+}: {
+  item: NavItem;
+  className: string;
+  onClick?: () => void;
+}) {
+  const hash = "hash" in item ? item.hash : undefined;
+  return (
+    <Link
+      to={item.to}
+      hash={hash}
+      className={className}
+      onClick={() => {
+        onClick?.();
+        if (hash) window.setTimeout(() => scrollToHash(hash), 40);
+      }}
+    >
+      {item.label}
+    </Link>
+  );
+}
+
 export function SiteHeader() {
   const { user, isPending } = useCurrentUserState();
   const [open, setOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-bg">
+      <HashScroll />
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-2 focus:z-50 focus:rounded-full focus:bg-gold focus:px-4 focus:py-2 focus:text-sm focus:text-ink"
@@ -49,17 +82,9 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm text-muted md:flex" aria-label="Primary">
-          {NAV.map((l) => (
-            <a key={l.href} href={l.href} className="hover:text-fg">
-              {l.label}
-            </a>
+          {NAV.map((item) => (
+            <NavLink key={item.label} item={item} className="hover:text-fg" />
           ))}
-          <Link to="/call" className="hover:text-fg">
-            Shop line
-          </Link>
-          <Link to="/book" className="hover:text-fg">
-            Form
-          </Link>
           {user ? (
             looksLikeOwner(user.primaryEmail) ? (
               <Link to="/jobs" className="hover:text-fg">
@@ -120,23 +145,14 @@ export function SiteHeader() {
       {open ? (
         <div id="mobile-nav" className="border-t border-border bg-bg px-4 py-4 md:hidden">
           <nav className="flex flex-col gap-1">
-            {NAV.map((l) => (
-              <a
-                key={l.href}
-                href={l.href}
+            {NAV.map((item) => (
+              <NavLink
+                key={item.label}
+                item={item}
                 className="rounded-xl px-3 py-3 text-fg hover:bg-fg/8"
                 onClick={() => setOpen(false)}
-              >
-                {l.label}
-              </a>
+              />
             ))}
-            <Link
-              to="/call"
-              className="rounded-xl px-3 py-3 text-gold hover:bg-fg/8"
-              onClick={() => setOpen(false)}
-            >
-              Shop line
-            </Link>
             <Link
               to="/login"
               className="rounded-xl px-3 py-3 text-fg hover:bg-fg/8"
@@ -150,13 +166,6 @@ export function SiteHeader() {
               onClick={() => setOpen(false)}
             >
               Your hauls
-            </Link>
-            <Link
-              to="/book"
-              className="rounded-xl px-3 py-3 text-fg hover:bg-fg/8"
-              onClick={() => setOpen(false)}
-            >
-              Form
             </Link>
           </nav>
         </div>
@@ -201,9 +210,9 @@ export function SiteFooter() {
           <Link to="/plan" className="text-muted hover:text-gold">
             Plan
           </Link>
-          <a href="/#faq" className="text-muted hover:text-gold">
+          <Link to="/" hash="faq" className="text-muted hover:text-gold">
             FAQ
-          </a>
+          </Link>
           <a className="text-fg hover:text-gold" href="tel:7012133969">
             701-213-3969
           </a>

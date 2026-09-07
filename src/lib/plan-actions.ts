@@ -1,7 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getStripe, stripeConfigured } from "@/lib/stripe.server";
-import { senderConfigured } from "@/lib/renewal-notice.server";
 import {
   PLAN_TIERS,
   planConfigured,
@@ -13,6 +11,19 @@ import {
 
 const SITE = "https://pickitupe.com";
 
+const CLOSED = { available: false as const, tiers: [] as [] };
+
+/**
+ * Stripe + the renewal mailer stay behind dynamic import so this module can
+ * be pulled in by the /plan route without dragging .server files onto the
+ * client bundle (that 502'd the tab).
+ */
+async function stripeGate() {
+  const { getStripe, stripeConfigured } = await import("@/lib/stripe.server");
+  const { senderConfigured } = await import("@/lib/renewal-notice.server");
+  return { getStripe, stripeConfigured, senderConfigured };
+}
+
 /**
  * What the plan page needs to render. Deliberately safe to call with no Stripe
  * configured at all — it just reports `available: false` and the page shows
@@ -21,51 +32,56 @@ const SITE = "https://pickitupe.com";
  */
 export const getPlanStatus = createServerFn({ method: "GET" }).handler(
   async () => {
-    // HARD INTERLOCK. An auto-renewing plan may not be offered unless the
-    // statutory pre-renewal notice can actually be sent. NDCC ch. 51-37
-    // requires written notice 30-60 days before every renewal, and Stripe
-    // cannot produce it — invoice.upcoming fires days out, not weeks. Selling
-    // first and wiring the notice "later" means the obligation attaches to
-    // real customers before the mechanism exists, so the code refuses.
-    if (!stripeConfigured() || !planConfigured() || !senderConfigured()) {
-      return { available: false as const, tiers: [] };
+    try {
+      const { getStripe, stripeConfigured, senderConfigured } = await stripeGate();
+      // HARD INTERLOCK. An auto-renewing plan may not be offered unless the
+      // statutory pre-renewal notice can actually be sent. NDCC ch. 51-37
+      // requires written notice 30-60 days before every renewal, and Stripe
+      // cannot produce it — invoice.upcoming fires days out, not weeks. Selling
+      // first and wiring the notice "later" means the obligation attaches to
+      // real customers before the mechanism exists, so the code refuses.
+      if (!stripeConfigured() || !planConfigured() || !senderConfigured()) {
+        return CLOSED;
+      }
+
+      const stripe = getStripe();
+      const tiers = await Promise.all(
+        PLAN_TIERS.map(async (t) => {
+          const priceId = priceIdFor(t.tier);
+          if (!priceId) return null;
+          try {
+            const price = await stripe.prices.retrieve(priceId);
+            return {
+              tier: t.tier,
+              label: t.label,
+              hint: t.hint,
+              // Stripe stores minor units. Never render unit_amount raw.
+              amount: (price.unit_amount ?? 0) / 100,
+              interval: price.recurring?.interval ?? "year",
+            };
+          } catch {
+            // A missing or archived price must degrade to "unavailable", not a
+            // 500 on the marketing page.
+            return null;
+          }
+        }),
+      );
+
+      const usable = tiers.filter(Boolean) as {
+        tier: PlanTier;
+        label: string;
+        hint: string;
+        amount: number;
+        interval: string;
+      }[];
+
+      return {
+        available: usable.length === PLAN_TIERS.length,
+        tiers: usable,
+      };
+    } catch {
+      return CLOSED;
     }
-
-    const stripe = getStripe();
-    const tiers = await Promise.all(
-      PLAN_TIERS.map(async (t) => {
-        const priceId = priceIdFor(t.tier);
-        if (!priceId) return null;
-        try {
-          const price = await stripe.prices.retrieve(priceId);
-          return {
-            tier: t.tier,
-            label: t.label,
-            hint: t.hint,
-            // Stripe stores minor units. Never render unit_amount raw.
-            amount: (price.unit_amount ?? 0) / 100,
-            interval: price.recurring?.interval ?? "year",
-          };
-        } catch {
-          // A missing or archived price must degrade to "unavailable", not a
-          // 500 on the marketing page.
-          return null;
-        }
-      }),
-    );
-
-    const usable = tiers.filter(Boolean) as {
-      tier: PlanTier;
-      label: string;
-      hint: string;
-      amount: number;
-      interval: string;
-    }[];
-
-    return {
-      available: usable.length === PLAN_TIERS.length,
-      tiers: usable,
-    };
   },
 );
 
@@ -86,61 +102,66 @@ export const startPlanCheckout = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    // Same interlock on the write path, not just the read path — a stale
-    // page or a hand-crafted POST must not be able to open a checkout the
-    // status endpoint would have refused to advertise.
-    if (!stripeConfigured() || !planConfigured() || !senderConfigured()) {
-      return { ok: false as const, error: "The plan isn't available yet." };
-    }
+    try {
+      const { getStripe, stripeConfigured, senderConfigured } = await stripeGate();
+      // Same interlock on the write path, not just the read path — a stale
+      // page or a hand-crafted POST must not be able to open a checkout the
+      // status endpoint would have refused to advertise.
+      if (!stripeConfigured() || !planConfigured() || !senderConfigured()) {
+        return { ok: false as const, error: "The plan isn't available yet." };
+      }
 
-    const priceId = priceIdFor(data.tier);
-    if (!priceId) {
-      return { ok: false as const, error: "That plan isn't available yet." };
-    }
+      const priceId = priceIdFor(data.tier);
+      if (!priceId) {
+        return { ok: false as const, error: "That plan isn't available yet." };
+      }
 
-    const stripe = getStripe();
-    const price = await stripe.prices.retrieve(priceId);
-    const amountLabel = ((price.unit_amount ?? 0) / 100).toFixed(0);
+      const stripe = getStripe();
+      const price = await stripe.prices.retrieve(priceId);
+      const amountLabel = ((price.unit_amount ?? 0) / 100).toFixed(0);
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      line_items: [{ price: priceId, quantity: 1 }],
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        line_items: [{ price: priceId, quantity: 1 }],
 
-      success_url: `${SITE}/plan?welcome=1&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${SITE}/plan?cancelled=1`,
+        success_url: `${SITE}/plan?welcome=1&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${SITE}/plan?cancelled=1`,
 
-      // We text customers — a phone number is not optional for this business.
-      phone_number_collection: { enabled: true },
-      // Billing address for the card; shipping address doubles as the SERVICE
-      // address, which is the one the truck actually drives to.
-      billing_address_collection: "required",
-      shipping_address_collection: { allowed_countries: ["US"] },
+        // We text customers — a phone number is not optional for this business.
+        phone_number_collection: { enabled: true },
+        // Billing address for the card; shipping address doubles as the SERVICE
+        // address, which is the one the truck actually drives to.
+        billing_address_collection: "required",
+        shipping_address_collection: { allowed_countries: ["US"] },
 
-      // Lets the customer manage/cancel from the receipt without contacting us,
-      // which is the "simple cancellation" the statute asks for.
-      subscription_data: {
-        metadata: {
-          app: "pickitupe",
-          tier: data.tier,
-          spring_window: `${SERVICE_WINDOW.spring.typical}, outer bound ${SERVICE_WINDOW.spring.outerBound}`,
-          fall_window: `${SERVICE_WINDOW.fall.typical}, outer bound ${SERVICE_WINDOW.fall.outerBound}`,
+        // Lets the customer manage/cancel from the receipt without contacting us,
+        // which is the "simple cancellation" the statute asks for.
+        subscription_data: {
+          metadata: {
+            app: "pickitupe",
+            tier: data.tier,
+            spring_window: `${SERVICE_WINDOW.spring.typical}, outer bound ${SERVICE_WINDOW.spring.outerBound}`,
+            fall_window: `${SERVICE_WINDOW.fall.typical}, outer bound ${SERVICE_WINDOW.fall.outerBound}`,
+          },
         },
-      },
-      metadata: { app: "pickitupe", tier: data.tier },
+        metadata: { app: "pickitupe", tier: data.tier },
 
-      custom_text: {
-        submit: { message: renewalDisclosure(amountLabel) },
-      },
+        custom_text: {
+          submit: { message: renewalDisclosure(amountLabel) },
+        },
 
-      // Stripe emails the receipt; the receipt is where the cancellation link
-      // lives, so this is compliance surface too, not a nicety.
-      allow_promotion_codes: false,
-    });
+        // Stripe emails the receipt; the receipt is where the cancellation link
+        // lives, so this is compliance surface too, not a nicety.
+        allow_promotion_codes: false,
+      });
 
-    if (!session.url) {
-      return { ok: false as const, error: "Could not start checkout." };
+      if (!session.url) {
+        return { ok: false as const, error: "Could not start checkout." };
+      }
+      return { ok: true as const, url: session.url };
+    } catch {
+      return { ok: false as const, error: "Could not start checkout. Text 701-213-3969." };
     }
-    return { ok: true as const, url: session.url };
   });
 
 /**
@@ -155,29 +176,37 @@ export const openBillingPortal = createServerFn({ method: "POST" })
     z.object({ email: z.string().email() }).parse(input),
   )
   .handler(async ({ data }) => {
-    if (!stripeConfigured()) {
-      return { ok: false as const, error: "Billing isn't configured." };
-    }
-    const stripe = getStripe();
+    try {
+      const { getStripe, stripeConfigured } = await stripeGate();
+      if (!stripeConfigured()) {
+        return { ok: false as const, error: "Billing isn't configured." };
+      }
+      const stripe = getStripe();
 
-    const customers = await stripe.customers.list({
-      email: data.email,
-      limit: 1,
-    });
-    const customer = customers.data[0];
-    if (!customer) {
-      // Deliberately vague: confirming whether an email has an account is an
-      // enumeration oracle. The owner's phone number is the escape hatch.
+      const customers = await stripe.customers.list({
+        email: data.email,
+        limit: 1,
+      });
+      const customer = customers.data[0];
+      if (!customer) {
+        // Deliberately vague: confirming whether an email has an account is an
+        // enumeration oracle. The owner's phone number is the escape hatch.
+        return {
+          ok: false as const,
+          error:
+            "We couldn't find a plan for that email. Text 701-213-3969 and we'll sort it out.",
+        };
+      }
+
+      const portal = await stripe.billingPortal.sessions.create({
+        customer: customer.id,
+        return_url: `${SITE}/plan`,
+      });
+      return { ok: true as const, url: portal.url };
+    } catch {
       return {
         ok: false as const,
-        error:
-          "We couldn't find a plan for that email. Text 701-213-3969 and we'll sort it out.",
+        error: "Billing isn't available right now. Text 701-213-3969.",
       };
     }
-
-    const portal = await stripe.billingPortal.sessions.create({
-      customer: customer.id,
-      return_url: `${SITE}/plan`,
-    });
-    return { ok: true as const, url: portal.url };
   });

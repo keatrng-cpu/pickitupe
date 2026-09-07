@@ -25,6 +25,7 @@
     color-scheme: dark;
     background-color: var(--color-bg);
     scroll-behavior: smooth;
+    scroll-padding-top: 7.5rem;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -68,6 +69,12 @@
   :focus-visible {
     outline: 2px solid var(--color-gold);
     outline-offset: 2px;
+  }
+
+  #haul,
+  #rates,
+  #faq {
+    scroll-margin-top: 7.5rem;
   }
 }
 
