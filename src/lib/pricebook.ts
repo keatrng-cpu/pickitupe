@@ -445,6 +445,22 @@ export function sizeOptionsFor(service: ServiceKey): SizeOption[] {
   return LOAD_SIZES;
 }
 
+/** The sizes a homeowner can pick in two taps. Full list stays on the shop line. */
+const FEATURED_SIZE: Record<string, string[]> = {
+  "leaf-cleanup": ["small", "medium", "large", "half", "acre"],
+  "junk-removal": ["bags", "sofa", "fridge", "half", "full"],
+  "gutter-cleaning": ["standard", "complex"],
+};
+
+export function featuredSizesFor(service: ServiceKey): SizeOption[] {
+  const all = sizeOptionsFor(service);
+  const keys = FEATURED_SIZE[canonicalService(service)];
+  if (!keys?.length) return all;
+  const want = new Set(keys);
+  const picked = all.filter((s) => want.has(s.value));
+  return picked.length ? picked : all;
+}
+
 export type AddOnKey =
   | "bagging"
   | "stairs"

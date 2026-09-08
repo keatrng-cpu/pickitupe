@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { Menu, Phone, X } from "lucide-react";
 import { useState } from "react";
 import { HashScroll, scrollToHash } from "@/components/hash-scroll";
@@ -11,18 +11,22 @@ import { Button } from "@/components/ui/button";
 const PHONE = "701-213-3969";
 
 type NavItem =
-  | { to: "/"; hash: "haul" | "rates" | "faq"; label: string }
-  | { to: "/about" | "/landlords" | "/plan" | "/call" | "/book"; label: string };
+  | { to: "/"; hash?: "faq"; label: string }
+  | { to: "/about" | "/landlords" | "/plan" | "/call"; label: string };
 
 const NAV: NavItem[] = [
-  { to: "/", hash: "haul", label: "Haul" },
-  { to: "/", hash: "rates", label: "Rates" },
-  { to: "/about", label: "About" },
   { to: "/landlords", label: "Landlords" },
   { to: "/plan", label: "Plan" },
+  { to: "/about", label: "About" },
+];
+
+const MOBILE_NAV: NavItem[] = [
+  { to: "/", label: "Home" },
+  { to: "/call", label: "Book" },
+  { to: "/landlords", label: "Landlords" },
+  { to: "/plan", label: "Plan" },
+  { to: "/about", label: "About" },
   { to: "/", hash: "faq", label: "FAQ" },
-  { to: "/call", label: "Shop line" },
-  { to: "/book", label: "Form" },
 ];
 
 function Mark() {
@@ -41,17 +45,19 @@ function NavLink({
   item,
   className,
   onClick,
+  active,
 }: {
   item: NavItem;
   className: string;
   onClick?: () => void;
+  active?: boolean;
 }) {
   const hash = "hash" in item ? item.hash : undefined;
   return (
     <Link
       to={item.to}
       hash={hash}
-      className={className}
+      className={`${className} ${active ? "text-gold" : ""}`}
       onClick={() => {
         onClick?.();
         if (hash) window.setTimeout(() => scrollToHash(hash), 40);
@@ -65,6 +71,7 @@ function NavLink({
 export function SiteHeader() {
   const { user, isPending } = useCurrentUserState();
   const [open, setOpen] = useState(false);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-bg">
@@ -83,15 +90,20 @@ export function SiteHeader() {
 
         <nav className="hidden items-center gap-6 text-sm text-muted md:flex" aria-label="Primary">
           {NAV.map((item) => (
-            <NavLink key={item.label} item={item} className="hover:text-fg" />
+            <NavLink
+              key={item.label}
+              item={item}
+              active={pathname === item.to}
+              className="hover:text-fg"
+            />
           ))}
           {user ? (
             looksLikeOwner(user.primaryEmail) ? (
-              <Link to="/jobs" className="hover:text-fg">
+              <Link to="/jobs" className={`hover:text-fg ${pathname === "/jobs" ? "text-gold" : ""}`}>
                 Jobs
               </Link>
             ) : (
-              <Link to="/status" className="hover:text-fg">
+              <Link to="/status" className={`hover:text-fg ${pathname === "/status" ? "text-gold" : ""}`}>
                 Hauls
               </Link>
             )
@@ -107,10 +119,7 @@ export function SiteHeader() {
             {PHONE}
           </a>
           <Button asChild size="md" variant="cream">
-            <Link to="/call">
-              <Phone className="size-4" />
-              Shop line
-            </Link>
+            <Link to="/call">{pathname === "/call" ? "On the line" : "Book"}</Link>
           </Button>
           {isPending ? (
             <div className="size-8 animate-pulse rounded-full bg-fg/10" aria-hidden="true" />
@@ -122,7 +131,7 @@ export function SiteHeader() {
               <SignedOut>
                 <Link
                   to="/login"
-                  className="inline-flex h-11 items-center rounded-full border border-border px-3 text-sm text-fg hover:bg-fg/8"
+                  className="hidden h-11 items-center rounded-full px-3 text-sm text-muted hover:text-fg sm:inline-flex"
                 >
                   Sign in
                 </Link>
@@ -145,10 +154,11 @@ export function SiteHeader() {
       {open ? (
         <div id="mobile-nav" className="border-t border-border bg-bg px-4 py-4 md:hidden">
           <nav className="flex flex-col gap-1">
-            {NAV.map((item) => (
+            {MOBILE_NAV.map((item) => (
               <NavLink
                 key={item.label}
                 item={item}
+                active={pathname === item.to && !("hash" in item && item.hash)}
                 className="rounded-xl px-3 py-3 text-fg hover:bg-fg/8"
                 onClick={() => setOpen(false)}
               />
@@ -192,23 +202,26 @@ export function SiteFooter() {
           </div>
         </div>
         <nav className="flex flex-wrap content-start items-center gap-x-6 gap-y-2 text-sm" aria-label="Footer">
-          <Link to="/about" className="text-muted hover:text-gold">
-            About
+          <Link to="/call" className="text-fg hover:text-gold">
+            Book
           </Link>
           <Link to="/landlords" className="text-muted hover:text-gold">
             Landlords
           </Link>
-          <Link to="/call" className="text-muted hover:text-gold">
-            Shop line
+          <Link to="/plan" className="text-muted hover:text-gold">
+            Plan
+          </Link>
+          <Link to="/about" className="text-muted hover:text-gold">
+            About
+          </Link>
+          <Link to="/book" className="text-muted hover:text-gold">
+            Form
           </Link>
           <Link to="/status" className="text-muted hover:text-gold">
             Your hauls
           </Link>
           <Link to="/login" className="text-muted hover:text-gold">
             Sign in
-          </Link>
-          <Link to="/plan" className="text-muted hover:text-gold">
-            Plan
           </Link>
           <Link to="/" hash="faq" className="text-muted hover:text-gold">
             FAQ

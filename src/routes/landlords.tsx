@@ -5,6 +5,7 @@ import { PhotoQuote } from "@/components/photo-quote";
 import { LotSizeField } from "@/components/lot-size-field";
 import { HaulVideo } from "@/components/haul-video";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
+import { StickyDock } from "@/components/sticky-dock";
 import {
   COMBO_CREDIT,
   EXTRA_STOP_CUT,
@@ -65,7 +66,7 @@ function LandlordsPage() {
   }
 
   return (
-    <div className="relative z-10 min-h-dvh bg-bg text-fg">
+    <div className="page-home relative z-10 min-h-dvh bg-bg text-fg">
       <SiteHeader />
       <main id="main">
         <section className="hero-frame landlord-hero">
@@ -83,51 +84,38 @@ function LandlordsPage() {
               </h1>
               <p className="mt-5 max-w-xl text-sm text-muted">
                 First stop pays the truck. Extra units or yards this week run at
-                route rate — not another full trip fee. One code, one invoice,
-                deposit holds the stack.
+                route rate. One code, one invoice.
               </p>
-              <Link
-                to="/call"
-                search={{
-                  service: packService(pack),
-                  size: currentSize,
-                  src: "landlord",
-                  pack,
-                  stops,
-                  lotSqFt: lotSqFt || undefined,
-                }}
-                className="btn-press mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-fg px-7 text-sm font-medium text-ink hover:bg-gold"
-              >
-                Landlord shop line
-                <ArrowRight className="size-4" />
-              </Link>
             </div>
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-4 py-14">
-          <div className="grid gap-4 lg:grid-cols-3">
-            {LANDLORD_PACKS.map((p) => (
-              <button
-                key={p.value}
-                type="button"
-                onClick={() => pickPack(p.value)}
-                className={`card-green btn-press rounded-2xl p-6 text-left ${
-                  pack === p.value ? "ring-2 ring-gold" : ""
-                }`}
-              >
-                <p className="kicker">{p.kicker}</p>
-                <h2 className="mt-2 font-display text-2xl">{p.label}</h2>
-                <p className="mt-3 text-sm text-muted">{p.hint}</p>
-              </button>
-            ))}
-          </div>
-
-          <div className="card-green mt-8 rounded-2xl p-6 sm:p-8">
+        <section className="mx-auto max-w-6xl px-4 py-10">
+          <div className="card-green rounded-2xl p-6 sm:p-8">
             <p className="kicker">This week</p>
-            <h2 className="mt-2 font-display text-3xl">
-              How many {pack === "leaves" ? "yards" : pack === "combo" ? "addresses" : "units"}?
-            </h2>
+            <h2 className="mt-2 font-display text-3xl">Build the stack</h2>
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              {LANDLORD_PACKS.map((p) => (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => pickPack(p.value)}
+                  className={`btn-press rounded-2xl border p-4 text-left ${
+                    pack === p.value ? "border-gold bg-gold text-ink" : "border-border text-fg hover:bg-fg/8"
+                  }`}
+                >
+                  <p className={`text-xs tracking-[0.16em] uppercase ${pack === p.value ? "text-ink/70" : "text-gold"}`}>
+                    {p.kicker}
+                  </p>
+                  <p className="mt-1 font-display text-xl leading-none">{p.label}</p>
+                </button>
+              ))}
+            </div>
+            <p className="mt-3 text-sm text-muted">{LANDLORD_PACKS.find((p) => p.value === pack)?.hint}</p>
+
+            <p className="mt-8 text-xs font-medium text-muted">
+              How many {pack === "leaves" ? "yards" : pack === "combo" ? "addresses" : "units"} this week?
+            </p>
             <div className="mt-6 flex flex-wrap gap-2" role="radiogroup" aria-label="Number of stops">
               {STOP_COUNTS.map((c) => (
                 <button
@@ -169,18 +157,22 @@ function LandlordsPage() {
               ))}
             </div>
 
-            {pack !== "turns" ? <LotSizeField value={lotSqFt} onChange={setLotSqFt} /> : null}
-
-            <PhotoQuote
-              service={packService(pack)}
-              pack={pack}
-              stops={stops}
-              lotSqFt={lotSqFt}
-              onApply={({ size: next, lotSqFt: measured }) => {
-                setSize(next);
-                if (measured) setLotSqFt(measured);
-              }}
-            />
+            <details className="mt-6 rounded-2xl border border-border/80 p-4">
+              <summary className="cursor-pointer text-sm text-fg">
+                Photos or lot size — tighter number
+              </summary>
+              {pack !== "turns" ? <LotSizeField value={lotSqFt} onChange={setLotSqFt} /> : null}
+              <PhotoQuote
+                service={packService(pack)}
+                pack={pack}
+                stops={stops}
+                lotSqFt={lotSqFt}
+                onApply={({ size: next, lotSqFt: measured }) => {
+                  setSize(next);
+                  if (measured) setLotSqFt(measured);
+                }}
+              />
+            </details>
 
             <p className="mt-8 font-display text-5xl leading-none text-gold tabular-nums">
               {q.range ? formatRange(q.range) : "Walk-through"}
@@ -215,37 +207,12 @@ function LandlordsPage() {
               }}
               className="btn-press mt-6 inline-flex h-12 items-center gap-2 rounded-full bg-fg px-7 text-sm font-medium text-ink hover:bg-gold"
             >
-              Book {stops === 1 ? "this stop" : `${stops} on the landlord line`}
+              Book {stops === 1 ? "this stop" : `${stops} stops`}
               <ArrowRight className="size-4" />
             </Link>
           </div>
 
-          <ol className="mt-12 grid gap-6 sm:grid-cols-3">
-            <li className="list-none">
-              <p className="text-xs tracking-[0.2em] text-gold">01</p>
-              <h2 className="mt-2 font-display text-2xl">First stop is full rate</h2>
-              <p className="mt-2 text-sm text-muted">
-                That covers the truck, the dump run, and the crew. We do not discount the job that pays the day.
-              </p>
-            </li>
-            <li className="list-none">
-              <p className="text-xs tracking-[0.2em] text-gold">02</p>
-              <h2 className="mt-2 font-display text-2xl">Extras this week are cheaper</h2>
-              <p className="mt-2 text-sm text-muted">
-                Same town, same dump ticket. Each extra unit or yard is ${EXTRA_STOP_CUT.low}–$
-                {EXTRA_STOP_CUT.high} off. Stacked days, no extra trip fee between your addresses.
-              </p>
-            </li>
-            <li className="list-none">
-              <p className="text-xs tracking-[0.2em] text-gold">03</p>
-              <h2 className="mt-2 font-display text-2xl">Deposit holds the stack</h2>
-              <p className="mt-2 text-sm text-muted">
-                One-off couches stay at $50. Two stops $75. Three or more $100. Combo week starts at $75 and steps up. Comes off the invoice.
-              </p>
-            </li>
-          </ol>
-
-          <div className="mt-12 grid gap-6 sm:grid-cols-2">
+          <div className="mt-10 grid gap-6 sm:grid-cols-2">
             <article className="card-green rounded-2xl p-6">
               <p className="kicker">Turns</p>
               <h2 className="mt-2 font-display text-2xl">May 1–15 and Aug 1–20</h2>
@@ -266,20 +233,13 @@ function LandlordsPage() {
             </article>
           </div>
 
-          <p className="mt-12 max-w-2xl text-sm text-muted">
-            Tenants still book a couch on the regular shop line. Owners book the stack here.{" "}
-            <Link
-              to="/call"
-              search={{ src: "landlord", pack, stops, service: packService(pack), size: currentSize }}
-              className="text-gold hover:underline"
-            >
-              Landlord shop line
-            </Link>{" "}
-            asks how many addresses, not which loveseat.
+          <p className="mt-10 max-w-2xl text-sm text-muted">
+            Tenants book a couch on the regular line. Owners book the stack here.
           </p>
         </section>
       </main>
       <SiteFooter />
+      <StickyDock />
     </div>
   );
 }

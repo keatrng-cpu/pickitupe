@@ -5,6 +5,7 @@ import { DateField } from "@/components/date-field";
 import { LotSizeField } from "@/components/lot-size-field";
 import { PhotoQuote } from "@/components/photo-quote";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
+import { StickyDock } from "@/components/sticky-dock";
 import { speakShop, talkShop, type ChatTurn, type ShopLead } from "@/lib/dispatcher";
 import { submitBooking } from "@/lib/bookings";
 import { formatPhone, isUsPhone } from "@/lib/phone";
@@ -13,6 +14,7 @@ import {
   canonicalService,
   clampStops,
   estimate,
+  featuredSizesFor,
   formatRange,
   isPromoActive,
   LANDLORD_PACKS,
@@ -138,6 +140,7 @@ function CallPage() {
   const [busy, setBusy] = useState(false);
   const [locked, setLocked] = useState<{ day: string; code: string } | null>(null);
   const [fillKey, setFillKey] = useState(0);
+  const [showAllSizes, setShowAllSizes] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recRef = useRef<SpeechRecognition | null>(null);
   const logRef = useRef<HTMLOListElement | null>(null);
@@ -154,7 +157,12 @@ function CallPage() {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: "smooth" });
   }, [turns, thinking]);
 
-  const sized = landlord ? sizesForPack(pack ?? "turns") : sizeOptionsFor(service);
+  const sizedAll = landlord ? sizesForPack(pack ?? "turns") : sizeOptionsFor(service);
+  const featured = landlord ? sizedAll : featuredSizesFor(service);
+  const sized =
+    landlord || showAllSizes || !featured.some((s) => s.value === size)
+      ? sizedAll
+      : featured;
   const currentSize = sized.find((s) => s.value === size)?.value ?? sized[0]?.value ?? size;
   const priced = useMemo(
     () =>
@@ -381,36 +389,24 @@ function CallPage() {
   }
 
   return (
-    <div className="relative z-10 min-h-dvh bg-bg text-fg">
+    <div className="page-home relative z-10 min-h-dvh bg-bg text-fg">
       <SiteHeader />
       <main id="main" className="mx-auto max-w-6xl px-4 py-8 lg:py-12">
-        <p className="kicker">{landlord ? "Landlord desk" : "Shop line"}</p>
+        <p className="kicker">{landlord ? "Landlord desk" : "Book"}</p>
         <h1 className="mt-2 font-display text-4xl leading-none sm:text-5xl">
-          {landlord ? "Book the stack." : "Book with the shop."}
+          {landlord ? "Book the stack." : "Lock a day."}
         </h1>
         <p className="mt-3 max-w-xl text-sm text-muted">
           {landlord
-            ? "Tenant turns, leaf routes, or both. First stop full rate. Extra stops this week at route rate. Same crew calendar."
-            : "Same crew calendar the website uses. Tap a day, tell us the stop, we lock it. Chat if you'd rather talk it through."}
+            ? "Turns, leaves, or both. First stop full rate. Extra stops this week at route rate."
+            : "What it is, how big, which day. Then we hold it."}
         </p>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]">
           <section className="card-green rounded-3xl p-5 sm:p-6">
-            <DateField
-              service={pack ? packService(pack) : service}
-              size={currentSize}
-              day={day}
-              asap={asap}
-              refreshKey={fillKey}
-              onChange={(next) => {
-                setDay(next.day);
-                setAsap(next.asap);
-              }}
-            />
-
             {landlord ? (
               <>
-                <fieldset className="mt-6">
+                <fieldset>
                   <legend className="text-xs font-medium text-muted">Owner pack</legend>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {LANDLORD_PACKS.map((p) => (
@@ -463,7 +459,7 @@ function CallPage() {
                 </fieldset>
               </>
             ) : (
-            <fieldset className="mt-6">
+            <fieldset>
               <legend className="text-xs font-medium text-muted">What we're hauling</legend>
               <div className="mt-2 flex flex-wrap gap-2">
                 {SERVICES.map((s) => (
@@ -473,7 +469,8 @@ function CallPage() {
                     aria-pressed={service === s.value}
                     onClick={() => {
                       setService(s.value);
-                      const next = sizeOptionsFor(s.value);
+                      setShowAllSizes(false);
+                      const next = featuredSizesFor(s.value);
                       if (!next.some((x) => x.value === size)) setSize(next[0]?.value ?? "");
                     }}
                     className={`btn-press inline-flex min-h-11 items-center rounded-full px-4 text-sm ${
@@ -511,22 +508,47 @@ function CallPage() {
                   </button>
                 ))}
               </div>
+              {!landlord && sizedAll.length > featured.length ? (
+                <button
+                  type="button"
+                  onClick={() => setShowAllSizes((v) => !v)}
+                  className="mt-3 text-xs text-muted underline-offset-4 hover:text-gold hover:underline"
+                >
+                  {showAllSizes ? "Fewer sizes" : "More sizes"}
+                </button>
+              ) : null}
             </fieldset>
 
-            {service === "leaf-cleanup" || pack === "leaves" || pack === "combo" ? (
-              <LotSizeField value={lotSqFt} onChange={setLotSqFt} />
-            ) : null}
+            <div className="mt-6">
+              <DateField
+                service={pack ? packService(pack) : service}
+                size={currentSize}
+                day={day}
+                asap={asap}
+                refreshKey={fillKey}
+                onChange={(next) => {
+                  setDay(next.day);
+                  setAsap(next.asap);
+                }}
+              />
+            </div>
 
-            <PhotoQuote
-              service={pack ? packService(pack) : service}
-              pack={pack}
-              stops={landlord ? stops : 1}
-              lotSqFt={lotSqFt}
-              onApply={({ size: next, lotSqFt: measured }) => {
-                setSize(next);
-                if (measured) setLotSqFt(measured);
-              }}
-            />
+            <details className="mt-6 rounded-2xl border border-border/80 p-4">
+              <summary className="cursor-pointer text-sm text-fg">Photos or lot size</summary>
+              {service === "leaf-cleanup" || pack === "leaves" || pack === "combo" ? (
+                <LotSizeField value={lotSqFt} onChange={setLotSqFt} />
+              ) : null}
+              <PhotoQuote
+                service={pack ? packService(pack) : service}
+                pack={pack}
+                stops={landlord ? stops : 1}
+                lotSqFt={lotSqFt}
+                onApply={({ size: next, lotSqFt: measured }) => {
+                  setSize(next);
+                  if (measured) setLotSqFt(measured);
+                }}
+              />
+            </details>
 
             {priced.range ? (
               <p className="mt-4 font-display text-3xl leading-none text-gold tabular-nums">
@@ -587,6 +609,12 @@ function CallPage() {
                     ? `Lock ${formatDayLong(day)}`
                     : "Pick a day first"}
             </button>
+            <p className="mt-3 text-center text-xs text-muted">
+              Prefer a form?{" "}
+              <Link to="/book" className="text-gold hover:underline">
+                Use the form
+              </Link>
+            </p>
           </section>
 
           <section className="flex min-h-[28rem] flex-col">
@@ -678,6 +706,7 @@ function CallPage() {
         </div>
       </main>
       <SiteFooter />
+      <StickyDock />
     </div>
   );
 }

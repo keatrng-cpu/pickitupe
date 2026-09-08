@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import {
   canonicalService,
   estimate,
+  featuredSizesFor,
   formatRange,
   isPromoActive,
   sizeOptionsFor,
@@ -23,7 +24,8 @@ const JOBS: {
 export function QuickQuote() {
   const [service, setService] = useState<ServiceKey>("leaf-cleanup");
   const [size, setSize] = useState("medium");
-  const sizes = sizeOptionsFor(service);
+  const [allSizes, setAllSizes] = useState(false);
+  const sizes = allSizes ? sizeOptionsFor(service) : featuredSizesFor(service);
 
   const result = useMemo(
     () =>
@@ -39,7 +41,8 @@ export function QuickQuote() {
   function pick(next: ServiceKey) {
     const s = canonicalService(next);
     setService(s);
-    setSize(sizeOptionsFor(s)[0]?.value ?? "");
+    setAllSizes(false);
+    setSize(featuredSizesFor(s)[0]?.value ?? "");
   }
 
   const current = sizes.some((s) => s.value === size)
@@ -105,6 +108,15 @@ export function QuickQuote() {
           );
         })}
       </div>
+      {sizeOptionsFor(service).length > featuredSizesFor(service).length ? (
+        <button
+          type="button"
+          onClick={() => setAllSizes((v) => !v)}
+          className="mt-3 text-xs text-muted underline-offset-4 hover:text-gold hover:underline"
+        >
+          {allSizes ? "Fewer sizes" : "More sizes"}
+        </button>
+      ) : null}
       {currentHint ? <p className="mt-3 text-sm text-muted">{currentHint}</p> : null}
 
       <div className="card-estimate relative mt-8 overflow-hidden rounded-2xl p-6">
@@ -128,7 +140,7 @@ export function QuickQuote() {
           search={{ service, size: current }}
           className="btn-press mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-mahogany text-sm font-medium text-paper hover:bg-mahogany-deep sm:w-auto sm:px-8"
         >
-          Lock this rate
+          Lock this
           <ArrowRight className="size-4" />
         </Link>
       </div>

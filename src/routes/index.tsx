@@ -1,11 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, CalendarCheck, Receipt, Truck } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
 import { FinePrint } from "@/components/fine-print";
 import { HaulVideo } from "@/components/haul-video";
 import { QuickQuote } from "@/components/quick-quote";
 import { RateReel } from "@/components/rate-reel";
-import { DateField } from "@/components/date-field";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { StickyDock } from "@/components/sticky-dock";
 import { getOfferStatus } from "@/lib/bookings";
@@ -50,8 +49,6 @@ export const Route = createFileRoute("/")({
 function Home() {
   const offer = Route.useLoaderData();
   const [last, setLast] = useState<SavedBooking | null>(null);
-  const [boardDay, setBoardDay] = useState("");
-  const [boardAsap, setBoardAsap] = useState(true);
 
   useEffect(() => {
     setLast(readLastBooking());
@@ -81,15 +78,15 @@ function Home() {
                 <span className="mt-1 block italic text-gold">You don't.</span>
               </h1>
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Link
-                  to="/call"
+                <a
+                  href="#haul"
                   className="btn-press inline-flex h-12 items-center gap-2 rounded-full bg-fg px-7 text-base font-medium text-ink hover:bg-gold"
                 >
-                  Shop line
+                  Get a number
                   <ArrowRight className="size-4" />
-                </Link>
-                <Link to="/book" className="text-sm text-fg/80 underline-offset-4 hover:text-gold hover:underline">
-                  Prefer a form?
+                </a>
+                <Link to="/call" className="text-sm text-fg/80 underline-offset-4 hover:text-gold hover:underline">
+                  Skip to booking
                 </Link>
               </div>
               {offer.active ? (
@@ -103,62 +100,6 @@ function Home() {
 
         <QuickQuote />
         <RateReel />
-
-        <section className="section-y mx-auto max-w-6xl px-4">
-          <div className="card-green rounded-3xl p-5 sm:p-8">
-            <p className="kicker">Crew board</p>
-            <h2 className="mt-2 font-display text-3xl leading-none sm:text-4xl">
-              Same calendar the shop line books on.
-            </h2>
-            <p className="mt-3 max-w-xl text-sm text-muted">
-              Four slots a day, Monday through Saturday. When someone locks a stop — chat or form —
-              these numbers move.
-            </p>
-            <div className="mt-6">
-              <DateField
-                service="junk-removal"
-                size="sofa"
-                day={boardDay}
-                asap={boardAsap}
-                onChange={(next) => {
-                  setBoardDay(next.day);
-                  setBoardAsap(next.asap);
-                }}
-              />
-            </div>
-            <Link
-              to="/call"
-              className="btn-press mt-6 inline-flex h-12 items-center gap-2 rounded-full bg-fg px-6 text-sm font-medium text-ink hover:bg-gold"
-            >
-              Shop line — lock it
-              <ArrowRight className="size-4" />
-            </Link>
-          </div>
-        </section>
-
-        <section className="section-y mx-auto max-w-6xl px-4">
-          <p className="kicker">The trip</p>
-          <ol className="mt-8 grid gap-8 sm:grid-cols-3">
-            <Beat
-              n="01"
-              icon={<Receipt className="size-6 text-gold" />}
-              title="Estimate"
-              copy="Photo or tap. Range on screen before we roll."
-            />
-            <Beat
-              n="02"
-              icon={<CalendarCheck className="size-6 text-gold" />}
-              title="Date"
-              copy="First open day on the crew board — not a guess."
-            />
-            <Beat
-              n="03"
-              icon={<Truck className="size-6 text-gold" />}
-              title="Hauled"
-              copy="We show up. You don't lift."
-            />
-          </ol>
-        </section>
 
         <section className="mx-auto max-w-6xl px-4 py-8">
           <Link
@@ -187,30 +128,5 @@ function Home() {
       <SiteFooter />
       <StickyDock />
     </div>
-  );
-}
-
-function Beat({
-  n,
-  icon,
-  title,
-  copy,
-}: {
-  n: string;
-  icon: ReactNode;
-  title: string;
-  copy: string;
-}) {
-  return (
-    <li>
-      <div className="flex items-center gap-4">
-        <span className="grid size-14 place-items-center rounded-full bg-bg-deep font-display text-xl text-gold ring-1 ring-gold/35">
-          {n}
-        </span>
-        {icon}
-        <span className="font-display text-3xl leading-none">{title}</span>
-      </div>
-      <p className="mt-3 text-sm text-muted">{copy}</p>
-    </li>
   );
 }
