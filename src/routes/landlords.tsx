@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowRight } from "lucide-react";
+import { HaulVideo } from "@/components/haul-video";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 
 export const Route = createFileRoute("/landlords")({
@@ -20,24 +22,33 @@ function LandlordsPage() {
     <div className="relative z-10 min-h-dvh bg-bg text-fg">
       <SiteHeader />
       <main id="main">
-        <section className="relative overflow-hidden border-b border-border">
-          <img
-            src="/haul-junk-poster.jpg"
-            alt=""
-            className="absolute inset-0 size-full object-cover opacity-35"
+        <section className="hero-frame landlord-hero">
+          <HaulVideo
+            src="/haul-complex.mp4"
+            poster="/haul-complex-poster.jpg"
+            fillClass="hero-fill-complex"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-bg via-bg/80 to-transparent" />
-          <div className="relative mx-auto max-w-6xl px-4 py-16 sm:py-24">
-            <p className="kicker">Landlords & investors</p>
-            <h1 className="mt-3 max-w-2xl font-display text-4xl leading-none sm:text-6xl">
-              Portfolio week.
-              <span className="mt-2 block italic text-gold">Every complex. One crew.</span>
-            </h1>
-            <p className="mt-5 max-w-xl text-sm text-muted">
-              Two, three, four buildings — we stack them in the same week, one
-              PICK code, one deposit. Extra complexes run at investor rate, not
-              another full-building price.
-            </p>
+          <div className="hero-copy">
+            <div className="mx-auto w-full max-w-6xl">
+              <p className="kicker">Landlords & investors</p>
+              <h1 className="mt-3 max-w-2xl font-display text-4xl leading-none sm:text-6xl">
+                Portfolio week.
+                <span className="mt-2 block italic text-gold">Every complex. One crew.</span>
+              </h1>
+              <p className="mt-5 max-w-xl text-sm text-muted">
+                Two, three, four buildings — we stack them in the same week, one
+                PICK code, one deposit. Extra complexes run at investor rate, not
+                another full-building price.
+              </p>
+              <Link
+                to="/call"
+                search={{ service: "junk-removal", size: "full", src: "landlord" }}
+                className="btn-press mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-fg px-7 text-sm font-medium text-ink hover:bg-gold"
+              >
+                Shop line
+                <ArrowRight className="size-4" />
+              </Link>
+            </div>
           </div>
         </section>
 

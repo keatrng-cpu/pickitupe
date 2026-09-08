@@ -296,6 +296,73 @@
     );
   }
 
+  .hero-fill-complex {
+    object-position: center 58%;
+  }
+
+  .landlord-hero {
+    min-height: 36rem;
+  }
+
+  .landlord-hero .hero-media {
+    position: absolute;
+    inset: 0;
+    aspect-ratio: auto;
+    height: 100%;
+  }
+
+  .landlord-hero .hero-copy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 2rem 1rem 2.25rem;
+  }
+
+  .landlord-hero .hero-scrim {
+    background:
+      linear-gradient(
+        to top,
+        var(--color-bg) 0%,
+        color-mix(in srgb, var(--color-bg) 82%, transparent) 34%,
+        color-mix(in srgb, var(--color-bg-deep) 28%, transparent) 62%,
+        transparent 100%
+      ),
+      linear-gradient(
+        to right,
+        color-mix(in srgb, var(--color-bg) 78%, transparent) 0%,
+        color-mix(in srgb, var(--color-bg) 22%, transparent) 46%,
+        transparent 74%
+      );
+  }
+
+  .landlord-strip {
+    position: relative;
+    min-height: 17rem;
+    color: var(--color-fg);
+  }
+
+  .landlord-strip .hero-media {
+    position: absolute;
+    inset: 0;
+    aspect-ratio: auto;
+    height: 100%;
+    pointer-events: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .landlord-strip .hero-scrim {
+    background:
+      linear-gradient(
+        to top,
+        var(--color-bg) 0%,
+        color-mix(in srgb, var(--color-bg) 70%, transparent) 42%,
+        color-mix(in srgb, var(--color-bg) 18%, transparent) 78%,
+        transparent 100%
+      );
+  }
+
   @media (min-width: 1024px) {
     .hero-frame {
       min-height: calc(100dvh - 4rem);
@@ -324,6 +391,18 @@
         color-mix(in srgb, var(--color-bg) 20%, transparent) 68%,
         transparent 100%
       );
+    }
+
+    .landlord-hero {
+      min-height: min(78dvh, 46rem);
+    }
+
+    .landlord-hero .hero-media {
+      aspect-ratio: auto;
+    }
+
+    .landlord-strip {
+      min-height: 22rem;
     }
   }
 

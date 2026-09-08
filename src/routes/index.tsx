@@ -163,15 +163,22 @@ function Home() {
         <section className="mx-auto max-w-6xl px-4 py-8">
           <Link
             to="/landlords"
-            className="card-green flex items-center justify-between gap-4 rounded-2xl p-5"
+            className="landlord-strip card-green block overflow-hidden rounded-2xl"
           >
-            <div>
-              <p className="kicker">Landlords</p>
-              <p className="mt-2 font-display text-2xl">
-                Investor special — 2+ complexes, one week, one code.
-              </p>
+            <HaulVideo
+              src="/haul-complex.mp4"
+              poster="/haul-complex-poster.jpg"
+              fillClass="hero-fill-complex"
+            />
+            <div className="relative z-10 flex items-end justify-between gap-4 p-5 sm:p-8">
+              <div>
+                <p className="kicker">Landlords</p>
+                <p className="mt-2 max-w-xl font-display text-2xl sm:text-3xl">
+                  Investor special — 2+ complexes, one week, one code.
+                </p>
+              </div>
+              <ArrowRight className="size-5 shrink-0 text-gold" />
             </div>
-            <ArrowRight className="size-5 shrink-0 text-gold" />
           </Link>
         </section>
 
