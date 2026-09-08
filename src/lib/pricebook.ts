@@ -1,11 +1,107 @@
-export const PHONE = "701-213-3969";
-export const PHONE_TEL = "7012133969";
+/**
+ * Pick It Up E — flat-rate pricebook and instant estimator.
+ *
+ * Every number here is a **local starting range the owner calibrates**, not a
+ * quoted price. Structure borrowed from the E&E flat-rate pricebook: one range
+ * per line item, trip + labor + haul included, add-ons stated separately, and
+ * a hard "stop and re-quote if scope changes" rule.
+ *
+ * Deterministic on purpose — same answers every time, no API key, no model, no
+ * network. The customer sees a number in under a second and the owner can
+ * defend every dollar of it.
+ *
+ * PRICING POSITION: every tier sits under a named local comparable — see
+ * PRICEBOOK.md for the benchmarks and their sources. Undercut, don't race to
+ * the bottom: the cheapest bid in a trade nobody licenses reads as the least
+ * reliable one.
+ *
+ * TO RE-PRICE: edit the tables below. Nothing else reads raw numbers.
+ */
+
 export const DEPOSIT = 50;
+
+/**
+ * Fall pre-season promo — replaces the old count-based "first 25 bookings"
+ * cap. Two reasons:
+ *
+ * 1. A calendar date is verifiable by anyone; an unproven "spots left"
+ *    counter on a brand-new site with zero completed jobs is not — it reads
+ *    as fake scarcity to a skeptical visitor.
+ * 2. It decouples the discount from leaf season. Grand Forks leaves aren't
+ *    down by this date (city vacuum runs mid-Oct to mid-Nov), so this locks
+ *    the RATE and the DEPOSIT now — it is not a promise the truck shows up
+ *    by the deadline. `isPromoActive` gates booking eligibility, not service
+ *    timing.
+ *
+ * Percent-with-a-cap on purpose, not a flat dollar amount: a flat discount
+ * disproportionately crushes the cheapest tier (see FLOOR below) and
+ * undershoots on the priciest one. Percent scales with the job; the cap
+ * keeps a single acreage quote from giving away an unbounded amount.
+ */
 export const PROMO_PERCENT = 0.2;
 export const PROMO_CAP = 75;
 export const PROMO_DEADLINE_LABEL = "September 20";
-export const PROMO_DEADLINE = new Date("2026-09-20T23:59:59-05:00");
-export const MIN_AFTER_DISCOUNT = 55;
+/** 2026-09-20 23:59:59 America/Chicago (CDT, UTC-5 in September). */
+export const PROMO_DEADLINE = new Date("2026-09-21T05:00:00.000Z");
+
+export function isPromoActive(now: Date = new Date()): boolean {
+  return now.getTime() < PROMO_DEADLINE.getTime();
+}
+
+/** Never below this after discounts — a truck roll costs money. */
+const FLOOR = 55;
+
+/**
+ * Same-week rush. "Before city vacuum" is the SEASONAL norm here, not a rush —
+ * the whole business is built around that mid-Oct to mid-Nov window — so it
+ * carries no surcharge. "This week" is the actual rush: it displaces work
+ * already on the calendar and burns a slot that could have been routed with a
+ * neighbour on the same street.
+ *
+ * Priced as a range, like every other line, because a squeeze-in costs more on
+ * a full week than an empty one. Added BEFORE discounts, the same way add-ons
+ * are, so one mechanism governs the whole quote.
+ */
+export const RUSH_SURCHARGE: Range = { low: 10, high: 20 };
+
+/**
+ * Block deal — two or more houses on the same street, the same day. One trip
+ * down a street costs less than two, so we hand that back.
+ *
+ * This used to live only in marketing copy and get applied by hand on the
+ * invoice. That was a real defect: `estimate()` could not produce the number
+ * the site was advertising, and subtracting it after the fact walked straight
+ * through FLOOR. Traced on the live site: a small lot with the promo landed at
+ * $76, minus $25 by hand = $51, four dollars under the floor with nothing left
+ * to re-check it. It also inverted the ladder — a standard lot at $145 − $29
+ * promo − $25 block = $91, cheaper than a small lot's $95 list price.
+ *
+ * THE $40 IS DERIVED, NOT CHOSEN. The cheapest job the credit may touch lists
+ * at BLOCK_MIN_JOB_LOW ($95) and FLOOR is $55, so $95 − $55 = $40 is the
+ * largest per-house credit that can never breach the floor. Raising either
+ * bound without re-deriving this breaks that guarantee — the unit tests in
+ * scripts/pricebook.test.mjs assert it.
+ *
+ * Why $40 at three houses and not the $30 originally floated: the customer's
+ * own credit moving $25 → $30 pays them $5 for recruiting the second
+ * neighbour, after $25 bought the first. Neighbour #1 is the person you talk
+ * to over the fence; neighbour #2 is the house you only wave at. Paying $25
+ * for the easy ask and $5 for the hard one is a dead ladder. $25 → $40 pays
+ * $15 for the second recruit — the same order of magnitude as the first.
+ */
+export const BLOCK_TIERS: { households: number; credit: number }[] = [
+  { households: 2, credit: 25 },
+  { households: 3, credit: 40 },
+];
+
+/**
+ * The block credit is not offered on jobs listing below this. Without the
+ * gate a $59 one-item haul quotes $55–$76 after the promo and then goes to
+ * $30–$51 — both ends under the floor, on a single mattress.
+ */
+export const BLOCK_MIN_JOB_LOW = 95;
+
+export type Range = { low: number; high: number };
 
 export type ServiceKey =
   | "leaf-cleanup"
@@ -19,8 +115,6 @@ export function canonicalService(service: ServiceKey): ServiceKey {
   return service === "furniture-appliances" ? "junk-removal" : service;
 }
 
-export type Range = { low: number; high: number };
-
 export type SizeOption = {
   value: string;
   label: string;
@@ -28,22 +122,11 @@ export type SizeOption = {
   range: Range;
 };
 
-export type AddOn = {
-  key: string;
-  label: string;
-  hint: string;
-  range: Range;
-  appliesTo: ServiceKey[] | "all";
-};
-
-export const SERVICES: { value: ServiceKey; label: string }[] = [
-  { value: "leaf-cleanup", label: "Fall leaf & yard cleanup" },
-  { value: "junk-removal", label: "Junk & furniture" },
-  { value: "gutter-cleaning", label: "Gutter cleaning" },
-  { value: "other", label: "Something else" },
-];
-
-export const LEAF_SIZES: SizeOption[] = [
+/**
+ * Leaf cleanup — rake, blow, bag, haul. Sized by lot, because that is what a
+ * homeowner can answer without measuring anything.
+ */
+const LEAF_SIZES: SizeOption[] = [
   {
     value: "small",
     label: "Small city lot",
@@ -70,24 +153,28 @@ export const LEAF_SIZES: SizeOption[] = [
   },
 ];
 
-export const JUNK_SIZES: SizeOption[] = [
+/**
+ * Haul work — sized by how much of the truck bed it fills. Silver Sierra 1500
+ * crew cab, so a heaped "full load" is roughly two cubic yards.
+ */
+const LOAD_SIZES: SizeOption[] = [
   {
     value: "bags",
     label: "A few bags",
     hint: "Contractor bags or a small pile at the curb",
-    range: { low: 69, high: 95 },
+    range: { low: 59, high: 95 },
   },
   {
     value: "small-item",
     label: "One small piece",
     hint: "Chair, nightstand, microwave, lamp",
-    range: { low: 69, high: 89 },
+    range: { low: 59, high: 89 },
   },
   {
     value: "single",
     label: "One item",
     hint: "Anything we can carry in one trip to the truck",
-    range: { low: 69, high: 95 },
+    range: { low: 59, high: 95 },
   },
   {
     value: "dresser",
@@ -99,31 +186,31 @@ export const JUNK_SIZES: SizeOption[] = [
     value: "sofa",
     label: "Couch or mattress",
     hint: "One bulky living-room piece",
-    range: { low: 89, high: 119 },
+    range: { low: 59, high: 95 },
   },
   {
     value: "appliance",
     label: "Washer, dryer, or stove",
     hint: "One large appliance, no stairs",
-    range: { low: 99, high: 129 },
+    range: { low: 85, high: 130 },
   },
   {
     value: "fridge",
     label: "Refrigerator",
-    hint: "Includes the refrigerant drop fee in the range",
-    range: { low: 99, high: 139 },
+    hint: "Refrigerant drop is an add-on if it still has freon",
+    range: { low: 85, high: 130 },
   },
   {
     value: "two",
     label: "Two bulky items",
     hint: "Same stop, same truck",
-    range: { low: 129, high: 169 },
+    range: { low: 85, high: 130 },
   },
   {
     value: "three",
     label: "Three mixed items",
     hint: "Furniture, appliances, bags, or both",
-    range: { low: 169, high: 219 },
+    range: { low: 125, high: 195 },
   },
   {
     value: "quarter",
@@ -149,33 +236,164 @@ export const JUNK_SIZES: SizeOption[] = [
     hint: "More than one pickup bed",
     range: { low: 245, high: 365 },
   },
-  {
-    value: "building",
-    label: "Building / turnover",
-    hint: "One address, several units, same week — we walk it first",
-    range: { low: 365, high: 890 },
-  },
 ];
 
-/** @deprecated Same list as junk — kept so old item quotes still resolve. */
-export const FURNITURE_SIZES: SizeOption[] = JUNK_SIZES;
+/**
+ * SPRING cleanup — dead thatch, winter street sand, matted leaves the fall
+ * missed, downed branches. Sized by the same lot tiers as fall so a customer
+ * answers one question, not two.
+ *
+ * DERIVED AT 0.80 x THE FALL BAND, and that ratio is sourced rather than
+ * picked: HomeGuide (2026-02-04) puts spring cleanup at $125-$300 against fall
+ * at $150-$400 — 0.833 at the low end, 0.75 at the high, 0.773 at midpoints.
+ * The local mechanism agrees: Lawn King of Grand Forks describes spring as one
+ * pass raking dead thatch, versus fall where they "make multiple passes."
+ *
+ * THIS REPLACED AN EARLIER 85% GUESS, which sat above HomeGuide's own
+ * high-end AND midpoint ratios — i.e. it would have priced spring above what
+ * the only sourced comparison supports.
+ *
+ * STILL AN ASSUMPTION IN ONE RESPECT: nobody has performed a spring cleanup
+ * for this business yet, so the RATIO is sourced but the underlying hours are
+ * not. PRICEBOOK.md's "what to check after a real season" list is where the
+ * measured numbers replace these.
+ */
+const SPRING_SIZES: SizeOption[] = [
+  {
+    value: "small",
+    label: "Small city lot",
+    hint: "One or two trees, light winter debris",
+    range: { low: 75, high: 125 },
+  },
+  {
+    value: "medium",
+    label: "Standard lot",
+    hint: "Full yard, thatch and street sand",
+    range: { low: 115, high: 195 },
+  },
+  {
+    value: "large",
+    label: "Large / corner lot",
+    hint: "Heavy thatch, mature trees",
+    range: { low: 195, high: 315 },
+  },
+  // Acreage deliberately absent — see PLAN_DISCOUNT_CAP below and
+  // `needsWalkthrough`. We do not sell a fixed annual price for the one tier
+  // the estimator already refuses to quote sight-unseen.
+];
 
-export const GUTTER_SIZES: SizeOption[] = [
+export function springSizeOptions(): SizeOption[] {
+  return SPRING_SIZES;
+}
+
+/**
+ * Seasonal plan discount — 20% off the two-visit pair, capped at $150.
+ *
+ * The percent is PROMO_PERCENT, reused on purpose: the plan and the Sept 20
+ * promo are then worth the same, so a customer is never worse off on one path
+ * than the other and there is no reason to let them stack.
+ *
+ * THE CAP IS DERIVED: a plan is TWO visits, so it is 2 x PROMO_CAP. Applying
+ * the single-job $75 cap to a two-job bundle would halve the effective
+ * discount on the largest tier — backwards for a subscription, where the big
+ * lots are the ones most worth locking in. At current tiers the cap never
+ * binds (largest cut is $115); it exists to bound a future acreage plan.
+ *
+ * NON-STACKING IS MANDATORY. Three things must never apply to a plan price:
+ *   1. PROMO_PERCENT / PROMO_CAP — same 20%, would double-discount.
+ *   2. BLOCK_TIERS — BLOCK_MIN_JOB_LOW is checked against a single job's
+ *      total.low and has no meaning against one flat annual price, so it
+ *      would silently pass the gate.
+ *   3. DEPOSIT — it is credited against a final invoice, and a fully prepaid
+ *      annual subscription has no invoice left to credit it to. Leaving it on
+ *      both paths produces a self-contradictory quote.
+ * `estimate()` is never called for plan pricing; the plan reads Stripe.
+ */
+export const PLAN_DISCOUNT_PERCENT = PROMO_PERCENT;
+export const PLAN_DISCOUNT_CAP = PROMO_CAP * 2;
+
+/** List price of a plan tier before the commitment discount. */
+export function planPairTotal(sizeValue: string): number | null {
+  const fall = LEAF_SIZES.find((s) => s.value === sizeValue);
+  const spring = SPRING_SIZES.find((s) => s.value === sizeValue);
+  if (!fall || !spring) return null;
+  const mid = (r: Range) => (r.low + r.high) / 2;
+  return Math.round(mid(fall.range) + mid(spring.range));
+}
+
+/** What a plan tier should cost per year. Stripe holds the sold price. */
+export function planPriceFor(sizeValue: string): number | null {
+  const pair = planPairTotal(sizeValue);
+  if (pair === null) return null;
+  const cut = Math.min(pair * PLAN_DISCOUNT_PERCENT, PLAN_DISCOUNT_CAP);
+  return Math.round(pair - cut);
+}
+
+/**
+ * GUTTER CLEANING — single-storey only, cleaned from the GROUND.
+ *
+ * PRICED BELOW THE OWNER'S FIRST PROPOSAL, ON PURPOSE. The original idea was
+ * $175-$225 flat, described as "competitive". It is not: homeyou models
+ * $160-$205 for Grand Forks and a local operator publicly quotes $125 for
+ * one-storey. PRICEBOOK.md's standing position is that every tier sits under a
+ * named local comparable, and $175 does not. $135-$165 does.
+ *
+ * NO TWO-STOREY TIER, AT ANY PRICE. The equipment is a ground-based vacuum
+ * with 20 ft of pole — that covers a single-storey gutter (~10-12 ft)
+ * comfortably and a two-storey run (~18-20 ft) only marginally. Selling work
+ * the equipment cannot reliably reach is how someone ends up on a ladder they
+ * bought this business to avoid. Longer pole sets exist; add the tier when the
+ * poles are actually in the truck, not before.
+ *
+ * NO PER-LINEAR-FOOT OPTION. Published beside a flat price it creates adverse
+ * selection: at Grand Forks' typical ~215 linear feet, $1.25-$1.75/ft yields
+ * $269-$376, so its LOW end beats the flat price's HIGH end and every customer
+ * who can multiply picks the cheaper method.
+ */
+const GUTTER_SIZES: SizeOption[] = [
   {
     value: "standard",
     label: "Single-story home",
-    hint: "Standard ranch or rambler",
+    hint: "Standard ranch or rambler, straightforward roofline",
     range: { low: 135, high: 165 },
   },
   {
+    // ASSUMPTION, not a measured figure: derived at ~1.3x the standard tier
+    // for the extra runs, corners and setups a complex roofline adds. Replace
+    // it once a few of these have actually been timed.
     value: "complex",
     label: "Large or complex single-story",
-    hint: "Long runs, wraparound, split level",
+    hint: "Long runs, multiple corners, wraparound or split level",
     range: { low: 175, high: 215 },
   },
 ];
 
-export const ADD_ONS: AddOn[] = [
+/** Cleanouts price like haul work plus sort-and-carry labor. */
+const CLEANOUT_LABOR: Range = { low: 50, high: 100 };
+
+export function sizeOptionsFor(service: ServiceKey): SizeOption[] {
+  const s = canonicalService(service);
+  if (s === "leaf-cleanup") return LEAF_SIZES;
+  if (s === "gutter-cleaning") return GUTTER_SIZES;
+  return LOAD_SIZES;
+}
+
+export type AddOnKey =
+  | "bagging"
+  | "stairs"
+  | "long-carry"
+  | "appliance-freon"
+  | "wet-heavy"
+  | "cleanout"
+  | "downspout";
+
+export const ADD_ONS: {
+  key: AddOnKey;
+  label: string;
+  hint: string;
+  range: Range;
+  appliesTo: ServiceKey[] | "all";
+}[] = [
   {
     key: "bagging",
     label: "Leaves aren't curb-ready",
@@ -198,6 +416,10 @@ export const ADD_ONS: AddOn[] = [
     appliesTo: ["junk-removal", "furniture-appliances"],
   },
   {
+    // The one real gutter add-on. A blocked downspout is a separate job from
+    // clearing the trough — it needs flushing and sometimes snaking, and it is
+    // where the callback comes from if it is skipped and the gutter overflows
+    // anyway. Priced per visit, not per downspout, to keep the quote one number.
     key: "downspout",
     label: "Downspouts are draining slow",
     hint: "We flush them out, not just the gutters",
@@ -212,10 +434,15 @@ export const ADD_ONS: AddOn[] = [
     appliesTo: "all",
   },
   {
+    // Was a hard-coded surcharge on the deleted "garage-basement" service. It
+    // is real labour — sorting a basement is not the same job as lifting a
+    // couch already at the curb — so removing the service without keeping this
+    // would have quietly priced every cleanout $50-$100 under cost. As an
+    // add-on it now applies to any haul that turns out to be a cleanout.
     key: "cleanout",
     label: "Garage or basement cleanout",
-    hint: "We sort and carry it out",
-    range: { low: 50, high: 100 },
+    hint: "We sort and carry it out, not just load at the curb",
+    range: CLEANOUT_LABOR,
     appliesTo: ["junk-removal", "furniture-appliances"],
   },
   {
@@ -227,19 +454,13 @@ export const ADD_ONS: AddOn[] = [
   },
 ];
 
-export const BLOCK_TIERS = [
-  { households: 2, credit: 25 },
-  { households: 3, credit: 40 },
-];
+export function addOnsFor(service: ServiceKey) {
+  return ADD_ONS.filter(
+    (a) => a.appliesTo === "all" || a.appliesTo.includes(service),
+  );
+}
 
-/** Extra complex after the first, cheaper than booking a second full building. */
-export const EXTRA_COMPLEX: Range = { low: 285, high: 640 };
-
-export const PORTFOLIO_TIERS = [
-  { complexes: 2, credit: 150 },
-  { complexes: 3, credit: 275 },
-  { complexes: 4, credit: 400 },
-];
+export type LandlordPack = "turns" | "leaves" | "combo";
 
 /** Dollars off each extra landlord stop this week. First stop stays full rate. */
 export const EXTRA_STOP_CUT: Range = { low: 30, high: 45 };
@@ -248,8 +469,6 @@ export const EXTRA_STOP_CUT: Range = { low: 30, high: 45 };
 export const COMBO_CREDIT = 40;
 
 export const STOP_COUNTS = [1, 2, 3, 4, 6] as const;
-
-export type LandlordPack = "turns" | "leaves" | "combo";
 
 export const LANDLORD_PACKS: {
   value: LandlordPack;
@@ -285,161 +504,12 @@ export const LANDLORD_PACKS: {
   },
 ];
 
-export const LANDLORD_TURN_SIZES: SizeOption[] = [
-  {
-    value: "bags",
-    label: "A few bags",
-    hint: "Curb pile or contractor bags",
-    range: { low: 69, high: 95 },
-  },
-  {
-    value: "three",
-    label: "Typical unit",
-    hint: "Furniture, bags, one unit",
-    range: { low: 169, high: 219 },
-  },
-  {
-    value: "full",
-    label: "Trashed unit",
-    hint: "Bed full — we take the day",
-    range: { low: 175, high: 265 },
-  },
-  {
-    value: "building",
-    label: "Whole building",
-    hint: "Several units, we walk it first",
-    range: { low: 365, high: 890 },
-  },
-];
-
-export const LANDLORD_LEAF_SIZES: SizeOption[] = LEAF_SIZES.filter((s) => s.value !== "acreage");
-
-export const RUSH: Range = { low: 10, high: 20 };
-
-export const REFUSED = [
-  "paint",
-  "chemicals",
-  "oil",
-  "propane",
-  "concrete",
-  "dirt",
-  "roofing",
-  "asbestos",
-];
-
-export type FurnitureRateRow = {
-  item: string;
-  local: string;
-  ours: string;
-  promo: string;
+const TURN_LABELS: Record<string, { label: string; hint: string }> = {
+  bags: { label: "A few bags", hint: "Curb pile or contractor bags" },
+  three: { label: "Typical unit", hint: "Furniture, bags, one unit" },
+  full: { label: "Trashed unit", hint: "Bed full — we take the day" },
+  overflow: { label: "Whole building", hint: "Several units, we walk it first" },
 };
-
-export const FURNITURE_RATE_CARD: FurnitureRateRow[] = [
-  {
-    item: "Chair, nightstand, microwave",
-    local: "$79",
-    ours: "$69",
-    promo: "$55",
-  },
-  {
-    item: "Dresser, table, bed frame",
-    local: "$79",
-    ours: "$75",
-    promo: "$60",
-  },
-  {
-    item: "Couch or mattress",
-    local: "$99",
-    ours: "$89",
-    promo: "$71",
-  },
-  {
-    item: "Washer, dryer, or stove",
-    local: "$109",
-    ours: "$99",
-    promo: "$79",
-  },
-  {
-    item: "Refrigerator (we come inside)",
-    local: "$109 apps / $48 city curb",
-    ours: "$99",
-    promo: "$79",
-  },
-  {
-    item: "Two bulky items, same stop",
-    local: "$138–$168",
-    ours: "$129",
-    promo: "$103",
-  },
-  {
-    item: "Three mixed items",
-    local: "$170–$230",
-    ours: "$169",
-    promo: "$135",
-  },
-];
-
-export function isPromoLive(now = new Date()) {
-  return now.getTime() <= PROMO_DEADLINE.getTime();
-}
-
-export function sizesFor(service: ServiceKey): SizeOption[] {
-  const s = canonicalService(service);
-  if (s === "leaf-cleanup") return LEAF_SIZES;
-  if (s === "gutter-cleaning") return GUTTER_SIZES;
-  if (s === "junk-removal") return JUNK_SIZES;
-  return LEAF_SIZES;
-}
-
-export function addOnsFor(service: ServiceKey): AddOn[] {
-  const s = canonicalService(service);
-  return ADD_ONS.filter(
-    (a) => a.appliesTo === "all" || a.appliesTo.includes(s) || a.appliesTo.includes(service),
-  );
-}
-
-function add(a: Range, b: Range): Range {
-  return { low: a.low + b.low, high: a.high + b.high };
-}
-
-function applyPercent(range: Range): Range {
-  const cut = (n: number) => Math.min(n * PROMO_PERCENT, PROMO_CAP);
-  return {
-    low: Math.max(MIN_AFTER_DISCOUNT, Math.round(range.low - cut(range.low))),
-    high: Math.max(MIN_AFTER_DISCOUNT, Math.round(range.high - cut(range.high))),
-  };
-}
-
-function applyCredit(range: Range, credit: number): Range {
-  return {
-    low: Math.max(MIN_AFTER_DISCOUNT, Math.round(range.low - credit)),
-    high: Math.max(MIN_AFTER_DISCOUNT, Math.round(range.high - credit)),
-  };
-}
-
-function blockCredit(households: number, jobLow: number) {
-  if (!Number.isFinite(households) || households < 2 || jobLow < 95) return 0;
-  const tier = [...BLOCK_TIERS]
-    .sort((a, b) => b.households - a.households)
-    .find((t) => households >= t.households);
-  return tier ? tier.credit : 0;
-}
-
-function portfolioCredit(complexes: number) {
-  if (!Number.isFinite(complexes) || complexes < 2) return 0;
-  const tier = [...PORTFOLIO_TIERS]
-    .sort((a, b) => b.complexes - a.complexes)
-    .find((t) => complexes >= t.complexes);
-  return tier ? tier.credit : 0;
-}
-
-function extraStopRange(base: Range, size: string): Range {
-  if (size === "building") return { ...EXTRA_COMPLEX };
-  return {
-    low: Math.max(MIN_AFTER_DISCOUNT, base.low - EXTRA_STOP_CUT.low),
-    high: Math.max(base.low, base.high - EXTRA_STOP_CUT.high),
-  };
-}
 
 export function clampStops(n: unknown) {
   const v = Math.round(Number(n));
@@ -464,53 +534,146 @@ export function packDefaultSize(pack: LandlordPack) {
 }
 
 export function sizesForPack(pack: LandlordPack): SizeOption[] {
-  return pack === "leaves" ? LANDLORD_LEAF_SIZES : LANDLORD_TURN_SIZES;
+  if (pack === "leaves") {
+    return sizeOptionsFor("leaf-cleanup").filter((s) => s.value !== "acreage");
+  }
+  return sizeOptionsFor("junk-removal")
+    .filter((s) => s.value in TURN_LABELS)
+    .map((s) => ({ ...s, ...TURN_LABELS[s.value] }));
 }
 
-function cheaper(a: Range, b: Range) {
-  return a.high < b.high;
+function extraStopRange(base: Range): Range {
+  return {
+    low: Math.max(FLOOR, base.low - EXTRA_STOP_CUT.low),
+    high: Math.max(base.low, base.high - EXTRA_STOP_CUT.high),
+  };
 }
 
-export function formatRange(range: Range) {
-  return `$${range.low}–$${range.high}`;
+/**
+ * Loads we turn down. Straight from the door hanger — keep this list and the
+ * printed card identical.
+ */
+export const REFUSED = [
+  "paint",
+  "chemicals",
+  "oil",
+  "propane",
+  "concrete",
+  "dirt",
+  "roofing",
+  "asbestos",
+] as const;
+
+/** Free-text scan so the estimator warns before the truck is dispatched. */
+export function refusedItemsIn(text: string): string[] {
+  const t = (text || "").toLowerCase();
+  return REFUSED.filter((word) => t.includes(word));
 }
 
-export function refusedIn(notes: string) {
-  const t = (notes || "").toLowerCase();
-  return REFUSED.filter((w) => t.includes(w));
-}
-
-export type QuoteInput = {
+export type EstimateInput = {
   service: ServiceKey;
   size: string;
-  addOns: string[];
-  urgency?: "before-vacuum" | "this-week" | "flexible";
-  households?: number;
-  complexes?: number;
-  stops?: number;
-  pack?: LandlordPack;
+  addOns: AddOnKey[];
+  earlyBird: boolean;
   notes?: string;
-  earlyBird?: boolean;
+  /**
+   * Houses on the same street booked for the same day, INCLUDING this one.
+   * 1 (or omitted) means no block deal.
+   */
+  households?: number;
+  /** Only "this-week" changes the price. See RUSH_SURCHARGE. */
+  urgency?: "before-vacuum" | "this-week" | "flexible";
+  /** Owner packs — extra stops this week at route rate. First stop stays full. */
+  pack?: LandlordPack;
+  stops?: number;
 };
 
-export type QuoteLine = { label: string; range: Range };
+/** Which credit actually got applied. Never both — see `estimate()`. */
+export type DiscountKind = "none" | "promo" | "block" | "route" | "combo";
 
-export type Quote = {
+export type Estimate = {
+  /** Null when the job genuinely needs eyes on it before any number. */
   range: Range | null;
+  /** Range before any credit, for showing the strike-through. */
   beforeDiscount: Range | null;
   discount: number;
-  appliedDiscount: "none" | "promo" | "block" | "portfolio" | "route" | "combo";
+  /**
+   * Which mechanism produced `discount`. The UI must read this rather than
+   * assuming the promo — quoting "book by Sept 20 to lock this rate" on a
+   * quote that actually won on the block credit is a false statement.
+   */
+  appliedDiscount: DiscountKind;
   deposit: number;
-  lines: QuoteLine[];
+  lines: { label: string; range: Range }[];
   notes: string[];
   refused: string[];
   needsWalkthrough: boolean;
 };
 
-export function quote(input: QuoteInput): Quote {
-  const earlyBird = input.earlyBird ?? isPromoLive();
-  const service = canonicalService(input.service);
-  if (service === "other") {
+function add(a: Range, b: Range): Range {
+  return { low: a.low + b.low, high: a.high + b.high };
+}
+
+/** 20% off each end of the range, capped at $75, floored at $55. */
+function applyPromo(range: Range): Range {
+  const cut = (n: number) => Math.min(n * PROMO_PERCENT, PROMO_CAP);
+  return {
+    low: Math.max(FLOOR, Math.round(range.low - cut(range.low))),
+    high: Math.max(FLOOR, Math.round(range.high - cut(range.high))),
+  };
+}
+
+/** A flat dollar credit off each end, floored the same way the promo is. */
+function applyFlat(range: Range, credit: number): Range {
+  return {
+    low: Math.max(FLOOR, Math.round(range.low - credit)),
+    high: Math.max(FLOOR, Math.round(range.high - credit)),
+  };
+}
+
+/** Per-house block credit, or 0 when the job does not qualify. */
+export function blockCreditFor(households: number, jobLow: number): number {
+  if (!Number.isFinite(households) || households < 2) return 0;
+  if (jobLow < BLOCK_MIN_JOB_LOW) return 0;
+  const tier = [...BLOCK_TIERS]
+    .sort((a, b) => b.households - a.households)
+    .find((t) => households >= t.households);
+  return tier ? tier.credit : 0;
+}
+
+/**
+ * Which of two candidate quotes is better for the customer.
+ *
+ * Compared on the HIGH end, deliberately, and not on total dollars saved.
+ * Total-saved picks the flat block credit on a standard lot ($80 saved vs
+ * $78) even though it produces a HIGHER top-of-range number ($205 vs $196) —
+ * i.e. recruiting a neighbour would have made someone's quote worse at the
+ * number they actually plan around. Comparing the high end removes that.
+ *
+ * It is also safe in both directions: a flat credit that beats the percentage
+ * at the top of the range necessarily beats it at the bottom too, because the
+ * percentage cut shrinks with the number while the flat credit does not. So a
+ * winning block credit dominates on BOTH ends, and a losing one leaves the
+ * customer with exactly the promo they would have had anyway. Recruiting a
+ * neighbour can never make a quote worse than not recruiting.
+ */
+function isBetter(candidate: Range, incumbent: Range): boolean {
+  return candidate.high < incumbent.high;
+}
+
+export function estimate(input: EstimateInput): Estimate {
+  const pack = input.pack;
+  const stops = clampStops(input.stops ?? 1);
+  const sizes = pack
+    ? sizesForPack(pack === "leaves" ? "leaves" : "turns")
+    : sizeOptionsFor(input.service);
+  const size = sizes.find((s) => s.value === input.size) ?? sizes[0];
+  const lines: { label: string; range: Range }[] = [];
+  const notes: string[] = [];
+
+  let total: Range = { low: 0, high: 0 };
+
+  if (input.service === "other") {
     return {
       range: null,
       beforeDiscount: null,
@@ -519,179 +682,156 @@ export function quote(input: QuoteInput): Quote {
       deposit: DEPOSIT,
       lines: [],
       notes: [
-        `Tell us what it is and we'll price it the same day — call or text ${PHONE}.`,
+        "Tell us what it is and we'll price it the same day — call or text 701-213-3969.",
       ],
-      refused: refusedIn(input.notes ?? ""),
+      refused: refusedItemsIn(input.notes ?? ""),
       needsWalkthrough: true,
     };
   }
 
-  const pack = input.pack;
-  const stops = clampStops(input.stops ?? (pack ? 1 : input.complexes ?? 1));
-  const sizes = pack ? sizesForPack(pack === "combo" ? "turns" : pack) : sizesFor(service);
-  const size = sizes.find((s) => s.value === input.size) ?? sizes[0];
-  const noun = pack === "leaves" ? "yard" : pack === "combo" ? "address" : "unit";
-  const yard = LANDLORD_LEAF_SIZES.find((s) => s.value === "medium") ?? LEAF_SIZES[1];
-  const lines: QuoteLine[] = [
-    {
-      label: pack ? `${size.label} — first ${noun}` : size.label,
-      range: size.range,
-    },
-  ];
-  let total: Range = { ...size.range };
+  lines.push({ label: size.label, range: size.range });
+  total = add(total, size.range);
 
-  if (pack === "combo") {
-    lines.push({ label: `${yard.label} — first yard`, range: yard.range });
-    total = add(total, yard.range);
-    for (let i = 2; i <= stops; i += 1) {
-      const extraUnit = extraStopRange(size.range, size.value);
-      const extraYard = extraStopRange(yard.range, yard.value);
-      lines.push({ label: `${noun} ${i} — route rate`, range: extraUnit });
-      lines.push({ label: `yard ${i} — route rate`, range: extraYard });
-      total = add(total, extraUnit);
-      total = add(total, extraYard);
-    }
-  } else if (pack && stops > 1) {
-    const extra = extraStopRange(size.range, size.value);
-    for (let i = 2; i <= stops; i += 1) {
-      lines.push({
-        label: `${noun} ${i} — route rate`,
-        range: extra,
-      });
-      total = add(total, extra);
-    }
-  } else {
-    const complexes = Math.min(8, Math.max(1, Math.round(input.complexes ?? 1)));
-    if (size.value === "building" && complexes > 1) {
-      for (let i = 2; i <= complexes; i += 1) {
-        lines.push({
-          label: `Complex ${i} — investor rate`,
-          range: EXTRA_COMPLEX,
-        });
-        total = add(total, EXTRA_COMPLEX);
+  const noun = pack === "leaves" ? "yard" : pack === "combo" ? "address" : "unit";
+  const yard = sizeOptionsFor("leaf-cleanup").find((s) => s.value === "medium") ?? sizeOptionsFor("leaf-cleanup")[1];
+  if (pack) {
+    lines[0].label = `${size.label} — first ${noun}`;
+    if (pack === "combo" && yard) {
+      lines.push({ label: `${yard.label} — first yard`, range: yard.range });
+      total = add(total, yard.range);
+      const extraUnit = extraStopRange(size.range);
+      const extraYard = extraStopRange(yard.range);
+      for (let i = 2; i <= stops; i += 1) {
+        lines.push({ label: `${noun} ${i} — route rate`, range: extraUnit });
+        lines.push({ label: `yard ${i} — route rate`, range: extraYard });
+        total = add(total, extraUnit);
+        total = add(total, extraYard);
+      }
+    } else if (stops > 1) {
+      const extra = extraStopRange(size.range);
+      for (let i = 2; i <= stops; i += 1) {
+        lines.push({ label: `${noun} ${i} — route rate`, range: extra });
+        total = add(total, extra);
       }
     }
   }
 
-  const available = addOnsFor(pack === "leaves" ? "leaf-cleanup" : service);
+  const available = addOnsFor(input.service);
   for (const key of input.addOns) {
     const addOn = available.find((a) => a.key === key);
-    if (addOn) {
-      lines.push({ label: addOn.label, range: addOn.range });
-      total = add(total, addOn.range);
-    }
+    if (!addOn) continue;
+    lines.push({ label: addOn.label, range: addOn.range });
+    total = add(total, addOn.range);
   }
 
+  // Rush last, so it reads as a surcharge on the assembled job rather than
+  // something bundled into the base price.
   if (input.urgency === "this-week") {
-    lines.push({ label: "Same-week rush", range: RUSH });
-    total = add(total, RUSH);
+    lines.push({ label: "Same-week rush", range: RUSH_SURCHARGE });
+    total = add(total, RUSH_SURCHARGE);
   }
 
-  const before = pack
+  const beforeDiscount = pack
     ? {
-        low: (size.range.low + (pack === "combo" ? yard.range.low : 0)) * stops,
-        high: (size.range.high + (pack === "combo" ? yard.range.high : 0)) * stops,
+        low: (size.range.low + (pack === "combo" && yard ? yard.range.low : 0)) * stops,
+        high: (size.range.high + (pack === "combo" && yard ? yard.range.high : 0)) * stops,
       }
-    : { ...total };
+    : total;
+
   if (pack === "combo") {
-    total = applyCredit(total, COMBO_CREDIT);
+    total = applyFlat(total, COMBO_CREDIT);
     lines.push({
       label: "Yard + unit bundle",
       range: { low: -COMBO_CREDIT, high: -COMBO_CREDIT },
     });
   }
 
-  const complexes = Math.min(8, Math.max(1, Math.round(input.complexes ?? stops)));
-  const promoRange = earlyBird && !pack ? applyPercent(total) : total;
-  const credit = pack ? 0 : blockCredit(input.households ?? 1, total.low);
-  const blockRange = credit > 0 ? applyCredit(total, credit) : total;
-  const portCredit = !pack && size.value === "building" ? portfolioCredit(complexes) : 0;
-  const portfolioRange = portCredit > 0 ? applyCredit(total, portCredit) : total;
+  // NON-STACKING, BY CONSTRUCTION. The customer gets whichever single credit
+  // saves them more — never both. Stacking them is what drove a small-lot
+  // block booking to $51 against a $55 floor, and what let a standard lot
+  // undercut the small-lot list price. Compare the two candidates on total
+  // dollars saved across the range, then commit to one mechanism for the
+  // whole quote so the number and the explanation always agree.
+  //
+  // Owner packs skip the Sept 20 percent on 2+ stops — route rate is the deal.
+  const routeDeal = Boolean(pack && (stops > 1 || pack === "combo"));
+  const promoApplied = !routeDeal && input.earlyBird ? applyPromo(total) : total;
+  const blockCredit = routeDeal ? 0 : blockCreditFor(input.households ?? 1, total.low);
+  const blockApplied =
+    blockCredit > 0 ? applyFlat(total, blockCredit) : total;
 
-  let applied: Quote["appliedDiscount"] = pack === "combo" ? "combo" : pack && stops > 1 ? "route" : "none";
-  let final = total;
-  if (!pack) {
-    applied = "none";
-    if (earlyBird && cheaper(promoRange, final)) {
-      applied = "promo";
-      final = promoRange;
+  let appliedDiscount: DiscountKind = pack === "combo" ? "combo" : pack && stops > 1 ? "route" : "none";
+  let discounted = total;
+  if (!routeDeal) {
+    appliedDiscount = "none";
+    if (input.earlyBird && isBetter(promoApplied, discounted)) {
+      appliedDiscount = "promo";
+      discounted = promoApplied;
     }
-    if (credit > 0 && cheaper(blockRange, final)) {
-      applied = "block";
-      final = blockRange;
-    }
-    if (portCredit > 0 && cheaper(portfolioRange, final)) {
-      applied = "portfolio";
-      final = portfolioRange;
+    if (blockCredit > 0 && isBetter(blockApplied, discounted)) {
+      appliedDiscount = "block";
+      discounted = blockApplied;
     }
   }
+  const blockLost = blockCredit > 0 && appliedDiscount !== "block";
 
-  const saved = before.high - final.high;
-  const notes: string[] = [];
-  const walk = size.value === "acreage" || size.value === "building" || stops >= 6;
+  // Dollars saved at the top of the range — the number worth putting in a
+  // text message. The bottom of the range can save proportionally less (or
+  // nothing, once the floor clamps it) — that's intentional, not a bug.
+  const discount = beforeDiscount.high - discounted.high;
+
+  const needsWalkthrough =
+    size.value === "acreage" || Boolean(pack && (size.value === "overflow" || stops >= 6));
   if (pack) {
     notes.push(
       stops === 1
         ? "One stop. Add a second address this week and that one runs at route rate — first stop stays full price so the truck is paid."
-        : `First ${noun} is full rate. The other ${stops - 1} this week run at route rate ($${EXTRA_STOP_CUT.low}–$${EXTRA_STOP_CUT.high} off each). Same crew, stacked days, one PICK code.`,
+        : `First ${noun} is full rate. The other ${stops - 1} this week run at route rate ($${EXTRA_STOP_CUT.low}–$${EXTRA_STOP_CUT.high} off each). Same crew, stacked days, one code.`,
     );
     if (pack === "combo") {
       notes.push(`Yard + unit bundle: $${COMBO_CREDIT} off the stack. Two services, one set of miles.`);
     }
-    if (stops >= 6) {
-      notes.push("Six or more stops: we walk the first address, then stack the week.");
-    }
-  } else if (walk) {
+  } else if (needsWalkthrough) {
     notes.push(
-      size.value === "building"
-        ? "We walk the first building. Extra complexes stack on the next open days that week — one code, one deposit."
-        : "Acreage gets a free walk-through first — the range above is a starting point, not the quote.",
+      "Acreage gets a free walk-through first — the range above is a starting point, not the quote.",
     );
   }
-  if (applied === "promo" && saved > 0) {
+  if (appliedDiscount === "promo" && discount > 0) {
     notes.push(
       `Book by ${PROMO_DEADLINE_LABEL} to lock this rate — ${Math.round(PROMO_PERCENT * 100)}% off (up to $${PROMO_CAP}) is already taken off this range.`,
     );
   }
-  if (applied === "block" && saved > 0) {
+  if (appliedDiscount === "block" && discount > 0) {
     notes.push(
-      `Block deal applied — $${credit} off because we're doing ${input.households} houses on your street the same day. It beat the ${PROMO_DEADLINE_LABEL} rate, so you're getting the bigger of the two, not both.`,
+      `Block deal applied — $${blockCredit} off because we're doing ${input.households} houses on your street the same day. It beat the ${PROMO_DEADLINE_LABEL} rate, so you're getting the bigger of the two, not both.`,
     );
   }
-  if (applied === "portfolio" && saved > 0) {
+  if (appliedDiscount === "promo" && blockLost) {
     notes.push(
-      `Investor special — ${complexes} complexes the same week, $${portCredit} off. Beats the ${PROMO_DEADLINE_LABEL} cap. One truck, stacked days, one PICK code.`,
-    );
-  }
-  if (applied === "promo" && (credit > 0 || portCredit > 0)) {
-    notes.push(
-      `Your ${PROMO_DEADLINE_LABEL} rate is worth more on a job this size, so we applied that instead. You get the better one, never stacked.`,
+      `Your ${PROMO_DEADLINE_LABEL} rate is worth more than the $${blockCredit} block credit on a job this size, so we applied that instead. You get the better one, never both.`,
     );
   }
   const deposit = pack ? landlordDeposit(stops, pack) : DEPOSIT;
   notes.push(
-    `$${deposit} deposit holds the first day and comes off the final invoice.${pack && stops > 1 ? " Bigger stack, bigger hold — so a one-off couch doesn't bump your week." : ""}`,
+    `$${deposit} deposit holds your date and comes off the final invoice.${pack && stops > 1 ? " Bigger stack, bigger hold — so a one-off couch doesn't bump your week." : ""}`,
   );
   notes.push(
     "If the pile turns out bigger than described, we stop and re-quote before we load anything.",
   );
 
   return {
-    range: final,
-    beforeDiscount: before,
-    discount: Math.max(0, saved),
-    appliedDiscount: applied,
+    range: discounted,
+    beforeDiscount,
+    discount,
+    appliedDiscount,
     deposit,
     lines,
     notes,
-    refused: refusedIn(input.notes ?? ""),
-    needsWalkthrough: walk,
+    refused: refusedItemsIn(input.notes ?? ""),
+    needsWalkthrough,
   };
 }
 
-export function sizeLabelFor(service: ServiceKey) {
-  const s = canonicalService(service);
-  if (s === "junk-removal") return "How much is there?";
-  if (s === "gutter-cleaning") return "What kind of house?";
-  return "Yard size";
+export function formatRange(r: Range): string {
+  return `$${r.low}–$${r.high}`;
 }

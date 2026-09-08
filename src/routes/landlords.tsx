@@ -2,20 +2,19 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { HaulVideo } from "@/components/haul-video";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
+import { SiteFooter, SiteHeader } from "@/components/site-header";
 import {
   COMBO_CREDIT,
   EXTRA_STOP_CUT,
   LANDLORD_PACKS,
   STOP_COUNTS,
   clampStops,
+  estimate,
   formatRange,
-  isPromoLive,
+  isPromoActive,
   landlordDeposit,
   packDefaultSize,
   packService,
-  quote,
   sizesForPack,
   type LandlordPack,
 } from "@/lib/pricebook";
@@ -27,10 +26,8 @@ export const Route = createFileRoute("/landlords")({
       {
         name: "description",
         content:
-          "Grand Forks landlords: bundle tenant cleanouts or leaf routes. First stop is full rate. Extra stops this week run cheaper. One PICK code, one deposit.",
+          "Grand Forks landlords: bundle tenant cleanouts or leaf routes. First stop is full rate. Extra stops this week run cheaper. One code, one deposit.",
       },
-      { property: "og:title", content: "Landlord bundles — tenant turns & leaf routes | Pick It Up E" },
-      { property: "og:image", content: "/og.jpg" },
     ],
   }),
   component: LandlordsPage,
@@ -44,13 +41,13 @@ function LandlordsPage() {
   const currentSize = sized.find((s) => s.value === size)?.value ?? sized[0]?.value ?? size;
   const q = useMemo(
     () =>
-      quote({
+      estimate({
         service: packService(pack),
         size: currentSize,
         addOns: [],
         pack,
         stops,
-        earlyBird: isPromoLive(),
+        earlyBird: isPromoActive(),
       }),
     [pack, currentSize, stops],
   );
@@ -81,8 +78,8 @@ function LandlordsPage() {
               </h1>
               <p className="mt-5 max-w-xl text-sm text-muted">
                 First stop pays the truck. Extra units or yards this week run at
-                route rate — not another full trip fee. One PICK code, one
-                invoice, deposit holds the stack.
+                route rate — not another full trip fee. One code, one invoice,
+                deposit holds the stack.
               </p>
               <Link
                 to="/call"
@@ -170,9 +167,7 @@ function LandlordsPage() {
                 : `First stop full price. ${stops - 1} extra at route rate ($${EXTRA_STOP_CUT.low}–$${EXTRA_STOP_CUT.high} off each).`}
               {pack === "combo" ? ` Bundle cut $${COMBO_CREDIT}.` : ""} ${deposit}{" "}
               deposit holds the first day.
-              {q.discount > 0
-                ? ` Versus booking each stop solo, about $${q.discount} less on the high end.`
-                : ""}
+              {q.discount > 0 ? ` Versus booking each stop solo, about $${q.discount} less on the high end.` : ""}
             </p>
             <ul className="mt-4 space-y-1 text-sm text-muted">
               {q.lines.slice(0, 6).map((line) => (
@@ -199,21 +194,28 @@ function LandlordsPage() {
           </div>
 
           <ol className="mt-12 grid gap-6 sm:grid-cols-3">
-            <Step
-              n="01"
-              title="First stop is full rate"
-              copy="That covers the truck, the dump run, and the crew. We do not discount the job that pays the day."
-            />
-            <Step
-              n="02"
-              title="Extras this week are cheaper"
-              copy={`Same town, same dump ticket. Each extra unit or yard is $${EXTRA_STOP_CUT.low}–$${EXTRA_STOP_CUT.high} off. Stacked days, no extra trip fee between your addresses.`}
-            />
-            <Step
-              n="03"
-              title="Deposit holds the stack"
-              copy="One-off couches stay at $50. Two stops $75. Three or more $100. Combo week starts at $75 and steps up. Comes off the invoice."
-            />
+            <li className="list-none">
+              <p className="text-xs tracking-[0.2em] text-gold">01</p>
+              <h2 className="mt-2 font-display text-2xl">First stop is full rate</h2>
+              <p className="mt-2 text-sm text-muted">
+                That covers the truck, the dump run, and the crew. We do not discount the job that pays the day.
+              </p>
+            </li>
+            <li className="list-none">
+              <p className="text-xs tracking-[0.2em] text-gold">02</p>
+              <h2 className="mt-2 font-display text-2xl">Extras this week are cheaper</h2>
+              <p className="mt-2 text-sm text-muted">
+                Same town, same dump ticket. Each extra unit or yard is ${EXTRA_STOP_CUT.low}–$
+                {EXTRA_STOP_CUT.high} off. Stacked days, no extra trip fee between your addresses.
+              </p>
+            </li>
+            <li className="list-none">
+              <p className="text-xs tracking-[0.2em] text-gold">03</p>
+              <h2 className="mt-2 font-display text-2xl">Deposit holds the stack</h2>
+              <p className="mt-2 text-sm text-muted">
+                One-off couches stay at $50. Two stops $75. Three or more $100. Combo week starts at $75 and steps up. Comes off the invoice.
+              </p>
+            </li>
           </ol>
 
           <div className="mt-12 grid gap-6 sm:grid-cols-2">
@@ -238,8 +240,7 @@ function LandlordsPage() {
           </div>
 
           <p className="mt-12 max-w-2xl text-sm text-muted">
-            Tenants still book a couch on the regular shop line. Owners book the
-            stack here.{" "}
+            Tenants still book a couch on the regular shop line. Owners book the stack here.{" "}
             <Link
               to="/call"
               search={{ src: "landlord", pack, stops, service: packService(pack), size: currentSize }}
@@ -253,15 +254,5 @@ function LandlordsPage() {
       </main>
       <SiteFooter />
     </div>
-  );
-}
-
-function Step({ n, title, copy }: { n: string; title: string; copy: string }) {
-  return (
-    <li className="list-none">
-      <p className="text-xs tracking-[0.2em] text-gold">{n}</p>
-      <h2 className="mt-2 font-display text-2xl">{title}</h2>
-      <p className="mt-2 text-sm text-muted">{copy}</p>
-    </li>
   );
 }

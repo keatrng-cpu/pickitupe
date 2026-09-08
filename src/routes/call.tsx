@@ -2,24 +2,21 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Mic, Phone, PhoneOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DateField } from "@/components/date-field";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
+import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { speakShop, talkShop, type ChatTurn, type ShopLead } from "@/lib/dispatcher";
-import { jobSourceFrom, readChannel } from "@/lib/channel";
-import { reserveJob } from "@/lib/jobs";
+import { submitBooking } from "@/lib/bookings";
 import { formatPhone, isUsPhone } from "@/lib/phone";
+import { PHONE } from "@/lib/messages";
 import {
   canonicalService,
   clampStops,
+  estimate,
   formatRange,
-  isPromoLive,
+  isPromoActive,
   LANDLORD_PACKS,
   packDefaultSize,
   packService,
-  PHONE,
-  quote,
-  SERVICES,
-  sizesFor,
+  sizeOptionsFor,
   sizesForPack,
   STOP_COUNTS,
   type LandlordPack,
@@ -27,7 +24,6 @@ import {
 } from "@/lib/pricebook";
 import { saveLastBooking } from "@/lib/returning";
 import { formatDayLong } from "@/lib/schedule";
-import { fire } from "@/lib/track";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 
 type Search = {
@@ -74,8 +70,19 @@ function landlordGreeting(pack?: LandlordPack, stops?: number) {
   return "Landlord desk. Tenant turns, a leaf route, or both this week? I'll stack the days on one code.";
 }
 
+const SERVICES: { value: ServiceKey; short: string }[] = [
+  { value: "leaf-cleanup", short: "Leaves" },
+  { value: "junk-removal", short: "Junk" },
+  { value: "gutter-cleaning", short: "Gutters" },
+];
+
 function isService(v: string | undefined): v is ServiceKey {
-  return SERVICES.some((s) => s.value === v) || v === "furniture-appliances";
+  return (
+    v === "leaf-cleanup" ||
+    v === "junk-removal" ||
+    v === "furniture-appliances" ||
+    v === "gutter-cleaning"
+  );
 }
 
 function CallPage() {
@@ -89,12 +96,14 @@ function CallPage() {
       : "junk-removal";
   const initialSizes = landlord
     ? sizesForPack(initialPack ?? "turns")
-    : sizesFor(initialService);
+    : sizeOptionsFor(initialService);
   const initialSize =
     initialSizes.find((s) => s.value === params.size)?.value ??
     (initialPack ? packDefaultSize(initialPack) : initialSizes[0]?.value ?? "sofa");
 
-  const [pack, setPack] = useState<LandlordPack | undefined>(initialPack ?? (landlord ? "turns" : undefined));
+  const [pack, setPack] = useState<LandlordPack | undefined>(
+    initialPack ?? (landlord ? "turns" : undefined),
+  );
   const [stops, setStops] = useState(params.stops ?? (landlord ? 2 : 1));
   const [service, setService] = useState<ServiceKey>(initialService);
   const [size, setSize] = useState(initialSize);
@@ -104,7 +113,10 @@ function CallPage() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [turns, setTurns] = useState<ChatTurn[]>([
-    { role: "assistant", content: landlord ? landlordGreeting(initialPack, params.stops) : GREETING },
+    {
+      role: "assistant",
+      content: landlord ? landlordGreeting(initialPack, params.stops) : GREETING,
+    },
   ]);
   const [draft, setDraft] = useState("");
   const [hearing, setHearing] = useState(false);
@@ -121,7 +133,6 @@ function CallPage() {
   const { user } = useCurrentUserState();
 
   useEffect(() => {
-    fire("call_open", readChannel(), "/call");
     return () => {
       recRef.current?.stop();
       audioRef.current?.pause();
@@ -132,17 +143,17 @@ function CallPage() {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: "smooth" });
   }, [turns, thinking]);
 
-  const sized = landlord ? sizesForPack(pack ?? "turns") : sizesFor(service);
+  const sized = landlord ? sizesForPack(pack ?? "turns") : sizeOptionsFor(service);
   const currentSize = sized.find((s) => s.value === size)?.value ?? sized[0]?.value ?? size;
   const priced = useMemo(
     () =>
-      quote({
+      estimate({
         service: pack ? packService(pack) : service,
         size: currentSize,
         addOns: [],
         pack,
         stops: landlord ? stops : 1,
-        earlyBird: isPromoLive(),
+        earlyBird: isPromoActive(),
       }),
     [service, currentSize, pack, stops, landlord],
   );
@@ -154,10 +165,12 @@ function CallPage() {
       name: name.trim() || undefined,
       phone: phone.trim() || undefined,
       address: address.trim() || undefined,
+      email: user?.primaryEmail || undefined,
       day: asap ? undefined : day,
       asap,
       pack,
       stops: landlord ? stops : undefined,
+      desk: landlord ? "landlord" : undefined,
     };
   }
 
@@ -212,14 +225,12 @@ function CallPage() {
   function finish(lockedDay: string, code: string, snap?: ShopLead) {
     setLocked({ day: lockedDay, code });
     setFillKey((n) => n + 1);
-    fire("call_book", readChannel(), "/call");
     saveLastBooking({
       name: (snap?.name ?? name).trim(),
       phone: (snap?.phone ?? phone).trim(),
       address: (snap?.address ?? address).trim(),
       service: snap?.service ?? service,
       size: snap?.size ?? currentSize,
-      code,
       at: new Date().toISOString(),
     });
   }
@@ -233,11 +244,7 @@ function CallPage() {
     setLive(true);
     setThinking(true);
     const reply = await talkShop({
-      data: {
-        turns: next,
-        source: jobSourceFrom(readChannel()),
-        lead: leadSnap(),
-      },
+      data: { turns: next, lead: leadSnap() },
     }).catch(() => ({ text: "Line crackled. Say that again?", lead: leadSnap() }));
     setThinking(false);
     const said = reply.text || "Say that again?";
@@ -287,27 +294,35 @@ function CallPage() {
       return;
     }
     setBusy(true);
-    const held = await reserveJob({
+    const held = await submitBooking({
       data: {
-        service,
-        size: currentSize,
-        day: day || "1970-01-01",
-        asap: asap || !day,
-        source: jobSourceFrom(readChannel()),
-        phone,
         name: name.trim(),
+        phone,
         address: address.trim() + (landlord && stops > 1 ? ` · ${stops} ${pack ?? "stops"} this week` : ""),
+        email: user?.primaryEmail || "",
+        service: pack ? packService(pack) : service,
+        jobSize: currentSize,
+        preferredDate: day,
+        asap: asap || !day,
+        notes: landlord ? `Landlord desk · ${stops} ${pack ?? "stops"}` : "Shop line",
+        estimateLow: priced.range?.low,
+        estimateHigh: priced.range?.high,
       },
-    }).catch(() => ({ ok: false as const, error: "Couldn't hold the day. Try again." }));
+    }).catch((err: unknown) => ({
+      ok: false as const,
+      error: err instanceof Error ? err.message : "Couldn't hold the day. Try again.",
+    }));
     setBusy(false);
-    if (!held.ok) {
-      setError(held.error);
+    if (!held || !("ok" in held) || !held.ok) {
+      setError("error" in held ? String(held.error) : "Couldn't hold the day.");
       setFillKey((n) => n + 1);
       return;
     }
-    finish(held.day, held.code ?? "");
+    const lockedDay = held.preferredDate || day;
+    const code = `#${held.id}`;
+    finish(lockedDay || "", code);
     const range = priced.range ? formatRange(priced.range) : "we'll confirm on site";
-    const said = `Locked. ${formatDayLong(held.day)}. ${range}. Code ${held.code}. We'll text ${formatPhone(phone)}.`;
+    const said = `Locked. ${lockedDay ? formatDayLong(lockedDay) : "First open day"}. ${range}. Job ${code}. We'll text ${formatPhone(phone)}.`;
     setTurns((cur) => [...cur, { role: "assistant", content: said }]);
     setLive(true);
     await say(said);
@@ -321,8 +336,9 @@ function CallPage() {
           <p className="kicker">On the truck</p>
           <h1 className="mt-3 font-display text-5xl leading-none">You're booked.</h1>
           <p className="mt-4 text-base text-muted">
-            {formatDayLong(locked.day)}. {priced.range ? `${formatRange(priced.range)} on file.` : null}{" "}
-            Code {locked.code}. We'll text {formatPhone(phone) || "the number you gave"}.
+            {locked.day ? `${formatDayLong(locked.day)}. ` : null}
+            {priced.range ? `${formatRange(priced.range)} on file. ` : null}
+            Job {locked.code}. We'll text {formatPhone(phone) || "the number you gave"}.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
@@ -339,7 +355,10 @@ function CallPage() {
                 Save on an account
               </Link>
             ) : null}
-            <a href={`tel:${PHONE.replaceAll("-", "")}`} className="btn-press inline-flex h-12 items-center rounded-full border border-border px-6 text-sm text-fg">
+            <a
+              href={`tel:${PHONE.replaceAll("-", "")}`}
+              className="btn-press inline-flex h-12 items-center rounded-full border border-border px-6 text-sm text-fg"
+            >
               {PHONE}
             </a>
           </div>
@@ -406,7 +425,11 @@ function CallPage() {
                 </fieldset>
                 <fieldset className="mt-4">
                   <legend className="text-xs font-medium text-muted">
-                    {pack === "leaves" ? "Yards this week" : pack === "combo" ? "Addresses this week" : "Units this week"}
+                    {pack === "leaves"
+                      ? "Yards this week"
+                      : pack === "combo"
+                        ? "Addresses this week"
+                        : "Units this week"}
                   </legend>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {STOP_COUNTS.map((c) => (
@@ -431,14 +454,14 @@ function CallPage() {
             <fieldset className="mt-6">
               <legend className="text-xs font-medium text-muted">What we're hauling</legend>
               <div className="mt-2 flex flex-wrap gap-2">
-                {SERVICES.filter((s) => s.value !== "other").map((s) => (
+                {SERVICES.map((s) => (
                   <button
                     key={s.value}
                     type="button"
                     aria-pressed={service === s.value}
                     onClick={() => {
                       setService(s.value);
-                      const next = sizesFor(s.value);
+                      const next = sizeOptionsFor(s.value);
                       if (!next.some((x) => x.value === size)) setSize(next[0]?.value ?? "");
                     }}
                     className={`btn-press inline-flex min-h-11 items-center rounded-full px-4 text-sm ${
@@ -447,7 +470,7 @@ function CallPage() {
                         : "border border-border text-fg hover:bg-fg/8"
                     }`}
                   >
-                    {s.label.replace("Fall leaf & yard cleanup", "Leaves").replace("Junk & furniture", "Junk").replace("Gutter cleaning", "Gutters")}
+                    {s.short}
                   </button>
                 ))}
               </div>
@@ -526,13 +549,27 @@ function CallPage() {
               disabled={busy}
               className="btn-press mt-5 h-14 w-full rounded-full bg-fg text-base font-medium text-ink hover:bg-gold disabled:opacity-60"
             >
-              {busy ? "Holding the day…" : asap ? "Lock first open day" : day ? `Lock ${formatDayLong(day)}` : "Pick a day first"}
+              {busy
+                ? "Holding the day…"
+                : asap
+                  ? "Lock first open day"
+                  : day
+                    ? `Lock ${formatDayLong(day)}`
+                    : "Pick a day first"}
             </button>
           </section>
 
           <section className="flex min-h-[28rem] flex-col">
             <p className="kicker">
-              {speaking ? "Shop talking" : hearing ? "Listening" : thinking ? "Checking the board" : live ? "Connected" : "Talk it through"}
+              {speaking
+                ? "Shop talking"
+                : hearing
+                  ? "Listening"
+                  : thinking
+                    ? "Checking the board"
+                    : live
+                      ? "Connected"
+                      : "Talk it through"}
             </p>
             <ol
               ref={logRef}
@@ -560,11 +597,7 @@ function CallPage() {
               <input
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                placeholder={
-                  landlord
-                    ? "3 units on University, ASAP…"
-                    : "Couch, 123 Main, ASAP…"
-                }
+                placeholder={landlord ? "3 units on University, ASAP…" : "Couch, 123 Main, ASAP…"}
                 className="field h-12"
                 disabled={thinking || speaking}
                 aria-label="Message the shop"
