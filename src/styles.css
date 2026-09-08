@@ -297,22 +297,12 @@
   }
 
   .hero-fill-complex {
-    top: auto;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: auto;
-    min-width: 100%;
-    min-height: 120%;
-    transform: none;
-    object-fit: cover;
-    object-position: center center;
+    object-position: center 58%;
   }
 
   .landlord-hero .hero-fill,
   .landlord-strip .hero-fill {
-    opacity: 0.7;
+    opacity: 0.72;
   }
 
   .landlord-hero {
@@ -418,27 +408,8 @@
       aspect-ratio: auto;
     }
 
-    .landlord-hero .hero-fill-complex,
-    .landlord-strip .hero-fill-complex {
-      top: 50%;
-      right: 5%;
-      bottom: auto;
-      left: auto;
-      width: auto;
-      height: 122%;
-      min-width: 0;
-      min-height: 0;
-      transform: translateY(-50%);
-      object-fit: cover;
-    }
-
     .landlord-strip {
       min-height: 26rem;
-    }
-
-    .landlord-strip .hero-fill-complex {
-      right: 3%;
-      height: 148%;
     }
   }
 

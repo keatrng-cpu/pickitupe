@@ -24,8 +24,8 @@ function LandlordsPage() {
       <main id="main">
         <section className="hero-frame landlord-hero">
           <HaulVideo
-            src="/haul-complex.mp4"
-            poster="/haul-complex-poster.jpg"
+            src="/haul-complex.mp4?v=5"
+            poster="/haul-complex-poster.jpg?v=5"
             fillClass="hero-fill-complex"
           />
           <div className="hero-copy">

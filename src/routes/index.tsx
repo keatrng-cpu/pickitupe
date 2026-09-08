@@ -166,8 +166,8 @@ function Home() {
             className="landlord-strip card-green block overflow-hidden rounded-2xl"
           >
             <HaulVideo
-              src="/haul-complex.mp4"
-              poster="/haul-complex-poster.jpg"
+              src="/haul-complex.mp4?v=5"
+              poster="/haul-complex-poster.jpg?v=5"
               fillClass="hero-fill-complex"
             />
             <div className="relative z-10 flex items-end justify-between gap-4 p-5 sm:p-8">
