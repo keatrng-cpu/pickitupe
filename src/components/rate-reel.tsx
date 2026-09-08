@@ -3,11 +3,9 @@ import { Link } from "@tanstack/react-router";
 import { isPromoActive, PROMO_DEADLINE_LABEL } from "@/lib/pricebook";
 
 const ROWS = [
-  { item: "Chair, nightstand, microwave", local: "$79", ours: "$69", promo: "$55" },
-  { item: "Dresser, table, bed frame", local: "$79", ours: "$75", promo: "$60" },
-  { item: "Couch or mattress", local: "$99", ours: "$89", promo: "$71" },
-  { item: "Washer, dryer, or stove", local: "$109", ours: "$99", promo: "$79" },
-  { item: "Refrigerator", local: "$109 apps / $48 city curb", ours: "$99", promo: "$79" },
+  { item: "One piece — couch, dresser, mattress", local: "$79–$99", ours: "$59–$95", promo: "$55–$76" },
+  { item: "A few pieces — fridge or washer", local: "$109 apps / $48 city curb", ours: "$85–$130", promo: "$68–$104" },
+  { item: "Half the truck", local: "$211–$344", ours: "$125–$195", promo: "$100–$156" },
 ];
 
 export function RateReel() {
@@ -15,7 +13,7 @@ export function RateReel() {
   return (
     <section id="rates" className="section-y">
       <div className="mx-auto max-w-6xl px-4">
-        <p className="kicker">Single-item pickups</p>
+        <p className="kicker">Haul rates</p>
         <h2 className="mt-3 max-w-xl font-display text-3xl leading-none sm:text-4xl lg:text-5xl">
           Priced under the apps.
         </h2>
@@ -23,7 +21,7 @@ export function RateReel() {
       <div
         className="reel mt-8 gap-4 px-4"
         role="region"
-        aria-label="Single-item pickup rates"
+        aria-label="Haul rates"
         tabIndex={0}
       >
         {ROWS.map((row) => (

@@ -23,7 +23,7 @@ import {
   formatRange,
   PROMO_DEADLINE_LABEL,
   refusedItemsIn,
-  sizeOptionsFor,
+  listedSizesFor,
   type AddOnKey,
   type ServiceKey,
 } from "@/lib/pricebook";
@@ -190,7 +190,7 @@ export function QuoteForm({
   const households = Number(form.watch("households") ?? 1) || 1;
   const urgency = form.watch("urgency");
 
-  const sizes = useMemo(() => sizeOptionsFor(service), [service]);
+  const sizes = useMemo(() => listedSizesFor(service), [service]);
   const availableAddOns = useMemo(() => addOnsFor(service), [service]);
 
   // Keep the size and add-ons valid whenever the service changes.

@@ -5,7 +5,7 @@ import {
   addOnsFor,
   estimate as computeEstimate,
   formatRange,
-  sizeOptionsFor,
+  listedSizesFor,
   type AddOnKey,
   type ServiceKey,
 } from "@/lib/pricebook";
@@ -62,7 +62,7 @@ export function HeroQuoteTeaser({ promo }: { promo: PromoStatus }) {
     }
   }
 
-  const sizes = useMemo(() => sizeOptionsFor(service), [service]);
+  const sizes = useMemo(() => listedSizesFor(service), [service]);
   const availableAddOns = useMemo(() => addOnsFor(service), [service]);
 
   // Keep size and add-ons valid whenever the service changes.
