@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PhotoQuote } from "@/components/photo-quote";
 import { LotSizeField } from "@/components/lot-size-field";
+import { HaulVideo } from "@/components/haul-video";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import {
   COMBO_CREDIT,
