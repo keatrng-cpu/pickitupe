@@ -37,6 +37,7 @@ export type ShopLead = {
   bookedDay?: string;
   pack?: LandlordPack;
   stops?: number;
+  extraAddresses?: string[];
   desk?: "landlord";
 };
 
@@ -72,6 +73,7 @@ const leadSchema = z.object({
   bookedDay: z.string().max(40).optional(),
   pack: z.enum(["turns", "leaves", "combo"]).optional(),
   stops: z.number().int().min(1).max(8).optional(),
+  extraAddresses: z.array(z.string().max(200)).max(8).optional(),
   desk: z.enum(["landlord"]).optional(),
 });
 
@@ -232,6 +234,9 @@ function missingOf(lead: ShopLead): string[] {
   if (!lead.name || lead.name.trim().length < 2) m.push("name");
   if (!lead.phone || !isUsPhone(lead.phone)) m.push("phone");
   if (!lead.address || lead.address.trim().length < 5) m.push("address");
+  const extraNeed = (lead.desk === "landlord" || lead.pack) && (lead.stops ?? 1) > 1 ? (lead.stops ?? 1) - 1 : 0;
+  const extraHave = (lead.extraAddresses ?? []).filter((a) => a.trim().length >= 5).length;
+  if (extraNeed > extraHave) m.push("extras");
   if (!lead.asap && !/^\d{4}-\d{2}-\d{2}$/.test(lead.day || "")) m.push("day");
   return m;
 }
@@ -256,8 +261,12 @@ function nextAsk(missing: string[], lead: ShopLead): string {
   if (first === "phone") return "Ten-digit phone we'll text the morning of?";
   if (first === "address") {
     return lead.stops && lead.stops > 1
-      ? "First street address — we'll stack the rest on the same code."
+      ? "First street address — then I'll take the rest, one per stop."
       : "Street address for the stop?";
+  }
+  if (first === "extras") {
+    const have = (lead.extraAddresses ?? []).filter((a) => a.trim().length >= 5).length;
+    return `Street for stop ${have + 2}? Same week, same code.`;
   }
   if (first === "day") return "Tap a day on the board or say ASAP and I'll lock the first open one.";
   return "Want me to lock that day?";
@@ -365,6 +374,12 @@ async function runTool(name: string, raw: string, lead: ShopLead, email: string 
     const nameOnJob = String(args.name || lead.name || "").trim();
     const phone = String(args.phone || lead.phone || "");
     const address = String(args.address || lead.address || "").trim();
+    const extras = [
+      ...(Array.isArray(args.extraAddresses) ? args.extraAddresses.map(String) : []),
+      ...(lead.extraAddresses ?? []),
+    ]
+      .map((a) => a.trim())
+      .filter((a, i, arr) => a.length >= 5 && arr.indexOf(a) === i);
     const gap = missingOf({
       ...lead,
       service,
@@ -372,6 +387,7 @@ async function runTool(name: string, raw: string, lead: ShopLead, email: string 
       name: nameOnJob,
       phone,
       address,
+      extraAddresses: extras,
       day: String(args.day || lead.day || ""),
       asap: args.asap === true || lead.asap === true,
     });
@@ -384,6 +400,7 @@ async function runTool(name: string, raw: string, lead: ShopLead, email: string 
           name: nameOnJob,
           phone,
           address,
+          extraAddresses: extras,
           email: String(args.email || lead.email || email || ""),
           service,
           jobSize: size || "single",
@@ -648,6 +665,7 @@ async function fallbackReply(
           name: next.name as string,
           phone: next.phone as string,
           address: next.address as string,
+          extraAddresses: next.extraAddresses,
           email: next.email || email || "",
           service: next.service as ServiceKey,
           jobSize: next.size,

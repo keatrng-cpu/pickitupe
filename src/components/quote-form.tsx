@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AddressField } from "@/components/address-field";
 import { DateField } from "@/components/date-field";
-import { submitBooking } from "@/lib/bookings";
+import { lockWithDeposit } from "@/lib/pay-actions";
 import { assessJob } from "@/lib/assess-actions";
 import {
   addOnsFor,
@@ -224,25 +224,31 @@ export function QuoteForm({
               .join("\n\n")
           : values.notes;
 
-      const result = await submitBooking({
+      const result = await lockWithDeposit({
         data: {
-          ...values,
-          notes: described,
+          name: values.name,
+          phone: values.phone,
+          email: values.email || "",
+          address: values.address,
+          service: values.service,
           jobSize: activeSize,
-          addOns: activeAddOns,
-          households,
+          preferredDate: asap ? "" : values.preferredDate,
           asap,
+          notes: described,
           estimateLow: quote.range?.low,
           estimateHigh: quote.range?.high,
-          lat: geo?.lat,
-          lon: geo?.lon,
-          areaTier: geo?.verdict.tier,
         },
       });
-      setDone({ earlyBird: result.earlyBird });
-      toast.success("Request received — we'll text you back.");
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      if (result.url) {
+        window.location.href = result.url;
+        return;
+      }
     } catch {
-      toast.error("Could not send. Call or text 701-213-3969.");
+      toast.error("Could not open checkout. Call or text 701-213-3969.");
     }
   }
 
@@ -747,13 +753,12 @@ export function QuoteForm({
           {form.formState.isSubmitting ? (
             <Loader2 className="size-4 animate-spin" />
           ) : null}
-          Request booking
+          Pay $50 to hold
           <ArrowRight className="size-4" />
         </Button>
       </div>
       <p className="mt-3 text-sm leading-[1.5] text-muted">
-        $50 deposit holds the date. We'll text to confirm before we collect
-        it.
+        No lock without the card. $50 deposit comes off the invoice.
       </p>
     </form>
   );
