@@ -524,18 +524,20 @@ function guessService(text: string): ServiceKey | undefined {
 
 function guessSize(service: ServiceKey, text: string): string | undefined {
   const t = text.toLowerCase();
-  const sizes = sizeOptionsFor(service);
+  const sizes = sizeOptionsFor(service).filter((s) => !s.hide);
   for (const s of sizes) {
     if (t.includes(s.value) || t.includes(s.label.toLowerCase())) return s.value;
   }
   if (service === "junk-removal" || service === "furniture-appliances") {
-    if (/(couch|sofa|mattress|recliner|loveseat|sectional|sleeper)/.test(t)) return "sofa";
-    if (/(fridge|refrigerator|freezer)/.test(t)) return "fridge";
-    if (/(washer|dryer|stove|oven|dishwasher|appliance)/.test(t)) return "appliance";
-    if (/(dresser|table|bed frame|headboard|nightstand)/.test(t)) return "dresser";
-    if (/(grill|tv|bicycle|bike|treadmill|microwave|chair)/.test(t)) return "small-item";
-    if (/(full load|whole truck|overflow|whole garage|whole house|estate)/.test(t)) return "full";
+    if (/(couch|sofa|mattress|recliner|loveseat|sectional|sleeper)/.test(t)) return "single";
+    if (/(fridge|refrigerator|freezer|washer|dryer|stove|oven|dishwasher|appliance)/.test(t))
+      return "quarter";
+    if (/(dresser|table|bed frame|headboard|nightstand|chair|grill|tv|bicycle|bike|treadmill|microwave)/.test(t))
+      return "single";
+    if (/(two trips|overflow|whole garage|whole house|estate|building)/.test(t)) return "overflow";
+    if (/(full load|whole truck|full truck)/.test(t)) return "full";
     if (/(half)/.test(t)) return "half";
+    if (/(few pieces|quarter)/.test(t)) return "quarter";
     if (/(few bags|bags of)/.test(t)) return "bags";
     if (/\bbags\b/.test(t) && !/leaf|leaves|yard/.test(t)) return "bags";
   }

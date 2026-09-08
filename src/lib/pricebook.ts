@@ -120,6 +120,8 @@ export type SizeOption = {
   label: string;
   hint: string;
   range: Range;
+  /** Hidden from the picker. Still priced if an old booking or the shop chat uses it. */
+  hide?: boolean;
 };
 
 export const SQFT_PER_ACRE = 43_560;
@@ -224,85 +226,98 @@ const LEAF_SIZES: SizeOption[] = [
 /**
  * Haul work — sized by how much of the truck bed it fills. Silver Sierra 1500
  * crew cab, so a heaped "full load" is roughly two cubic yards.
+ *
+ * THE PICKER SHOWS SIX RUNGS. The extra values (sofa, fridge, dresser, …) are
+ * aliases with the same dollars so old bookings and the shop chat still price.
+ * Showing both "one item" and "couch or mattress" made the list feel like
+ * duplicates, because they were.
  */
 const LOAD_SIZES: SizeOption[] = [
   {
     value: "bags",
-    label: "A few bags",
+    label: "Bags",
     hint: "Contractor bags or a small pile at the curb",
     range: { low: 59, high: 95 },
   },
+  {
+    value: "single",
+    label: "One piece",
+    hint: "Couch, mattress, dresser, or one appliance",
+    range: { low: 59, high: 95 },
+  },
+  {
+    value: "quarter",
+    label: "A few pieces",
+    hint: "Fridge, washer, or a corner of the bed",
+    range: { low: 85, high: 130 },
+  },
+  {
+    value: "half",
+    label: "Half the truck",
+    hint: "Half the bed, heaped",
+    range: { low: 125, high: 195 },
+  },
+  {
+    value: "full",
+    label: "Full truck",
+    hint: "Bed full and strapped",
+    range: { low: 175, high: 265 },
+  },
+  {
+    value: "overflow",
+    label: "Two trips",
+    hint: "More than one pickup bed — we walk it if it's a building",
+    range: { low: 245, high: 365 },
+  },
+  // Aliases. Same dollars as the rungs above. Do not show in the picker.
   {
     value: "small-item",
     label: "One small piece",
     hint: "Chair, nightstand, microwave, lamp",
     range: { low: 59, high: 89 },
-  },
-  {
-    value: "single",
-    label: "One item",
-    hint: "Anything we can carry in one trip to the truck",
-    range: { low: 59, high: 95 },
+    hide: true,
   },
   {
     value: "dresser",
     label: "Dresser, table, bed frame",
     hint: "One mid-size furniture piece",
     range: { low: 75, high: 99 },
+    hide: true,
   },
   {
     value: "sofa",
     label: "Couch or mattress",
     hint: "One bulky living-room piece",
     range: { low: 59, high: 95 },
+    hide: true,
   },
   {
     value: "appliance",
     label: "Washer, dryer, or stove",
     hint: "One large appliance, no stairs",
     range: { low: 85, high: 130 },
+    hide: true,
   },
   {
     value: "fridge",
     label: "Refrigerator",
     hint: "Refrigerant drop is an add-on if it still has freon",
     range: { low: 85, high: 130 },
+    hide: true,
   },
   {
     value: "two",
     label: "Two bulky items",
     hint: "Same stop, same truck",
     range: { low: 85, high: 130 },
+    hide: true,
   },
   {
     value: "three",
     label: "Three mixed items",
     hint: "Furniture, appliances, bags, or both",
     range: { low: 125, high: 195 },
-  },
-  {
-    value: "quarter",
-    label: "Quarter load",
-    hint: "A pickup corner — a few pieces",
-    range: { low: 85, high: 130 },
-  },
-  {
-    value: "half",
-    label: "Half load",
-    hint: "Half the bed, heaped",
-    range: { low: 125, high: 195 },
-  },
-  {
-    value: "full",
-    label: "Full load",
-    hint: "Bed full and strapped",
-    range: { low: 175, high: 265 },
-  },
-  {
-    value: "overflow",
-    label: "Overflowing / two trips",
-    hint: "More than one pickup bed",
-    range: { low: 245, high: 365 },
+    hide: true,
   },
 ];
 
@@ -445,20 +460,40 @@ export function sizeOptionsFor(service: ServiceKey): SizeOption[] {
   return LOAD_SIZES;
 }
 
-/** The sizes a homeowner can pick in two taps. Full list stays on the shop line. */
+/** Sizes the customer sees. Aliases stay in `sizeOptionsFor` for old jobs. */
+export function listedSizesFor(service: ServiceKey): SizeOption[] {
+  return sizeOptionsFor(service).filter((s) => !s.hide);
+}
+
+/** The sizes a homeowner can pick in two taps. Full listed set stays on the shop line. */
 const FEATURED_SIZE: Record<string, string[]> = {
   "leaf-cleanup": ["small", "medium", "large", "half", "acre"],
-  "junk-removal": ["bags", "sofa", "fridge", "half", "full"],
+  "junk-removal": ["bags", "single", "quarter", "half", "full", "overflow"],
   "gutter-cleaning": ["standard", "complex"],
 };
 
 export function featuredSizesFor(service: ServiceKey): SizeOption[] {
-  const all = sizeOptionsFor(service);
+  const all = listedSizesFor(service);
   const keys = FEATURED_SIZE[canonicalService(service)];
   if (!keys?.length) return all;
   const want = new Set(keys);
   const picked = all.filter((s) => want.has(s.value));
   return picked.length ? picked : all;
+}
+
+/** Old furniture chips map onto the six-rung ladder. */
+const JUNK_SIZE_ALIAS: Record<string, string> = {
+  "small-item": "single",
+  dresser: "single",
+  sofa: "single",
+  appliance: "quarter",
+  fridge: "quarter",
+  two: "quarter",
+};
+
+export function canonicalSize(service: ServiceKey, size: string): string {
+  if (canonicalService(service) !== "junk-removal") return size;
+  return JUNK_SIZE_ALIAS[size] ?? size;
 }
 
 export type AddOnKey =

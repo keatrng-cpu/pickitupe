@@ -12,15 +12,16 @@ import { formatPhone, isUsPhone } from "@/lib/phone";
 import { PHONE } from "@/lib/messages";
 import {
   canonicalService,
+  canonicalSize,
   clampStops,
   estimate,
   featuredSizesFor,
   formatRange,
   isPromoActive,
   LANDLORD_PACKS,
+  listedSizesFor,
   packDefaultSize,
   packService,
-  sizeOptionsFor,
   sizesForPack,
   STOP_COUNTS,
   type LandlordPack,
@@ -108,10 +109,13 @@ function CallPage() {
       : "junk-removal";
   const initialSizes = landlord
     ? sizesForPack(initialPack ?? "turns")
-    : sizeOptionsFor(initialService);
+    : listedSizesFor(initialService);
+  const wantedSize = landlord
+    ? params.size
+    : canonicalSize(initialService, params.size || "");
   const initialSize =
-    initialSizes.find((s) => s.value === params.size)?.value ??
-    (initialPack ? packDefaultSize(initialPack) : initialSizes[0]?.value ?? "sofa");
+    initialSizes.find((s) => s.value === wantedSize)?.value ??
+    (initialPack ? packDefaultSize(initialPack) : initialSizes[0]?.value ?? "single");
 
   const [pack, setPack] = useState<LandlordPack | undefined>(
     initialPack ?? (landlord ? "turns" : undefined),
@@ -157,7 +161,7 @@ function CallPage() {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: "smooth" });
   }, [turns, thinking]);
 
-  const sizedAll = landlord ? sizesForPack(pack ?? "turns") : sizeOptionsFor(service);
+  const sizedAll = landlord ? sizesForPack(pack ?? "turns") : listedSizesFor(service);
   const featured = landlord ? sizedAll : featuredSizesFor(service);
   const sized =
     landlord || showAllSizes || !featured.some((s) => s.value === size)
@@ -544,7 +548,7 @@ function CallPage() {
                 stops={landlord ? stops : 1}
                 lotSqFt={lotSqFt}
                 onApply={({ size: next, lotSqFt: measured }) => {
-                  setSize(next);
+                  setSize(landlord ? next : canonicalSize(service, next));
                   if (measured) setLotSqFt(measured);
                 }}
               />

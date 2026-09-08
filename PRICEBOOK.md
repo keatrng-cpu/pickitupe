@@ -47,10 +47,14 @@ Silver Sierra 1500 crew cab. A heaped bed is roughly **2.5 cubic yards**.
 
 | Size | What it means | Our range | Market comparable |
 |---|---|---|---|
-| One item | Couch, mattress, treadmill | **$59–$95** | LoadUp Grand Forks starts **$70**; industry minimum $75–$100 |
-| Quarter bed | A pickup corner | **$85–$130** | Grand Forks ¼ truck load $111–$164 |
-| Half bed | Half the bed, heaped | **$125–$195** | between local ¼ and ½ truck load |
-| Full bed | Bed full and strapped | **$175–$265** | Grand Forks ½ truck load $211–$344 |
+| Bags | Curb bags or a small pile | **$59–$95** | LoadUp Grand Forks from **$70** |
+| One piece | Couch, mattress, dresser, or one appliance | **$59–$95** | industry minimum $75–$100 |
+| A few pieces | Fridge, washer, or a corner of the bed | **$85–$130** | Grand Forks ¼ truck $111–$164 |
+| Half the truck | Half the bed, heaped | **$125–$195** | between local ¼ and ½ |
+| Full truck | Bed full and strapped | **$175–$265** | Grand Forks ½ truck $211–$344 |
+| Two trips | More than one pickup bed | **$245–$365** | Grand Forks full $422–$550 |
+
+The picker shows those six. Older chips (sofa, fridge, dresser, two bulky…) still price as aliases so past jobs don't break.
 
 Garage / basement cleanouts add **$50–$100** of sort-and-carry labor on top of
 the load size.

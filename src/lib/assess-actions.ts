@@ -3,7 +3,9 @@ import { z } from "zod";
 import { BUSINESS } from "@/lib/seo";
 import {
   addOnsFor,
+  canonicalSize,
   refusedItemsIn,
+  listedSizesFor,
   sizeOptionsFor,
   sizesForPack,
   formatRange,
@@ -107,7 +109,7 @@ export function regionalFor(service: ServiceKey, size: string): RegionalComp {
 }
 
 function systemFor(service: ServiceKey, pack?: LandlordPack): string {
-  const sizes = (pack ? sizesForPack(pack === "leaves" ? "leaves" : "turns") : sizeOptionsFor(service))
+  const sizes = (pack ? sizesForPack(pack === "leaves" ? "leaves" : "turns") : listedSizesFor(service))
     .map((s) => `  ${s.value} = ${s.label} (${s.hint}) — ${formatRange(s.range)}`)
     .join("\n");
   const addons = addOnsFor(service)
@@ -190,7 +192,8 @@ function parseAssess(
   const validSizes = pack
     ? sizesForPack(pack === "leaves" ? "leaves" : "turns")
     : sizeOptionsFor(service);
-  const size = validSizes.find((s) => s.value === parsed.size)?.value ?? null;
+  const rawSize = validSizes.find((s) => s.value === parsed.size)?.value;
+  const size = rawSize ? (pack ? rawSize : canonicalSize(service, rawSize)) : null;
   const validAddOns = addOnsFor(service).map((a) => a.key);
   const addOns = (parsed.addOns ?? []).filter((k): k is AddOnKey => validAddOns.includes(k as AddOnKey));
   const refused = Array.from(

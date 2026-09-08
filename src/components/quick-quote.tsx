@@ -7,7 +7,7 @@ import {
   featuredSizesFor,
   formatRange,
   isPromoActive,
-  sizeOptionsFor,
+  listedSizesFor,
   type ServiceKey,
 } from "@/lib/pricebook";
 
@@ -25,7 +25,7 @@ export function QuickQuote() {
   const [service, setService] = useState<ServiceKey>("leaf-cleanup");
   const [size, setSize] = useState("medium");
   const [allSizes, setAllSizes] = useState(false);
-  const sizes = allSizes ? sizeOptionsFor(service) : featuredSizesFor(service);
+  const sizes = allSizes ? listedSizesFor(service) : featuredSizesFor(service);
 
   const result = useMemo(
     () =>
@@ -108,7 +108,7 @@ export function QuickQuote() {
           );
         })}
       </div>
-      {sizeOptionsFor(service).length > featuredSizesFor(service).length ? (
+      {listedSizesFor(service).length > featuredSizesFor(service).length ? (
         <button
           type="button"
           onClick={() => setAllSizes((v) => !v)}
