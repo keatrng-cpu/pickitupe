@@ -5,75 +5,304 @@ import {
   addOnsFor,
   refusedItemsIn,
   sizeOptionsFor,
+  sizesForPack,
   formatRange,
   type AddOnKey,
+  type LandlordPack,
   type ServiceKey,
 } from "@/lib/pricebook";
 import { COMPETITOR_BENCHMARKS, MODEL } from "@/lib/chat-knowledge";
 
 /**
- * Job assessor for the notes and photo fields.
+ * Job assessor for notes and photos.
  *
- * THE MODEL DOES NOT PRICE ANYTHING. It reads a description (and optionally a
- * photo) and recommends WHICH PRICEBOOK INPUTS fit — a size tier and some
- * add-ons. `estimate()` then produces the number deterministically, exactly as
- * it does when a customer picks the tier by hand.
- *
- * That split is the entire design. A model that outputs a dollar figure is
- * guessing at the one thing this site refuses to guess at; a model that outputs
- * "this looks like a standard lot with wet leaves" is doing something it is
- * genuinely good at and that a homeowner is genuinely bad at. The customer
- * still sees, and can override, every input.
- *
- * Everything coming back is validated against the pricebook before it is
- * returned — a hallucinated size value or add-on key is dropped rather than
- * handed to the estimator.
+ * THE MODEL DOES NOT PRICE ANYTHING. It reads a description and photos and
+ * recommends WHICH PRICEBOOK INPUTS fit. `estimate()` then produces the
+ * number. Regional averages are shown beside that number so the customer can
+ * see we sit under what Grand Forks and Fargo actually charge.
  */
 
 const MAX_NOTES = 1200;
-/** ~7MB of base64. Bigger than a phone photo needs, small enough to post. */
 const MAX_PHOTO_CHARS = 7_000_000;
 
-function systemFor(service: ServiceKey): string {
-  const sizes = sizeOptionsFor(service)
+export type RegionalComp = {
+  who: string;
+  what: string;
+  price: string;
+  low: number;
+  high: number;
+  source: string;
+};
+
+/** Named local/national comparable for a size tier. Sourced, not invented. */
+export function regionalFor(service: ServiceKey, size: string): RegionalComp {
+  if (service === "leaf-cleanup") {
+    if (size === "small") {
+      return {
+        who: "LawnStarter",
+        what: "a single yard cleanup",
+        price: "$174–$198",
+        low: 174,
+        high: 198,
+        source: "lawnstarter.com",
+      };
+    }
+    if (size === "large" || size === "acreage") {
+      return {
+        who: "His Workmanship (Fargo)",
+        what: "leaf raking on a half-acre yard",
+        price: "$450",
+        low: 450,
+        high: 450,
+        source: "hisworkmanship.com",
+      };
+    }
+    return {
+      who: "His Workmanship (Fargo, same climate)",
+      what: "leaf raking on a quarter-acre yard",
+      price: "$320",
+      low: 320,
+      high: 320,
+      source: "hisworkmanship.com",
+    };
+  }
+  if (service === "gutter-cleaning") {
+    return {
+      who: "HomeYou Grand Forks",
+      what: "single-story gutter cleaning",
+      price: "$160–$205",
+      low: 160,
+      high: 205,
+      source: "homeyou.com Grand Forks",
+    };
+  }
+  if (size === "bags" || size === "small-item" || size === "single" || size === "dresser") {
+    return {
+      who: "LoadUp / HomeYou Grand Forks",
+      what: "single-item pickup / quarter load",
+      price: "from $70 / $111–$164",
+      low: 70,
+      high: 164,
+      source: "loadup.com, homeyou.com Grand Forks",
+    };
+  }
+  if (size === "three" || size === "half" || size === "quarter" || size === "two") {
+    return {
+      who: "Grand Forks junk haulers",
+      what: "half truck load, local average",
+      price: "$211–$344",
+      low: 211,
+      high: 344,
+      source: "homeyou.com Grand Forks",
+    };
+  }
+  return {
+    who: "Grand Forks junk haulers",
+    what: "full truck load, local average",
+    price: "$422–$550",
+    low: 422,
+    high: 550,
+    source: "homeyou.com Grand Forks",
+  };
+}
+
+function systemFor(service: ServiceKey, pack?: LandlordPack): string {
+  const sizes = (pack ? sizesForPack(pack === "leaves" ? "leaves" : "turns") : sizeOptionsFor(service))
     .map((s) => `  ${s.value} = ${s.label} (${s.hint}) — ${formatRange(s.range)}`)
     .join("\n");
   const addons = addOnsFor(service)
     .map((a) => `  ${a.key} = ${a.label} (${a.hint}) — ${formatRange(a.range)}`)
     .join("\n");
-  const comps = COMPETITOR_BENCHMARKS.map(
-    (b) => `  ${b.who}, ${b.what}: ${b.price}`,
-  ).join("\n");
+  const comps = COMPETITOR_BENCHMARKS.map((b) => `  ${b.who}, ${b.what}: ${b.price}`).join("\n");
+  const landlord = pack
+    ? `
+THIS IS A LANDLORD / OWNER JOB (${pack}).
+- bags = curb bags from one unit
+- three = typical Grand Forks apartment after students leave (furniture + bags)
+- full = trashed unit, truck bed full
+- overflow = whole building / several units in the photos
+Default to three for a normal unit. Only pick overflow if you can see multiple units or a hallway of stuff. Photos size the FIRST stop — do not guess how many addresses they have.
+`
+    : "";
 
-  return `You size up yard, gutter and haul jobs for a small owner-operated business in Grand Forks, North Dakota. A customer has described their job, and may have attached a photo. Your job is to pick the right SIZE TIER and any ADD-ONS that apply.
+  return `You size up yard, gutter and haul jobs for a small owner-operated business in Grand Forks, North Dakota. A customer has described their job and may have attached photos. Pick the right SIZE TIER and any ADD-ONS that apply.
 
-YOU DO NOT SET PRICES. You never state a dollar total, never invent a number, never discount. You choose inputs; the company's own pricebook computes the price from them. The ranges below are shown to you only so your choice is informed — repeating one back is fine, inventing one is not.
+YOU DO NOT SET PRICES. Never state a dollar total, never invent a number, never discount. You choose inputs; the company's pricebook computes the price. Regional averages below are context only.
 
 SIZE TIERS (choose exactly one \`size\`):
 ${sizes}
 
-ADD-ONS (choose zero or more \`addOns\`, only where the description or photo genuinely supports it):
+ADD-ONS (zero or more \`addOns\`, only where the photo or description supports it):
 ${addons}
 
-WHAT LOCAL COMPETITORS CHARGE, for context on whether a tier is reasonable:
+WHAT LOCAL AND REGIONAL COMPETITORS CHARGE:
 ${comps}
+${landlord}
+HOW TO JUDGE THIS MARKET:
+- Grand Forks lots are mostly city lots. Do not reach for the largest tier because someone says "a lot."
+- Wet, matted, or snow-packed leaves after mid-October: \`wet-heavy\`.
+- Leaves still spread across the yard: \`bagging\`.
+- Basements, second floors: \`stairs\`. Long driveways: \`long-carry\`.
+- Fridges/freezers/AC: \`appliance-freon\`. Garage/basement sort: \`cleanout\`.
+- Gutters: single-story only from the ground.
 
-HOW TO JUDGE, for this specific market:
-- Grand Forks lots are mostly city lots and standard residential. Do not reach for the largest tier because someone says "a lot of leaves" — everyone says that. Reach for it when they describe a corner lot, mature trees, or acreage.
-- Wet, matted, or snow-packed leaves are common here after mid-October and genuinely slow the work. If they mention rain, snow, or leaves sitting a while, that is the \`wet-heavy\` add-on.
-- If leaves are still spread across the yard rather than piled or bagged at the curb, that is \`bagging\`.
-- Basements, second floors, and long driveways are real: \`stairs\` and \`long-carry\`.
-- Fridges, freezers and AC units carry a refrigerant disposal fee: \`appliance-freon\`.
-- Sorting a garage or basement is different work from lifting something already at the curb: \`cleanout\`.
-- Gutters are cleaned from the ground with a vacuum, SINGLE-STORY ONLY. A plain ranch or rambler is \`standard\`; a wraparound, split level, long runs or several corners is \`complex\`. If they describe a two-story home, a steep roof, or anything that needs a ladder on the roofline, pick \`standard\`, set confidence low, and say plainly in \`reasoning\` that we only do single-story gutters and they should call a gutter company. Overflowing or slow-draining downspouts: \`downspout\`.
+BE HONEST:
+- Vague photos: pick the middle tier, confidence low.
+- Refused items (paint, chemicals, oil, propane, concrete, dirt, roofing, asbestos): name them in \`refused\`.
+- Bigger than the largest tier: say so and recommend a walk-through.
 
-BE HONEST, INCLUDING WHEN IT COSTS THE JOB:
-- If the description is too vague to size, say so and pick the middle tier rather than the biggest.
-- If you can see or read something on the refused list (paint, chemicals, oil, propane, concrete, dirt, roofing, asbestos), name it in \`refused\`. Never wave it through.
-- If the job looks bigger than the largest tier, say so in \`reasoning\` and recommend they text a photo to ${BUSINESS.phone} for a walk-through.
+Reply with ONLY a JSON object, no prose, no code fence:
+{"size":"<one size value>","addOns":["<add-on keys>"],"refused":["<items>"],"reasoning":"<two sentences, plain, to the customer>","confidence":"high"|"medium"|"low"}`;
+}
 
-Reply with ONLY a JSON object, no prose around it, no code fence:
-{"size":"<one size value>","addOns":["<add-on keys>"],"refused":["<refused items you spotted>"],"reasoning":"<two sentences, plain, addressed to the customer>","confidence":"high"|"medium"|"low"}`;
+type AssessOk = {
+  ok: true;
+  size: string | null;
+  sizeLabel: string | null;
+  addOns: AddOnKey[];
+  refused: string[];
+  reasoning: string;
+  confidence: "high" | "medium" | "low";
+  regional: RegionalComp | null;
+};
+
+function parseAssess(
+  raw: string,
+  service: ServiceKey,
+  pack?: LandlordPack,
+): AssessOk | { ok: false; error: string } {
+  const json = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "");
+  let parsed: {
+    size?: string;
+    addOns?: string[];
+    refused?: string[];
+    reasoning?: string;
+    confidence?: string;
+  };
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    return { ok: false, error: `Couldn't read that one. Text ${BUSINESS.phone} and we'll size it by hand.` };
+  }
+
+  const validSizes = pack
+    ? sizesForPack(pack === "leaves" ? "leaves" : "turns")
+    : sizeOptionsFor(service);
+  const size = validSizes.find((s) => s.value === parsed.size)?.value ?? null;
+  const validAddOns = addOnsFor(service).map((a) => a.key);
+  const addOns = (parsed.addOns ?? []).filter((k): k is AddOnKey => validAddOns.includes(k as AddOnKey));
+  const refused = Array.from(
+    new Set([...(parsed.refused ?? []).filter((r) => typeof r === "string")]),
+  );
+
+  return {
+    ok: true,
+    size,
+    sizeLabel: size ? validSizes.find((s) => s.value === size)!.label : null,
+    addOns,
+    refused,
+    reasoning: (parsed.reasoning ?? "").slice(0, 400),
+    confidence: ["high", "medium", "low"].includes(parsed.confidence ?? "")
+      ? (parsed.confidence as "high" | "medium" | "low")
+      : "medium",
+    regional: size ? regionalFor(service, size) : null,
+  };
+}
+
+function imageParts(photos: string[]) {
+  const out: { mime: string; data: string; dataUrl: string }[] = [];
+  for (const url of photos) {
+    const m = /^data:(image\/(?:jpeg|png|webp|gif));base64,(.+)$/.exec(url);
+    if (m) out.push({ mime: m[1], data: m[2], dataUrl: url });
+  }
+  return out.slice(0, 3);
+}
+
+async function viaXai(
+  service: ServiceKey,
+  pack: LandlordPack | undefined,
+  notes: string,
+  photos: { mime: string; data: string; dataUrl: string }[],
+): Promise<string | null> {
+  const key = process.env.XAI_API_KEY?.trim();
+  if (!key) return null;
+  const content: unknown[] = photos.map((p) => ({
+    type: "image_url",
+    image_url: { url: p.dataUrl },
+  }));
+  content.push({
+    type: "text",
+    text: notes
+      ? `The customer picked "${service}"${pack ? ` (landlord pack: ${pack})` : ""} and wrote:\n\n${notes}`
+      : `The customer picked "${service}"${pack ? ` (landlord pack: ${pack})` : ""} and attached photo(s) with no description.`,
+  });
+  const res = await fetch("https://api.x.ai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${key}`,
+    },
+    body: JSON.stringify({
+      model: "grok-2-vision-1212",
+      temperature: 0.1,
+      max_tokens: 400,
+      messages: [
+        { role: "system", content: systemFor(service, pack) },
+        { role: "user", content },
+      ],
+    }),
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!res.ok) {
+    console.error(`[assess] xai ${res.status}: ${await res.text()}`);
+    return null;
+  }
+  const body = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+  return (body.choices?.[0]?.message?.content || "").trim() || null;
+}
+
+async function viaAnthropic(
+  service: ServiceKey,
+  pack: LandlordPack | undefined,
+  notes: string,
+  photos: { mime: string; data: string; dataUrl: string }[],
+): Promise<string | null> {
+  const key = process.env.ANTHROPIC_API_KEY?.trim();
+  if (!key) return null;
+  const content: unknown[] = photos.map((p) => ({
+    type: "image",
+    source: { type: "base64", media_type: p.mime, data: p.data },
+  }));
+  content.push({
+    type: "text",
+    text: notes
+      ? `The customer picked "${service}"${pack ? ` (landlord pack: ${pack})` : ""} and wrote:\n\n${notes}`
+      : `The customer picked "${service}"${pack ? ` (landlord pack: ${pack})` : ""} and attached photo(s) with no description.`,
+  });
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": key,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 400,
+      system: systemFor(service, pack),
+      messages: [{ role: "user", content }],
+    }),
+  });
+  if (!res.ok) {
+    console.error(`[assess] anthropic ${res.status}: ${await res.text()}`);
+    return null;
+  }
+  const body = (await res.json()) as { content?: { type: string; text?: string }[] };
+  return (body.content ?? [])
+    .filter((b) => b.type === "text")
+    .map((b) => b.text ?? "")
+    .join("")
+    .trim() || null;
 }
 
 export const assessJob = createServerFn({ method: "POST" })
@@ -89,133 +318,46 @@ export const assessJob = createServerFn({ method: "POST" })
         ]),
         notes: z.string().trim().max(MAX_NOTES).optional(),
         photoDataUrl: z.string().max(MAX_PHOTO_CHARS).optional(),
+        photos: z.array(z.string().max(MAX_PHOTO_CHARS)).max(3).optional(),
+        pack: z.enum(["turns", "leaves", "combo"]).optional(),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const key = process.env.ANTHROPIC_API_KEY?.trim();
-    if (!key) {
-      return {
-        ok: false as const,
-        error: `Not available yet — text a photo to ${BUSINESS.phone} and you'll get a number the same day.`,
-      };
-    }
     if (data.service === "other") {
       return {
         ok: false as const,
         error: `Pick a service above first, or just describe it and we'll price it by hand.`,
       };
     }
-    if (!data.notes?.trim() && !data.photoDataUrl) {
+    const photos = imageParts(
+      [...(data.photos ?? []), data.photoDataUrl ?? ""].filter(Boolean),
+    );
+    if (!data.notes?.trim() && !photos.length) {
       return {
         ok: false as const,
-        error: "Add a note or a photo first and we'll size it up.",
+        error: "Add a photo or a note first and we'll size it against Grand Forks averages.",
       };
     }
 
-    // Build the content blocks. A data URL is "data:<mime>;base64,<payload>";
-    // the API wants those two halves separately, so a malformed URL must be
-    // dropped rather than posted as garbage.
-    const content: unknown[] = [];
-    if (data.photoDataUrl) {
-      const m = /^data:(image\/(?:jpeg|png|webp|gif));base64,(.+)$/.exec(
-        data.photoDataUrl,
-      );
-      if (m) {
-        content.push({
-          type: "image",
-          source: { type: "base64", media_type: m[1], data: m[2] },
-        });
-      }
-    }
-    content.push({
-      type: "text",
-      text: data.notes?.trim()
-        ? `The customer picked "${data.service}" and wrote:\n\n${data.notes.trim()}`
-        : `The customer picked "${data.service}" and attached this photo with no description.`,
-    });
+    const service = data.service as ServiceKey;
+    const pack = data.pack;
+    const notes = data.notes?.trim() ?? "";
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": key,
-          "anthropic-version": "2023-06-01",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          model: MODEL,
-          max_tokens: 400,
-          system: systemFor(data.service as ServiceKey),
-          messages: [{ role: "user", content }],
-        }),
-      });
-
-      if (!res.ok) {
-        console.error(`[assess] anthropic ${res.status}: ${await res.text()}`);
+      const raw =
+        (await viaXai(service, pack, notes, photos)) ||
+        (await viaAnthropic(service, pack, notes, photos));
+      if (!raw) {
         return {
           ok: false as const,
-          error: `Couldn't size it up just now. Text ${BUSINESS.phone} and we'll do it by hand.`,
+          error: `Couldn't size it up just now. Text ${BUSINESS.phone} a photo and we'll do it by hand.`,
         };
       }
-
-      const body = (await res.json()) as {
-        content?: { type: string; text?: string }[];
-      };
-      const raw = (body.content ?? [])
-        .filter((b) => b.type === "text")
-        .map((b) => b.text ?? "")
-        .join("")
-        .trim();
-
-      // Tolerate a stray code fence rather than failing the whole call on it.
-      const json = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "");
-      let parsed: {
-        size?: string;
-        addOns?: string[];
-        refused?: string[];
-        reasoning?: string;
-        confidence?: string;
-      };
-      try {
-        parsed = JSON.parse(json);
-      } catch {
-        console.error(`[assess] unparseable reply: ${raw.slice(0, 200)}`);
-        return {
-          ok: false as const,
-          error: `Couldn't read that one. Text ${BUSINESS.phone} and we'll size it by hand.`,
-        };
-      }
-
-      // VALIDATE EVERYTHING against the pricebook. A hallucinated size value or
-      // add-on key is dropped, never forwarded to estimate().
-      const validSizes = sizeOptionsFor(data.service as ServiceKey);
-      const size = validSizes.find((s) => s.value === parsed.size)?.value;
-      const validAddOns = addOnsFor(data.service as ServiceKey).map((a) => a.key);
-      const addOns = (parsed.addOns ?? []).filter((k): k is AddOnKey =>
-        validAddOns.includes(k as AddOnKey),
-      );
-
-      // Refused items are re-derived from the text by the deterministic scanner
-      // as well, so a model that misses one still cannot let it through.
-      const refused = Array.from(
-        new Set([
-          ...refusedItemsIn(data.notes ?? ""),
-          ...(parsed.refused ?? []).filter((r) => typeof r === "string"),
-        ]),
-      );
-
-      return {
-        ok: true as const,
-        size: size ?? null,
-        sizeLabel: size ? validSizes.find((s) => s.value === size)!.label : null,
-        addOns,
-        refused,
-        reasoning: (parsed.reasoning ?? "").slice(0, 400),
-        confidence: ["high", "medium", "low"].includes(parsed.confidence ?? "")
-          ? (parsed.confidence as "high" | "medium" | "low")
-          : "medium",
-      };
+      const parsed = parseAssess(raw, service, pack);
+      if (!parsed.ok) return parsed;
+      const refused = Array.from(new Set([...refusedItemsIn(notes), ...parsed.refused]));
+      return { ...parsed, refused };
     } catch (err) {
       console.error("[assess] failed:", err);
       return {

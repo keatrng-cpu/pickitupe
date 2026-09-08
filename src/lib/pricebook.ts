@@ -753,8 +753,8 @@ export function estimate(input: EstimateInput): Estimate {
   // dollars saved across the range, then commit to one mechanism for the
   // whole quote so the number and the explanation always agree.
   //
-  // Owner packs skip the Sept 20 percent on 2+ stops — route rate is the deal.
-  const routeDeal = Boolean(pack && (stops > 1 || pack === "combo"));
+  // Owner packs skip the Sept 20 percent. Route rate is the owner deal.
+  const routeDeal = Boolean(pack);
   const promoApplied = !routeDeal && input.earlyBird ? applyPromo(total) : total;
   const blockCredit = routeDeal ? 0 : blockCreditFor(input.households ?? 1, total.low);
   const blockApplied =

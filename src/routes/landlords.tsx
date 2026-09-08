@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { useMemo, useState } from "react";
-import { HaulVideo } from "@/components/haul-video";
+import { PhotoQuote } from "@/components/photo-quote";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import {
   COMBO_CREDIT,
@@ -158,6 +158,13 @@ function LandlordsPage() {
               ))}
             </div>
 
+            <PhotoQuote
+              service={packService(pack)}
+              pack={pack}
+              stops={stops}
+              onApply={({ size: next }) => setSize(next)}
+            />
+
             <p className="mt-8 font-display text-5xl leading-none text-gold tabular-nums">
               {q.range ? formatRange(q.range) : "Walk-through"}
             </p>
@@ -167,7 +174,9 @@ function LandlordsPage() {
                 : `First stop full price. ${stops - 1} extra at route rate ($${EXTRA_STOP_CUT.low}–$${EXTRA_STOP_CUT.high} off each).`}
               {pack === "combo" ? ` Bundle cut $${COMBO_CREDIT}.` : ""} ${deposit}{" "}
               deposit holds the first day.
-              {q.discount > 0 ? ` Versus booking each stop solo, about $${q.discount} less on the high end.` : ""}
+              {stops > 1 && q.discount > 0
+                ? ` Versus booking each stop solo, about $${q.discount} less on the high end.`
+                : ""}
             </p>
             <ul className="mt-4 space-y-1 text-sm text-muted">
               {q.lines.slice(0, 6).map((line) => (

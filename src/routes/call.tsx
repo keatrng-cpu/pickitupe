@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Mic, Phone, PhoneOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DateField } from "@/components/date-field";
+import { PhotoQuote } from "@/components/photo-quote";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { speakShop, talkShop, type ChatTurn, type ShopLead } from "@/lib/dispatcher";
 import { submitBooking } from "@/lib/bookings";
@@ -497,6 +498,13 @@ function CallPage() {
                 ))}
               </div>
             </fieldset>
+
+            <PhotoQuote
+              service={pack ? packService(pack) : service}
+              pack={pack}
+              stops={landlord ? stops : 1}
+              onApply={({ size: next }) => setSize(next)}
+            />
 
             {priced.range ? (
               <p className="mt-4 font-display text-3xl leading-none text-gold tabular-nums">
