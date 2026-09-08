@@ -14,7 +14,7 @@ import { faqJsonLd, localBusinessJsonLd, SITE_URL } from "@/lib/seo";
 const TITLE =
   "Leaf Cleanup, Gutters & Junk Removal in Grand Forks, ND | Pick It Up E";
 const DESCRIPTION =
-  "Fall leaf & yard cleanup, gutter cleaning and junk hauling in Grand Forks and East Grand Forks. We rake, blow, and haul it — you never touch a bag. Book by September 20 for 20% off, up to $75. 701-213-3969.";
+  "Fall leaf & yard cleanup, gutter cleaning and junk hauling in Grand Forks and East Grand Forks. We rake, blow, and haul it — you never touch a bag. $50 on the card holds the day. 701-213-3969.";
 
 export const Route = createFileRoute("/")({
   loader: () => getOfferStatus(),
@@ -93,7 +93,11 @@ function Home() {
                 <p className="mt-4 text-xs text-fg/80">
                   {Math.round(offer.percent * 100)}% off through {offer.deadlineLabel}
                 </p>
-              ) : null}
+              ) : (
+                <p className="mt-4 text-xs text-fg/80">
+                  Book before the city vacuum. Same block, same day — neighbor credit. Floor holds.
+                </p>
+              )}
             </div>
           </div>
         </section>

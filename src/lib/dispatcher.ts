@@ -15,7 +15,8 @@ import {
   type ServiceKey,
 } from "@/lib/pricebook";
 import { dayOptions, firstOpenDay, formatDayLong, parseSpokenDay, slotsFor } from "@/lib/schedule";
-import { jobsForPhone, loadFill, submitBooking } from "@/lib/bookings";
+import { jobsForPhone, loadFill } from "@/lib/bookings";
+import { lockWithDeposit } from "@/lib/pay-actions";
 import { digitsPhone, isUsPhone } from "@/lib/phone";
 import { optionalSession } from "@/lib/optional-session";
 import { PHONE } from "@/lib/messages";
@@ -85,8 +86,8 @@ Services:
 ${SIZE_HINTS}
 
 Add-ons: stairs, long-carry, cleanout, fridge (junk); bagging (leaves); downspout (gutters).
-Promo: ${PROMO_DEADLINE_LABEL} still takes 20% off, capped at $75, floor $55.
-Deposit $50 after we confirm. Owner cell if they insist: ${PHONE}.
+Promo: ${isPromoActive() ? `${PROMO_DEADLINE_LABEL} still takes 20% off, capped at $75, floor $55.` : "Percent-off window is closed. Book before the city vacuum (mid-Oct to mid-Nov). Neighbor/block credit for same-street density. Floor still $55. No extra coupon."}
+Deposit: $50 on the card holds the day (landlord stacks $75–$100) and comes off the invoice. No hold without the card. Owner cell if they insist: ${PHONE}.
 
 HOW TO TALK
 - One question at a time. Confirm what they just said in a few words, then ask the next missing piece.
@@ -95,7 +96,7 @@ HOW TO TALK
 - If they dump several facts in one message, grab them all, confirm, ask only what's still missing.
 - If they say book / yes / lock it / come get it and nothing is missing, call book_stop immediately.
 - book_stop REQUIRES name, 10-digit phone, and a street address. If any are missing, ask for that one thing. Do not book.
-- When booked, read back: what's hauled, the dollar range, the actual day, the job number. Then stop selling.
+- When booked, read back: what's hauled, the dollar range, the day, the job number, and the payUrl so they can put the deposit on the card. The day is not held until the card clears.
 - Customers look up jobs with the phone they booked.
 - Keep replies under 45 words, spoken out loud. Straight. No "great question", no "I'd be happy to".
 - Short answers fill the missing field. "Pat" is a name. "123 Main" is the address. "tomorrow" or "Monday" is a day.
@@ -378,7 +379,7 @@ async function runTool(name: string, raw: string, lead: ShopLead, email: string 
       return JSON.stringify({ ok: false, missing: gap, ask: nextAsk(gap, lead) });
     }
     try {
-      const held = await submitBooking({
+      const held = await lockWithDeposit({
         data: {
           name: nameOnJob,
           phone,
@@ -391,14 +392,21 @@ async function runTool(name: string, raw: string, lead: ShopLead, email: string 
           notes: lead.pack
             ? `Landlord desk · ${lead.stops ?? 1} ${lead.pack}`
             : "Shop line",
+          pack: lead.pack,
+          stops: lead.pack ? lead.stops ?? 1 : 1,
         },
       });
+      if (!held.ok) {
+        return JSON.stringify({ ok: false, error: held.error });
+      }
       return JSON.stringify({
         ok: true,
         day: held.preferredDate,
         dayLabel: held.preferredDate ? formatDayLong(held.preferredDate) : null,
         code: `#${held.id}`,
         id: held.id,
+        payUrl: held.url,
+        deposit: held.deposit,
       });
     } catch (err) {
       return JSON.stringify({
@@ -635,7 +643,7 @@ async function fallbackReply(
 
   if (wantBook && gap.length === 0) {
     try {
-      const held = await submitBooking({
+      const held = await lockWithDeposit({
         data: {
           name: next.name as string,
           phone: next.phone as string,
@@ -646,8 +654,13 @@ async function fallbackReply(
           preferredDate: next.day || "",
           asap: next.asap !== false,
           notes: next.pack ? `Landlord desk · ${next.stops ?? 1} ${next.pack}` : "Shop line",
+          pack: next.pack,
+          stops: next.pack ? next.stops ?? 1 : 1,
         },
       });
+      if (!held.ok) {
+        return { text: held.error, lead: next };
+      }
       const q = estimate({
         service: next.service as ServiceKey,
         size: next.size as string,
@@ -659,7 +672,7 @@ async function fallbackReply(
       const range = q.range ? formatRange(q.range) : "we'll confirm on site";
       const day = held.preferredDate || next.day || "";
       return {
-        text: `Locked. ${serviceLabel(next.service)} ${day ? formatDayLong(day) : "first open day"}. ${range}. Job #${held.id}. We'll text ${next.phone}.`,
+        text: `Job #${held.id}. ${serviceLabel(next.service)} ${day ? formatDayLong(day) : "first open day"}. ${range}. Put $${held.deposit} on the card to hold it — comes off the invoice: ${held.url}`,
         lead: { ...next, booked: true, code: `#${held.id}`, bookedDay: day, day },
       };
     } catch (err) {

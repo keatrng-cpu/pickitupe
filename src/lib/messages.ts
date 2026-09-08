@@ -11,6 +11,9 @@ import { BLOCK_TIERS, PROMO_CAP, PROMO_PERCENT } from "@/lib/pricebook";
 
 export const PHONE = "701-213-3969";
 export const TEL = "tel:7012133969";
+/** Public Maps search until a GBP place id is set. */
+export const REVIEW_URL =
+  "https://www.google.com/maps/search/?api=1&query=Pick+It+Up+E+Grand+Forks+ND";
 
 export type MessageKind =
   | "callback"
@@ -77,14 +80,14 @@ export const TEMPLATES: MessageTemplate[] = [
     label: "Job done",
     stage: "scheduled",
     build: (c) =>
-      `All done, ${firstName(c.name)} — yard's clear and the load is gone. Invoice is ${c.estimate || "$___"} less your $50 deposit. Thanks for having us out. — Pick It Up E`,
+      `All done, ${firstName(c.name)} — yard's clear and the load is gone. Invoice is ${c.estimate || "$___"} less your deposit. If we did right by you, tap this Google review — 30 seconds. ${REVIEW_URL} — Pick It Up E`,
   },
   {
     kind: "review",
     label: "Ask for a review",
     stage: "done",
     build: (c) =>
-      `Thanks again, ${firstName(c.name)}. If we did right by you, a quick Google review helps neighbors find us — takes about 30 seconds. Either way, call anytime. — Pick It Up E, ${PHONE}`,
+      `Thanks again, ${firstName(c.name)}. If we did right by you, a Google review helps the next neighbor find us — 30 seconds: ${REVIEW_URL} — Pick It Up E, ${PHONE}`,
   },
   {
     kind: "neighbor",

@@ -17,6 +17,7 @@ import {
   type DayFill,
 } from "@/lib/schedule";
 import { z } from "zod";
+import { BOOKING_SELECT, ensurePayColumns } from "@/lib/pay-columns";
 import { notifyOwnerOfBooking } from "@/lib/booking-alert.server";
 import { sessionEmail } from "@/lib/optional-session";
 import { isOwnerEmail } from "@/lib/owner";
@@ -76,6 +77,12 @@ export type BookingRow = {
   households: number | null;
   applied_discount: string | null;
   discount_amount: number | null;
+  deposit_cents?: number | null;
+  deposit_paid?: boolean | null;
+  extra_addresses?: string | null;
+  pack?: string | null;
+  stops?: number | null;
+  balance_paid?: boolean | null;
 };
 
 /**
@@ -98,12 +105,13 @@ export const getOfferStatus = createServerFn({ method: "GET" }).handler(
 export async function loadFill(): Promise<DayFill[]> {
   try {
     const sql = await getSql();
+    await ensurePayColumns(sql);
     const rows = await sql<{ preferred_date: string | null; job_size: string | null; service: string }>`
       select preferred_date, job_size, service
       from bookings
       where preferred_date is not null
         and preferred_date >= ${todayISO()}
-        and status not in ('cancelled', 'done')
+        and status not in ('cancelled', 'done', 'hold')
     `;
     const used = new Map<string, number>();
     for (const r of rows) {
@@ -238,16 +246,10 @@ export const listBookings = createServerFn({ method: "GET" })
       throw new Error("Forbidden");
     }
     const sql = await getSql();
-    return sql<BookingRow>`
-      select id, name, phone, email, address, service, notes,
-             preferred_date, early_bird, status, created_at,
-             urgency, job_size, add_ons, estimate_low, estimate_high,
-             lat, lon, area_tier, neighbor_of,
-             households, applied_discount, discount_amount
-      from bookings
-      order by created_at desc
-      limit 200
-    `;
+    await ensurePayColumns(sql);
+    return sql.query<BookingRow>(
+      `select ${BOOKING_SELECT} from bookings order by created_at desc limit 200`,
+    );
   });
 
 export const updateBookingStatus = createServerFn({ method: "POST" })
@@ -256,7 +258,7 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
     z
       .object({
         id: z.number(),
-        status: z.enum(["new", "quoted", "scheduled", "done", "cancelled"]),
+        status: z.enum(["hold", "new", "quoted", "scheduled", "done", "cancelled"]),
       })
       .parse(input),
   )
@@ -265,9 +267,25 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
       throw new Error("Forbidden");
     }
     const sql = await getSql();
+    await ensurePayColumns(sql);
     await sql`
       update bookings set status = ${data.status} where id = ${data.id}
     `;
+    if (data.status === "done") {
+      const rows = await sql.query<{ name: string; phone: string; email: string | null; estimate_low: number | null; estimate_high: number | null }>(
+        `select name, phone, email, estimate_low, estimate_high from bookings where id = $1`,
+        [data.id],
+      );
+      const row = rows[0];
+      if (row) {
+        const { doneReviewMessage, notifyCustomer } = await import("@/lib/customer-notify.server");
+        const est =
+          row.estimate_low != null && row.estimate_high != null
+            ? `$${row.estimate_low}–$${row.estimate_high}`
+            : null;
+        await notifyCustomer(row.phone, row.email, doneReviewMessage(row.name, est));
+      }
+    }
     return { ok: true as const };
   });
 
@@ -277,16 +295,10 @@ export async function jobsForPhone(raw: string) {
   const phone = digitsPhone(raw);
   if (!isUsPhone(phone)) return [] as BookingRow[];
   const sql = await getSql();
-  const rows = await sql<BookingRow>`
-    select id, name, phone, email, address, service, notes,
-           preferred_date, early_bird, status, created_at,
-           urgency, job_size, add_ons, estimate_low, estimate_high,
-           lat, lon, area_tier, neighbor_of,
-           households, applied_discount, discount_amount
-    from bookings
-    order by created_at desc
-    limit 200
-  `;
+  await ensurePayColumns(sql);
+  const rows = await sql.query<BookingRow>(
+    `select ${BOOKING_SELECT} from bookings order by created_at desc limit 200`,
+  );
   return rows.filter((r) => digitsPhone(r.phone).slice(-10) === phone).slice(0, 20);
 }
 
@@ -300,17 +312,14 @@ export const listMyBookings = createServerFn({ method: "GET" })
     const email = context.email?.trim().toLowerCase();
     if (!email) return [] as BookingRow[];
     const sql = await getSql();
-    return sql<BookingRow>`
-      select id, name, phone, email, address, service, notes,
-             preferred_date, early_bird, status, created_at,
-             urgency, job_size, add_ons, estimate_low, estimate_high,
-             lat, lon, area_tier, neighbor_of,
-             households, applied_discount, discount_amount
-      from bookings
-      where lower(coalesce(email, '')) = ${email}
-      order by created_at desc
-      limit 40
-    `;
+    await ensurePayColumns(sql);
+    return sql.query<BookingRow>(
+      `select ${BOOKING_SELECT} from bookings
+        where lower(coalesce(email, '')) = $1
+        order by created_at desc
+        limit 40`,
+      [email],
+    );
   });
 
 export const claimByPhone = createServerFn({ method: "POST" })

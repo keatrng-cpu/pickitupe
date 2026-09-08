@@ -7,7 +7,7 @@ import { PhotoQuote } from "@/components/photo-quote";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { StickyDock } from "@/components/sticky-dock";
 import { speakShop, talkShop, type ChatTurn, type ShopLead } from "@/lib/dispatcher";
-import { submitBooking } from "@/lib/bookings";
+import { lockWithDeposit } from "@/lib/pay-actions";
 import { formatPhone, isUsPhone } from "@/lib/phone";
 import { PHONE } from "@/lib/messages";
 import {
@@ -20,6 +20,7 @@ import {
   isPromoActive,
   LANDLORD_PACKS,
   listedSizesFor,
+  landlordDeposit,
   packDefaultSize,
   packService,
   sizesForPack,
@@ -38,6 +39,11 @@ type Search = {
   pack?: LandlordPack;
   stops?: number;
   lotSqFt?: number;
+  held?: boolean;
+  job?: number;
+  when?: string;
+  code?: string;
+  cancelled?: boolean;
 };
 
 export const Route = createFileRoute("/call")({
@@ -63,6 +69,17 @@ export const Route = createFileRoute("/call")({
           ? Number(search.lotSqFt)
           : NaN;
     if (Number.isFinite(rawLot) && rawLot >= 1500) out.lotSqFt = Math.round(rawLot);
+    if (search.held === "1" || search.held === 1 || search.held === true) out.held = true;
+    if (search.cancelled === "1" || search.cancelled === 1 || search.cancelled === true) out.cancelled = true;
+    const job =
+      typeof search.job === "number"
+        ? search.job
+        : typeof search.job === "string"
+          ? Number(search.job)
+          : NaN;
+    if (Number.isFinite(job) && job > 0) out.job = job;
+    if (typeof search.day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search.day)) out.when = search.day;
+    if (typeof search.code === "string") out.code = search.code;
     return out;
   },
   component: CallPage,
@@ -145,10 +162,32 @@ function CallPage() {
   const [locked, setLocked] = useState<{ day: string; code: string } | null>(null);
   const [fillKey, setFillKey] = useState(0);
   const [showAllSizes, setShowAllSizes] = useState(false);
+  const [extras, setExtras] = useState<string[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recRef = useRef<SpeechRecognition | null>(null);
   const logRef = useRef<HTMLOListElement | null>(null);
   const { user } = useCurrentUserState();
+
+  useEffect(() => {
+    if (!params.held) return;
+    setLocked({
+      day: params.when || "",
+      code: params.code || (params.job ? `#${params.job}` : ""),
+    });
+  }, [params.held, params.when, params.code, params.job]);
+
+  useEffect(() => {
+    if (params.cancelled) setError("Card not charged. The day isn't held until the deposit clears.");
+  }, [params.cancelled]);
+
+  useEffect(() => {
+    if (!landlord) {
+      setExtras([]);
+      return;
+    }
+    const n = Math.max(0, stops - 1);
+    setExtras((cur) => Array.from({ length: n }, (_, i) => cur[i] ?? ""));
+  }, [landlord, stops]);
 
   useEffect(() => {
     return () => {
@@ -317,12 +356,17 @@ function CallPage() {
       setError("Street address for the stop.");
       return;
     }
+    if (landlord && stops > 1 && extras.filter((a) => a.trim().length >= 5).length < stops - 1) {
+      setError("Street for each stop this week.");
+      return;
+    }
     setBusy(true);
-    const held = await submitBooking({
+    const paid = await lockWithDeposit({
       data: {
         name: name.trim(),
         phone,
-        address: address.trim() + (landlord && stops > 1 ? ` · ${stops} ${pack ?? "stops"} this week` : ""),
+        address: address.trim(),
+        extraAddresses: extras.map((a) => a.trim()).filter(Boolean),
         email: user?.primaryEmail || "",
         service: pack ? packService(pack) : service,
         jobSize: currentSize,
@@ -331,25 +375,22 @@ function CallPage() {
         notes: landlord ? `Landlord desk · ${stops} ${pack ?? "stops"}` : "Shop line",
         estimateLow: priced.range?.low,
         estimateHigh: priced.range?.high,
+        pack,
+        stops: landlord ? stops : 1,
       },
     }).catch((err: unknown) => ({
       ok: false as const,
-      error: err instanceof Error ? err.message : "Couldn't hold the day. Try again.",
+      error: err instanceof Error ? err.message : "Couldn't open checkout.",
     }));
     setBusy(false);
-    if (!held || !("ok" in held) || !held.ok) {
-      setError("error" in held ? String(held.error) : "Couldn't hold the day.");
-      setFillKey((n) => n + 1);
+    if (!paid || !("ok" in paid) || !paid.ok) {
+      setError("error" in paid ? String(paid.error) : "Couldn't open checkout.");
       return;
     }
-    const lockedDay = held.preferredDate || day;
-    const code = `#${held.id}`;
-    finish(lockedDay || "", code);
-    const range = priced.range ? formatRange(priced.range) : "we'll confirm on site";
-    const said = `Locked. ${lockedDay ? formatDayLong(lockedDay) : "First open day"}. ${range}. Job ${code}. We'll text ${formatPhone(phone)}.`;
-    setTurns((cur) => [...cur, { role: "assistant", content: said }]);
-    setLive(true);
-    await say(said);
+    if ("url" in paid && paid.url) {
+      window.location.href = paid.url;
+      return;
+    }
   }
 
   if (locked) {
@@ -362,7 +403,8 @@ function CallPage() {
           <p className="mt-4 text-base text-muted">
             {locked.day ? `${formatDayLong(locked.day)}. ` : null}
             {priced.range ? `${formatRange(priced.range)} on file. ` : null}
-            Job {locked.code}. We'll text {formatPhone(phone) || "the number you gave"}.
+            Job {locked.code}. Deposit is on the card and comes off the invoice. We'll text{" "}
+            {formatPhone(phone) || "the number you gave"}.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
@@ -587,7 +629,7 @@ function CallPage() {
                 />
               </label>
               <label className="text-xs font-medium text-muted">
-                Street address
+                Street address{landlord && stops > 1 ? " — first stop" : ""}
                 <input
                   className="field mt-1 h-12"
                   autoComplete="street-address"
@@ -595,6 +637,21 @@ function CallPage() {
                   onChange={(e) => setAddress(e.target.value)}
                 />
               </label>
+              {landlord
+                ? extras.map((line, i) => (
+                    <label key={i} className="text-xs font-medium text-muted">
+                      Stop {i + 2}
+                      <input
+                        className="field mt-1 h-12"
+                        value={line}
+                        onChange={(e) =>
+                          setExtras((cur) => cur.map((x, j) => (j === i ? e.target.value : x)))
+                        }
+                        placeholder="Street, city"
+                      />
+                    </label>
+                  ))
+                : null}
             </div>
 
             {error ? <p className="mt-3 text-sm text-gold">{error}</p> : null}
@@ -606,12 +663,8 @@ function CallPage() {
               className="btn-press mt-5 h-14 w-full rounded-full bg-fg text-base font-medium text-ink hover:bg-gold disabled:opacity-60"
             >
               {busy
-                ? "Holding the day…"
-                : asap
-                  ? "Lock first open day"
-                  : day
-                    ? `Lock ${formatDayLong(day)}`
-                    : "Pick a day first"}
+                ? "Opening card…"
+                : `Pay $${landlord ? landlordDeposit(stops, pack ?? "turns") : 50} to hold`}
             </button>
             <p className="mt-3 text-center text-xs text-muted">
               Prefer a form?{" "}

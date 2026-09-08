@@ -6,6 +6,7 @@ import {
   startNewServiceYear,
   upsertSubscription,
 } from "@/lib/subscriptions.server";
+import { finalizeBalance, finalizePaidDeposit } from "@/lib/pay-finalize.server";
 
 /**
  * Stripe webhook endpoint — https://pickitupe.com/api/stripe/webhook
@@ -69,6 +70,17 @@ export const Route = createFileRoute("/api/stripe/webhook")({
           switch (event.type) {
             case "checkout.session.completed": {
               const session = event.data.object as Stripe.Checkout.Session;
+              if (session.mode === "payment") {
+                const id = Number(session.metadata?.bookingId);
+                if (Number.isFinite(id) && id > 0) {
+                  if (session.metadata?.kind === "balance") {
+                    await finalizeBalance(id, session.id);
+                  } else {
+                    await finalizePaidDeposit(id, session.id);
+                  }
+                }
+                break;
+              }
               if (session.mode !== "subscription" || !session.subscription) break;
 
               // Re-fetch rather than trusting the session's expansion state:

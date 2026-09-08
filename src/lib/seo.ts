@@ -100,11 +100,11 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "When does the Grand Forks city leaf vacuum run?",
-    a: "Typically mid-October to mid-November. Leaves must be loose, within 3 feet of the curb, not in the street, and clear of trees, mailboxes, and poles. Confirm current dates with the city at 701-738-8740.",
+    a: "Typically mid-October to mid-November. Book before it. Leaves must be loose, within 3 feet of the curb, not in the street. Confirm current dates with the city at 701-738-8740.",
   },
   {
     q: "How fast can you come out?",
-    a: "Text a photo of the pile to 701-213-3969 and you'll get a number the same day. A $50 deposit holds your date and comes off the invoice.",
+    a: "Tap a day on the shop line. A $50 card deposit holds it and comes off the invoice. I'll text the morning of.",
   },
 ];
 

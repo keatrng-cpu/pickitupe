@@ -10,12 +10,13 @@ import {
   type BookingRow,
 } from "@/lib/bookings";
 import { smsLink, templatesForStage } from "@/lib/messages";
+import { startBalanceInvoice } from "@/lib/pay-actions";
 import { PROMO_CAP, PROMO_PERCENT } from "@/lib/pricebook";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/jobs")({ component: JobsPage });
 
-const STATUSES = ["new", "quoted", "scheduled", "done", "cancelled"] as const;
+const STATUSES = ["hold", "new", "quoted", "scheduled", "done", "cancelled"] as const;
 
 const URGENCY_LABEL: Record<string, string> = {
   "before-vacuum": "Before city vacuum",
@@ -151,6 +152,13 @@ function JobsPage() {
                         <MapPin className="mt-0.5 size-3.5 shrink-0" />
                         {job.address}
                       </p>
+                      {job.extra_addresses
+                        ? job.extra_addresses.split("\n").map((line) => (
+                            <p key={line} className="ml-5 text-sm text-muted">
+                              {line}
+                            </p>
+                          ))
+                        : null}
                       {job.preferred_date ? (
                         <p className="text-sm">Wanted: {job.preferred_date}</p>
                       ) : null}
@@ -167,6 +175,20 @@ function JobsPage() {
                     <div className="flex flex-col items-end gap-2">
                       {est ? (
                         <span className="font-display text-2xl">{est}</span>
+                      ) : null}
+                      {job.deposit_paid ? (
+                        <span className="rounded-full bg-sioux px-3 py-1 text-xs">
+                          ${Math.round((job.deposit_cents ?? 5000) / 100)} deposit paid
+                        </span>
+                      ) : job.status === "hold" ? (
+                        <span className="rounded-full border border-gold/40 px-3 py-1 text-xs text-gold">
+                          Awaiting card
+                        </span>
+                      ) : null}
+                      {job.balance_paid ? (
+                        <span className="rounded-full bg-gold px-3 py-1 text-xs text-ink">
+                          Balance paid
+                        </span>
                       ) : null}
                       {job.early_bird ? (
                         <span className="rounded-full bg-sioux px-3 py-1 text-xs">
@@ -209,6 +231,19 @@ function JobsPage() {
                           </option>
                         ))}
                       </select>
+                      {!job.balance_paid && (job.estimate_high || job.estimate_low) ? (
+                        <button
+                          type="button"
+                          className="btn-press h-11 rounded-full bg-fg px-4 text-sm font-medium text-ink hover:bg-gold"
+                          onClick={async () => {
+                            const res = await startBalanceInvoice({ data: { id: job.id } });
+                            if (res.ok) window.location.href = res.url;
+                            else window.alert(res.error);
+                          }}
+                        >
+                          Invoice the rest
+                        </button>
+                      ) : null}
                     </div>
                   </div>
 

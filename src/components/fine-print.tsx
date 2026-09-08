@@ -11,7 +11,11 @@ const FAQS = [
   },
   {
     q: "City leaf vacuum?",
-    a: "Usually mid-October to mid-November. Leaves loose, within 3 ft of the curb, not in the street. 701-738-8740.",
+    a: "Usually mid-October to mid-November. Book before it. Leaves loose, within 3 ft of the curb. 701-738-8740.",
+  },
+  {
+    q: "How do I hold a day?",
+    a: "$50 on the card locks it. Landlord stacks run $75–$100. Deposit comes off the invoice.",
   },
 ];
 
@@ -22,7 +26,7 @@ export function FinePrint() {
       <h2 className="mt-3 font-display text-3xl leading-none sm:text-4xl">
         Fine print, in plain words.
       </h2>
-      <ul className="mt-8 grid gap-4 sm:grid-cols-3">
+      <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {FAQS.map((f) => (
           <li key={f.q} className="card-green rounded-2xl p-5">
             <p className="font-display text-xl leading-snug">{f.q}</p>

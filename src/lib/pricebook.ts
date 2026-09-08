@@ -48,6 +48,11 @@ export function isPromoActive(now: Date = new Date()): boolean {
   return now.getTime() < PROMO_DEADLINE.getTime();
 }
 
+/** After the percent-off window: a date, density, and the floor. Not another coupon. */
+export const VACUUM_WINDOW = "mid-October to mid-November";
+export const VACUUM_LINE =
+  "Book before the city vacuum. Same street, same day — neighbor credit, not another percent off. Floor still $55.";
+
 /** Never below this after discounts — a truck roll costs money. */
 const FLOOR = 55;
 

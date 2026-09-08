@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { getPlanStatus, openBillingPortal, startPlanCheckout } from "@/lib/plan-actions";
+import { startSpringHold, stripeReady } from "@/lib/pay-actions";
 import { PLAN_EXCLUSIONS, SERVICE_WINDOW, type PlanTier } from "@/lib/plan";
 
 const TITLE = "Seasonal Cleanup Plan — Spring + Fall | Pick It Up E";
@@ -32,6 +33,7 @@ function PlanPage() {
   });
   const welcomed = Boolean(search.welcome);
   const cancelled = Boolean(search.cancelled);
+  const springHeld = Boolean(search.held);
 
   const [status, setStatus] = useState<{
     available: boolean;
@@ -41,10 +43,21 @@ function PlanPage() {
   const [portalEmail, setPortalEmail] = useState("");
   const [portalBusy, setPortalBusy] = useState(false);
 
+  const [cardReady, setCardReady] = useState(false);
+  const [holdBusy, setHoldBusy] = useState(false);
+  const [holdName, setHoldName] = useState("");
+  const [holdPhone, setHoldPhone] = useState("");
+  const [holdEmail, setHoldEmail] = useState("");
+  const [holdAddress, setHoldAddress] = useState("");
+  const [holdTier, setHoldTier] = useState<PlanTier>("standard");
+
   useEffect(() => {
     getPlanStatus()
       .then(setStatus)
       .catch(() => setStatus({ available: false, tiers: [] }));
+    stripeReady()
+      .then((r) => setCardReady(r.ready))
+      .catch(() => setCardReady(false));
   }, []);
 
   async function join(tier: PlanTier) {
@@ -97,6 +110,15 @@ function PlanPage() {
                 You're on the plan. Check your email for the receipt — the
                 cancellation link lives in there, and in every renewal notice we
                 send. We'll text before your first visit.
+              </span>
+            </p>
+          ) : null}
+          {springHeld ? (
+            <p className="mt-6 flex max-w-2xl items-start gap-2 rounded-xl border border-gold/40 bg-gold/10 p-4 text-sm">
+              <Check className="mt-0.5 size-4 shrink-0 text-gold" />
+              <span>
+                Spring is held. $50 is on the card and comes off the plan. We'll
+                text when the ground is bare.
               </span>
             </p>
           ) : null}
@@ -158,14 +180,84 @@ function PlanPage() {
               </div>
             ) : (
               <div className="card-green mt-10 rounded-2xl p-8">
-                <p className="text-base leading-[1.6]">
-                  The seasonal plan isn't open for signups yet. Text{" "}
-                  <a className="underline decoration-gold/50 underline-offset-4" href="sms:7012133969">
-                    701-213-3969
-                  </a>{" "}
-                  and we'll hold your spring slot at this year's rate with the
-                  same $50 deposit as any booking.
+                <p className="kicker">Spring hold</p>
+                <h3 className="mt-2 font-display text-2xl">Lock this year's rate.</h3>
+                <p className="mt-3 max-w-xl text-sm text-muted">
+                  $50 holds the spring slot. It comes off the plan when the year
+                  is on the card. Ground thaw isn't a date here — we come when
+                  it's bare.
                 </p>
+                {cardReady ? (
+                  <form
+                    className="mt-6 grid gap-3 sm:grid-cols-2"
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      setHoldBusy(true);
+                      const res = await startSpringHold({
+                        data: {
+                          name: holdName,
+                          phone: holdPhone,
+                          email: holdEmail,
+                          address: holdAddress,
+                          tier: holdTier,
+                        },
+                      });
+                      setHoldBusy(false);
+                      if (res.ok) window.location.href = res.url;
+                      else toast.error(res.error);
+                    }}
+                  >
+                    <label className="text-xs font-medium text-muted sm:col-span-2">
+                      Lot
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {(["small", "standard", "large"] as PlanTier[]).map((t) => (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => setHoldTier(t)}
+                            className={`btn-press h-11 rounded-full px-4 text-sm ${
+                              holdTier === t ? "bg-gold text-ink" : "border border-border text-fg"
+                            }`}
+                          >
+                            {t === "small" ? "Small city" : t === "large" ? "Large / corner" : "Standard"}
+                          </button>
+                        ))}
+                      </div>
+                    </label>
+                    <label className="text-xs font-medium text-muted">
+                      Name
+                      <input className="field mt-1 h-12" value={holdName} onChange={(e) => setHoldName(e.target.value)} required />
+                    </label>
+                    <label className="text-xs font-medium text-muted">
+                      Phone
+                      <input className="field mt-1 h-12" inputMode="tel" value={holdPhone} onChange={(e) => setHoldPhone(e.target.value)} required />
+                    </label>
+                    <label className="text-xs font-medium text-muted">
+                      Email
+                      <input className="field mt-1 h-12" type="email" value={holdEmail} onChange={(e) => setHoldEmail(e.target.value)} />
+                    </label>
+                    <label className="text-xs font-medium text-muted">
+                      Address
+                      <input className="field mt-1 h-12" value={holdAddress} onChange={(e) => setHoldAddress(e.target.value)} required />
+                    </label>
+                    <button
+                      type="submit"
+                      disabled={holdBusy}
+                      className="btn-press mt-2 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-fg px-6 text-sm font-medium text-ink hover:bg-gold disabled:opacity-60 sm:col-span-2"
+                    >
+                      {holdBusy ? <Loader2 className="size-4 animate-spin" /> : null}
+                      Pay $50 to hold spring
+                    </button>
+                  </form>
+                ) : (
+                  <p className="mt-4 text-sm">
+                    Text{" "}
+                    <a className="underline decoration-gold/50 underline-offset-4" href="sms:7012133969">
+                      701-213-3969
+                    </a>{" "}
+                    and we'll hold the slot.
+                  </p>
+                )}
               </div>
             )}
 

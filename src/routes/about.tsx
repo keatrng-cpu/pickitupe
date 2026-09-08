@@ -17,6 +17,51 @@ export const Route = createFileRoute("/about")({
   component: AboutPage,
 });
 
+const WORK = [
+  {
+    src: "/work/leaves-rake.jpg",
+    alt: "Crew raking a leaf pile toward a forest-green pickup in Grand Forks",
+    kicker: "Leaves",
+    title: "You don't bag them.",
+    copy: "Loose piles at the curb are the job. We rake, blow, and load. You stay inside.",
+  },
+  {
+    src: "/work/leaves-lot.jpg",
+    alt: "Pickup bed heaped with leaves on a Grand Forks city lot",
+    kicker: "City lots",
+    title: "Front, back, the boulevard.",
+    copy: "Standard Grand Forks lot, one pass. We don't leave a row for the city vacuum to miss.",
+  },
+  {
+    src: "/work/fridge-stairs.jpg",
+    alt: "Two people carrying a refrigerator up basement stairs",
+    kicker: "Appliances",
+    title: "Basement fridge, we come in.",
+    copy: "City curb pickup is $48 if you can wait and haul it to the street. We take the stairs.",
+  },
+  {
+    src: "/work/couch-bed.jpg",
+    alt: "Couch and mattress strapped in the pickup bed",
+    kicker: "One piece",
+    title: "Couch or mattress, same stop.",
+    copy: "One bulky living-room piece is a size, not a second trip. Strapped, gone the same afternoon.",
+  },
+  {
+    src: "/work/empty-unit.jpg",
+    alt: "Empty apartment after a tenant turnover",
+    kicker: "Turns",
+    title: "Unit empty. Truck full.",
+    copy: "UND lease-out weeks, one code for the stack. We take the week. We do not pretend one afternoon empties four apartments.",
+  },
+  {
+    src: "/work/unit-haul.jpg",
+    alt: "Crew carrying bags and junk from a brick apartment",
+    kicker: "Cleanouts",
+    title: "What they left, we haul.",
+    copy: "Bags, a chair, a microwave — the pile a tenant walked away from. First stop full rate. Extra units that week at route rate.",
+  },
+];
+
 function AboutPage() {
   return (
     <div className="relative z-10 min-h-dvh bg-bg text-fg">
@@ -64,6 +109,23 @@ function AboutPage() {
               {HOURS_NOTE} {AFTER_HOURS}
             </p>
           </article>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 py-14">
+          <p className="kicker">The work</p>
+          <h2 className="mt-2 font-display text-3xl sm:text-4xl">Six stops. Same truck.</h2>
+          <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {WORK.map((w) => (
+              <li key={w.src} className="overflow-hidden rounded-2xl border border-border bg-bg-deep">
+                <img src={w.src} alt={w.alt} className="aspect-video w-full object-cover" />
+                <div className="p-5">
+                  <p className="kicker">{w.kicker}</p>
+                  <h3 className="mt-2 font-display text-xl">{w.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted">{w.copy}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
         </section>
 
         <section className="mx-auto max-w-6xl px-4 pb-16">

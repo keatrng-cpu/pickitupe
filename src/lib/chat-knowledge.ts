@@ -163,7 +163,7 @@ export function knowledge(): string {
   const faq = FAQ.map((f) => `Q: ${f.q}\nA: ${f.a}`).join("\n\n");
   const promo = isPromoActive()
     ? `ACTIVE: book by ${PROMO_DEADLINE_LABEL} for ${Math.round(PROMO_PERCENT * 100)}% off, capped at $${PROMO_CAP}. It locks the RATE, not the service date — leaves are not down by then.`
-    : `CLOSED. The ${PROMO_DEADLINE_LABEL} rate has passed. Still booking at regular rates.`;
+    : `CLOSED. The ${PROMO_DEADLINE_LABEL} percent-off is done. Book before the city vacuum (mid-October to mid-November). Neighbor/block credit for density. Floor still $55.`;
 
   return `
 BUSINESS: ${BUSINESS.name}, ${BUSINESS.city} ${BUSINESS.region}. Phone ${BUSINESS.phone}.
