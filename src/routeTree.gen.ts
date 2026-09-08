@@ -10,13 +10,13 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as BookRouteImport } from './routes/book'
 import { Route as CallRouteImport } from './routes/call'
 import { Route as JobsRouteImport } from './routes/jobs'
+import { Route as LandlordsRouteImport } from './routes/landlords'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PlanRouteImport } from './routes/plan'
-import { Route as AboutRouteImport } from './routes/about'
-import { Route as LandlordsRouteImport } from './routes/landlords'
 import { Route as StatusRouteImport } from './routes/status'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiCronRenewalNoticesRouteImport } from './routes/api/cron/renewal-notices'
@@ -25,6 +25,11 @@ import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe/webhoo
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BookRoute = BookRouteImport.update({
@@ -42,6 +47,11 @@ const JobsRoute = JobsRouteImport.update({
   path: '/jobs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LandlordsRoute = LandlordsRouteImport.update({
+  id: '/landlords',
+  path: '/landlords',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -50,16 +60,6 @@ const LoginRoute = LoginRouteImport.update({
 const PlanRoute = PlanRouteImport.update({
   id: '/plan',
   path: '/plan',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AboutRoute = AboutRouteImport.update({
-  id: '/about',
-  path: '/about',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LandlordsRoute = LandlordsRouteImport.update({
-  id: '/landlords',
-  path: '/landlords',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StatusRoute = StatusRouteImport.update({
@@ -85,13 +85,13 @@ const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/book': typeof BookRoute
   '/call': typeof CallRoute
   '/jobs': typeof JobsRoute
+  '/landlords': typeof LandlordsRoute
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
-  '/about': typeof AboutRoute
-  '/landlords': typeof LandlordsRoute
   '/status': typeof StatusRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
@@ -99,13 +99,13 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/book': typeof BookRoute
   '/call': typeof CallRoute
   '/jobs': typeof JobsRoute
+  '/landlords': typeof LandlordsRoute
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
-  '/about': typeof AboutRoute
-  '/landlords': typeof LandlordsRoute
   '/status': typeof StatusRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
@@ -114,13 +114,13 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/book': typeof BookRoute
   '/call': typeof CallRoute
   '/jobs': typeof JobsRoute
+  '/landlords': typeof LandlordsRoute
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
-  '/about': typeof AboutRoute
-  '/landlords': typeof LandlordsRoute
   '/status': typeof StatusRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
@@ -130,13 +130,13 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/book'
     | '/call'
     | '/jobs'
+    | '/landlords'
     | '/login'
     | '/plan'
-    | '/about'
-    | '/landlords'
     | '/status'
     | '/api/auth/$'
     | '/api/cron/renewal-notices'
@@ -144,13 +144,13 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/book'
     | '/call'
     | '/jobs'
+    | '/landlords'
     | '/login'
     | '/plan'
-    | '/about'
-    | '/landlords'
     | '/status'
     | '/api/auth/$'
     | '/api/cron/renewal-notices'
@@ -158,13 +158,13 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/about'
     | '/book'
     | '/call'
     | '/jobs'
+    | '/landlords'
     | '/login'
     | '/plan'
-    | '/about'
-    | '/landlords'
     | '/status'
     | '/api/auth/$'
     | '/api/cron/renewal-notices'
@@ -173,13 +173,13 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
   BookRoute: typeof BookRoute
   CallRoute: typeof CallRoute
   JobsRoute: typeof JobsRoute
+  LandlordsRoute: typeof LandlordsRoute
   LoginRoute: typeof LoginRoute
   PlanRoute: typeof PlanRoute
-  AboutRoute: typeof AboutRoute
-  LandlordsRoute: typeof LandlordsRoute
   StatusRoute: typeof StatusRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCronRenewalNoticesRoute: typeof ApiCronRenewalNoticesRoute
@@ -193,6 +193,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/book': {
@@ -216,6 +223,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JobsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/landlords': {
+      id: '/landlords'
+      path: '/landlords'
+      fullPath: '/landlords'
+      preLoaderRoute: typeof LandlordsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -228,20 +242,6 @@ declare module '@tanstack/react-router' {
       path: '/plan'
       fullPath: '/plan'
       preLoaderRoute: typeof PlanRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/landlords': {
-      id: '/landlords'
-      path: '/landlords'
-      fullPath: '/landlords'
-      preLoaderRoute: typeof LandlordsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/status': {
@@ -277,13 +277,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   BookRoute: BookRoute,
   CallRoute: CallRoute,
   JobsRoute: JobsRoute,
+  LandlordsRoute: LandlordsRoute,
   LoginRoute: LoginRoute,
   PlanRoute: PlanRoute,
-  AboutRoute: AboutRoute,
-  LandlordsRoute: LandlordsRoute,
   StatusRoute: StatusRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCronRenewalNoticesRoute: ApiCronRenewalNoticesRoute,

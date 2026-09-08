@@ -245,7 +245,8 @@ function nextAsk(missing: string[], lead: ShopLead): string {
   }
   if (first === "service") return "What are we hauling — leaves, junk, or gutters?";
   if (first === "size") {
-    if (lead.pack === "leaves" || lead.service === "leaf-cleanup") return "Small city lot, standard, or large?";
+    if (lead.pack === "leaves" || lead.service === "leaf-cleanup")
+      return "City lot, corner, half acre, or an acre? Square footage is even better.";
     if (lead.pack) return "Typical unit, trashed, or a whole building?";
     if (lead.service === "gutter-cleaning") return "House or a whole complex?";
     return "One item, a few pieces, or a truckload?";
@@ -539,7 +540,9 @@ function guessSize(service: ServiceKey, text: string): string | undefined {
     if (/\bbags\b/.test(t) && !/leaf|leaves|yard/.test(t)) return "bags";
   }
   if (service === "leaf-cleanup") {
-    if (/(acreage|acre)/.test(t)) return "acreage";
+    if (/(half[\s-]?acre|½[\s-]?acre)/.test(t)) return "half";
+    if (/(two acres|2 acres|acreage|tree-heavy)/.test(t)) return "acreage";
+    if (/(one acre|an acre|1 acre|\bacre\b)/.test(t)) return "acre";
     if (/(large|corner|huge|big yard)/.test(t)) return "large";
     if (/(small|tiny|townhouse)/.test(t)) return "small";
     if (/(standard|regular|normal|city lot|my yard)/.test(t)) return "medium";

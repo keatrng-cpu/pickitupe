@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PhotoQuote } from "@/components/photo-quote";
+import { LotSizeField } from "@/components/lot-size-field";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import {
   COMBO_CREDIT,
@@ -38,6 +39,7 @@ function LandlordsPage() {
   const [stops, setStops] = useState<(typeof STOP_COUNTS)[number]>(3);
   const sized = sizesForPack(pack);
   const [size, setSize] = useState(packDefaultSize(pack));
+  const [lotSqFt, setLotSqFt] = useState(0);
   const currentSize = sized.find((s) => s.value === size)?.value ?? sized[0]?.value ?? size;
   const q = useMemo(
     () =>
@@ -47,9 +49,10 @@ function LandlordsPage() {
         addOns: [],
         pack,
         stops,
+        lotSqFt: pack === "turns" ? 0 : lotSqFt,
         earlyBird: isPromoActive(),
       }),
-    [pack, currentSize, stops],
+    [pack, currentSize, stops, lotSqFt],
   );
   const deposit = landlordDeposit(stops, pack);
 
@@ -57,6 +60,7 @@ function LandlordsPage() {
     setPack(next);
     const nextSizes = sizesForPack(next);
     if (!nextSizes.some((s) => s.value === size)) setSize(packDefaultSize(next));
+    if (next === "turns") setLotSqFt(0);
   }
 
   return (
@@ -89,6 +93,7 @@ function LandlordsPage() {
                   src: "landlord",
                   pack,
                   stops,
+                  lotSqFt: lotSqFt || undefined,
                 }}
                 className="btn-press mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-fg px-7 text-sm font-medium text-ink hover:bg-gold"
               >
@@ -139,14 +144,19 @@ function LandlordsPage() {
               ))}
             </div>
 
-            <p className="mt-8 text-xs font-medium text-muted">How heavy is the first stop?</p>
+            <p className="mt-8 text-xs font-medium text-muted">
+              {pack === "leaves" ? "How big is the first yard?" : "How heavy is the first stop?"}
+            </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {sized.map((s) => (
                 <button
                   key={s.value}
                   type="button"
-                  aria-pressed={currentSize === s.value}
-                  onClick={() => setSize(s.value)}
+                  aria-pressed={currentSize === s.value && !lotSqFt}
+                  onClick={() => {
+                    setSize(s.value);
+                    setLotSqFt(0);
+                  }}
                   className={`btn-press inline-flex min-h-11 items-center rounded-full px-4 text-sm ${
                     currentSize === s.value
                       ? "bg-gold text-ink"
@@ -158,11 +168,17 @@ function LandlordsPage() {
               ))}
             </div>
 
+            {pack !== "turns" ? <LotSizeField value={lotSqFt} onChange={setLotSqFt} /> : null}
+
             <PhotoQuote
               service={packService(pack)}
               pack={pack}
               stops={stops}
-              onApply={({ size: next }) => setSize(next)}
+              lotSqFt={lotSqFt}
+              onApply={({ size: next, lotSqFt: measured }) => {
+                setSize(next);
+                if (measured) setLotSqFt(measured);
+              }}
             />
 
             <p className="mt-8 font-display text-5xl leading-none text-gold tabular-nums">
@@ -194,6 +210,7 @@ function LandlordsPage() {
                 src: "landlord",
                 pack,
                 stops: clampStops(stops),
+                lotSqFt: lotSqFt || undefined,
               }}
               className="btn-press mt-6 inline-flex h-12 items-center gap-2 rounded-full bg-fg px-7 text-sm font-medium text-ink hover:bg-gold"
             >

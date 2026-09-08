@@ -47,13 +47,13 @@ export function regionalFor(service: ServiceKey, size: string): RegionalComp {
         source: "lawnstarter.com",
       };
     }
-    if (size === "large" || size === "acreage") {
+    if (size === "large" || size === "acreage" || size === "acre" || size === "half") {
       return {
         who: "His Workmanship (Fargo)",
-        what: "leaf raking on a half-acre yard",
-        price: "$450",
+        what: size === "half" || size === "acre" ? "leaf raking on a half-acre yard" : "leaf raking on a half-acre yard",
+        price: size === "acre" || size === "acreage" ? "$450+ (half-acre listed; acre is a walk)" : "$450",
         low: 450,
-        high: 450,
+        high: size === "acre" || size === "acreage" ? 900 : 450,
         source: "hisworkmanship.com",
       };
     }
@@ -139,7 +139,7 @@ WHAT LOCAL AND REGIONAL COMPETITORS CHARGE:
 ${comps}
 ${landlord}
 HOW TO JUDGE THIS MARKET:
-- Grand Forks lots are mostly city lots. Do not reach for the largest tier because someone says "a lot."
+- Grand Forks lots are mostly 50×140 city lots (~7,000 sq ft). Estimate \`lotSqFt\` from the photo when you can see the house and lawn. A corner with mature trees is ~12,000. Do not call it an acre unless the photo clearly shows a rural lot.
 - Wet, matted, or snow-packed leaves after mid-October: \`wet-heavy\`.
 - Leaves still spread across the yard: \`bagging\`.
 - Basements, second floors: \`stairs\`. Long driveways: \`long-carry\`.
@@ -152,7 +152,7 @@ BE HONEST:
 - Bigger than the largest tier: say so and recommend a walk-through.
 
 Reply with ONLY a JSON object, no prose, no code fence:
-{"size":"<one size value>","addOns":["<add-on keys>"],"refused":["<items>"],"reasoning":"<two sentences, plain, to the customer>","confidence":"high"|"medium"|"low"}`;
+{"size":"<one size value>","lotSqFt":<estimated lot square footage or null>,"addOns":["<add-on keys>"],"refused":["<items>"],"reasoning":"<two sentences, plain, to the customer>","confidence":"high"|"medium"|"low"}`;
 }
 
 type AssessOk = {
@@ -164,6 +164,7 @@ type AssessOk = {
   reasoning: string;
   confidence: "high" | "medium" | "low";
   regional: RegionalComp | null;
+  lotSqFt: number | null;
 };
 
 function parseAssess(
@@ -174,6 +175,7 @@ function parseAssess(
   const json = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "");
   let parsed: {
     size?: string;
+    lotSqFt?: number;
     addOns?: string[];
     refused?: string[];
     reasoning?: string;
@@ -195,6 +197,11 @@ function parseAssess(
     new Set([...(parsed.refused ?? []).filter((r) => typeof r === "string")]),
   );
 
+  const lotSqFt =
+    typeof parsed.lotSqFt === "number" && parsed.lotSqFt >= 1500 && parsed.lotSqFt <= 350000
+      ? Math.round(parsed.lotSqFt)
+      : null;
+
   return {
     ok: true,
     size,
@@ -206,6 +213,7 @@ function parseAssess(
       ? (parsed.confidence as "high" | "medium" | "low")
       : "medium",
     regional: size ? regionalFor(service, size) : null,
+    lotSqFt,
   };
 }
 

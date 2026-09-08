@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Mic, Phone, PhoneOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DateField } from "@/components/date-field";
+import { LotSizeField } from "@/components/lot-size-field";
 import { PhotoQuote } from "@/components/photo-quote";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { speakShop, talkShop, type ChatTurn, type ShopLead } from "@/lib/dispatcher";
@@ -33,6 +34,7 @@ type Search = {
   src?: string;
   pack?: LandlordPack;
   stops?: number;
+  lotSqFt?: number;
 };
 
 export const Route = createFileRoute("/call")({
@@ -51,6 +53,13 @@ export const Route = createFileRoute("/call")({
           ? Number(search.stops)
           : NaN;
     if (Number.isFinite(rawStops) && rawStops >= 1) out.stops = clampStops(rawStops);
+    const rawLot =
+      typeof search.lotSqFt === "number"
+        ? search.lotSqFt
+        : typeof search.lotSqFt === "string"
+          ? Number(search.lotSqFt)
+          : NaN;
+    if (Number.isFinite(rawLot) && rawLot >= 1500) out.lotSqFt = Math.round(rawLot);
     return out;
   },
   component: CallPage,
@@ -108,6 +117,7 @@ function CallPage() {
   const [stops, setStops] = useState(params.stops ?? (landlord ? 2 : 1));
   const [service, setService] = useState<ServiceKey>(initialService);
   const [size, setSize] = useState(initialSize);
+  const [lotSqFt, setLotSqFt] = useState(params.lotSqFt ?? 0);
   const [day, setDay] = useState("");
   const [asap, setAsap] = useState(true);
   const [name, setName] = useState("");
@@ -154,9 +164,10 @@ function CallPage() {
         addOns: [],
         pack,
         stops: landlord ? stops : 1,
+        lotSqFt: service === "leaf-cleanup" || pack === "leaves" || pack === "combo" ? lotSqFt : 0,
         earlyBird: isPromoActive(),
       }),
-    [service, currentSize, pack, stops, landlord],
+    [service, currentSize, pack, stops, landlord, lotSqFt],
   );
 
   function leadSnap(): ShopLead {
@@ -486,7 +497,10 @@ function CallPage() {
                     key={s.value}
                     type="button"
                     aria-pressed={currentSize === s.value}
-                    onClick={() => setSize(s.value)}
+                    onClick={() => {
+                      setSize(s.value);
+                      setLotSqFt(0);
+                    }}
                     className={`btn-press inline-flex min-h-11 items-center rounded-full px-3 text-sm ${
                       currentSize === s.value
                         ? "bg-gold text-ink"
@@ -499,11 +513,19 @@ function CallPage() {
               </div>
             </fieldset>
 
+            {service === "leaf-cleanup" || pack === "leaves" || pack === "combo" ? (
+              <LotSizeField value={lotSqFt} onChange={setLotSqFt} />
+            ) : null}
+
             <PhotoQuote
               service={pack ? packService(pack) : service}
               pack={pack}
               stops={landlord ? stops : 1}
-              onApply={({ size: next }) => setSize(next)}
+              lotSqFt={lotSqFt}
+              onApply={({ size: next, lotSqFt: measured }) => {
+                setSize(next);
+                if (measured) setLotSqFt(measured);
+              }}
             />
 
             {priced.range ? (

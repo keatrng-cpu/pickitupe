@@ -12,19 +12,34 @@ sources are below — recheck them each season, because they move.
 
 ---
 
-## Leaf cleanup — sized by lot
+## Leaf cleanup — priced by the lot
 
-| Size | What it means | Our range | Market comparable |
+Rates are **dollars per 1,000 sq ft of lot**, haul included. High on a city lot
+because the truck, the dump ticket, and the first hour are the cost. Lower per
+foot on acreage because the crew is already there — an acre is still a full-day
+number.
+
+| Band | Lot | Rate | What that prints |
 |---|---|---|---|
-| Small city lot | One or two trees, light cover | **$95–$155** | $100–$250 medium yard |
-| Standard lot | Full cover, front and back | **$145–$245** | $160–$290 standard ¼-acre |
-| Large / corner lot | Heavy cover, mature trees | **$245–$395** | $400–$600 half-acre, heavy |
-| Acreage or tree-heavy | Walk it first | **$395–$650** | $400–$700 upper band |
+| City | 0–8,000 sf | **$32–$46 / 1,000** (~3.2–4.6¢/sf) | 5,000 sf small city **$160–$230** · 7,500 sf standard **$240–$345** |
+| Quarter to half | 8,000–22,000 sf | **$20–$30 / 1,000** | 12,000 sf corner **$335–$490** · half acre **$530–$780** |
+| Acreage | 22,000+ sf | **$14–$22 / 1,000** | one acre **$840–$1,260** · two acres+ is a walk |
 
-National 2026 leaf removal runs **$150–$700 per visit**, averaging $160–$290 for
-a standard quarter-acre. Rural and small-metro labor prices below big metros,
-which is why Grand Forks should sit at the bottom of every national band before
-we even discount.
+Chips are typical Grand Forks lots. A typed square footage or a photo estimate
+replaces the chip. His Workmanship (Fargo) is $320 on a quarter-acre rake and
+$450 on a half — we haul, so a measured quarter-acre sits on their rake price
+and a half-acre sits above it.
+
+National 2026 leaf removal runs **$150–$700 per visit**. We do not race to the
+bottom of that band.
+
+Old chip table (pre sq-ft, kept so the Stripe plan prices stay locked):
+
+| Size | Legacy range (plan still uses the pair totals) |
+|---|---|
+| Small city lot | $95–$155 |
+| Standard lot | $145–$245 |
+| Large / corner lot | $245–$395 |
 
 ## Haul work — sized by the bed
 

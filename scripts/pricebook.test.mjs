@@ -20,6 +20,9 @@ const {
   PLAN_DISCOUNT_CAP,
   RUSH_SURCHARGE,
   ADD_ONS,
+  leafRangeForSqFt,
+  leafRangeForAcres,
+  LOT_SQFT,
 } = await import("../src/lib/pricebook.ts");
 
 const FLOOR = 55;
@@ -142,18 +145,16 @@ test("the three defects that were live in production are fixed", () => {
   });
   assert.ok(smallPair.range.low >= FLOOR, "small-lot block booking breached floor");
 
-  // The $40 tier is the one derived to land exactly on the floor.
+  // The $40 tier was derived from the old $95 small-lot list. Leaf is now
+  // priced by the square foot, so a small city lot no longer sits on the floor.
+  // The floor still holds; the one-item haul is the job that still can't take the credit.
   const smallTrio = estimate({
     ...base,
     size: "small",
     earlyBird: true,
     households: 3,
   });
-  assert.equal(
-    smallTrio.range.low,
-    FLOOR,
-    "small lot at 3 houses should land exactly on the floor, never through it",
-  );
+  assert.ok(smallTrio.range.low >= FLOOR, "small-lot block booking breached floor");
 
   // 2. The ladder used to invert: standard lot cheaper than small lot's list.
   const smallList = sizeOptionsFor("leaf-cleanup").find((s) => s.value === "small").range.low;
@@ -207,9 +208,11 @@ test("block tiers: 1 house none, 2 houses $25, 3+ houses $40", () => {
 });
 
 test("the note always matches the credit that was actually applied", () => {
+  // Gutters: 20% of the high end is under $40, so the block credit wins.
   const blockWins = estimate({
-    ...base,
-    size: "small",
+    service: "gutter-cleaning",
+    size: "standard",
+    addOns: [],
     earlyBird: true,
     households: 3,
   });
@@ -403,4 +406,40 @@ test("the downspout add-on applies to gutters only", () => {
     !q.lines.some((l) => /downspout/i.test(l.label)),
     "downspout must not appear on a non-gutter estimate",
   );
+});
+
+test("leaf $/ksf bands: city lots are expensive per foot, acres still a full day", () => {
+  assert.deepEqual(leafRangeForSqFt(5_000), { low: 160, high: 230 });
+  assert.deepEqual(leafRangeForSqFt(7_500), { low: 240, high: 345 });
+  assert.deepEqual(leafRangeForSqFt(LOT_SQFT.large), leafRangeForSqFt(12_000));
+  const quarter = leafRangeForSqFt(10_890);
+  assert.ok(quarter.low >= 300 && quarter.high <= 470, `quarter-acre ${quarter.low}-${quarter.high} should sit on Fargo $320`);
+  const half = leafRangeForSqFt(21_780);
+  assert.ok(half.low >= 500 && half.high <= 800, `half-acre ${half.low}-${half.high}`);
+  const acre = leafRangeForAcres(1);
+  assert.ok(acre.low >= 800 && acre.high <= 1300, `acre ${acre.low}-${acre.high}`);
+  assert.ok(acre.low > half.low);
+});
+
+test("measured lotSqFt beats the chip", () => {
+  const chip = estimate({ service: "leaf-cleanup", size: "medium", addOns: [], earlyBird: false });
+  const measured = estimate({
+    service: "leaf-cleanup",
+    size: "medium",
+    addOns: [],
+    earlyBird: false,
+    lotSqFt: 10_890,
+  });
+  assert.ok(chip.range);
+  assert.ok(measured.range);
+  assert.notDeepEqual(chip.range, measured.range);
+  assert.deepEqual(measured.range, leafRangeForSqFt(10_890));
+});
+
+test("chip ranges equal the typical-lot formula", () => {
+  for (const size of sizeOptionsFor("leaf-cleanup")) {
+    const typical = LOT_SQFT[size.value];
+    if (!typical) continue;
+    assert.deepEqual(size.range, leafRangeForSqFt(typical), size.value);
+  }
 });

@@ -122,34 +122,102 @@ export type SizeOption = {
   range: Range;
 };
 
+export const SQFT_PER_ACRE = 43_560;
+
 /**
- * Leaf cleanup — rake, blow, bag, haul. Sized by lot, because that is what a
- * homeowner can answer without measuring anything.
+ * Leaf cleanup is priced by the lot, not a vibe.
+ *
+ * Rates are dollars per 1,000 sq ft of LOT (house included — we do not
+ * subtract the footprint). High on a city lot because the truck, the dump
+ * ticket, and the first hour are the cost. Lower per foot on acreage because
+ * the crew is already there — but an acre is still a full-day number.
+ *
+ * Grand Forks comparable: His Workmanship (Fargo) is $320 on a quarter-acre
+ * rake and $450 on a half. We haul. A measured quarter-acre lands around
+ * their rake price; a half-acre sits above it because the dump run is real.
+ *
+ * Band 1  0–8,000 sf     $32–$46 / ksf   (~3.2–4.6¢/sf)  city lots
+ * Band 2  8,000–22,000   $20–$30 / ksf   (~2.0–3.0¢/sf)  quarter to half
+ * Band 3  22,000+        $14–$22 / ksf   (~1.4–2.2¢/sf)  acreage
+ */
+export const LEAF_KSF = {
+  city: { upTo: 8_000, low: 32, high: 46 },
+  mid: { upTo: 22_000, low: 20, high: 30 },
+  acre: { low: 14, high: 22 },
+} as const;
+
+/** Typical Grand Forks lots used when the customer picks a chip instead of a number. */
+export const LOT_SQFT: Record<string, number> = {
+  small: 5_000,
+  medium: 7_500,
+  large: 12_000,
+  half: 21_780,
+  acre: 43_560,
+  acreage: 87_120,
+};
+
+function roundFive(n: number) {
+  return Math.max(FLOOR, Math.round(n / 5) * 5);
+}
+
+export function clampLotSqFt(n: unknown) {
+  const v = Math.round(Number(n));
+  if (!Number.isFinite(v) || v <= 0) return 0;
+  return Math.min(SQFT_PER_ACRE * 8, Math.max(1_500, v));
+}
+
+/** Instant leaf range from a measured lot. Same function the chips use. */
+export function leafRangeForSqFt(sqFt: number): Range {
+  const sf = clampLotSqFt(sqFt);
+  const city = Math.min(sf, LEAF_KSF.city.upTo);
+  const mid = Math.min(Math.max(0, sf - LEAF_KSF.city.upTo), LEAF_KSF.mid.upTo - LEAF_KSF.city.upTo);
+  const rest = Math.max(0, sf - LEAF_KSF.mid.upTo);
+  const low =
+    (city / 1000) * LEAF_KSF.city.low +
+    (mid / 1000) * LEAF_KSF.mid.low +
+    (rest / 1000) * LEAF_KSF.acre.low;
+  const high =
+    (city / 1000) * LEAF_KSF.city.high +
+    (mid / 1000) * LEAF_KSF.mid.high +
+    (rest / 1000) * LEAF_KSF.acre.high;
+  return { low: roundFive(low), high: roundFive(high) };
+}
+
+export function leafRangeForAcres(acres: number): Range {
+  return leafRangeForSqFt(Number(acres) * SQFT_PER_ACRE);
+}
+
+export function lotLabel(sqFt: number) {
+  const sf = clampLotSqFt(sqFt);
+  const acres = sf / SQFT_PER_ACRE;
+  if (acres >= 0.9) return `${acres.toFixed(acres >= 2 ? 0 : 1).replace(/\.0$/, "")} acre lot`;
+  return `${sf.toLocaleString("en-US")} sq ft lot`;
+}
+
+function leafChip(value: string, label: string, hint: string): SizeOption {
+  return {
+    value,
+    label,
+    hint,
+    range: leafRangeForSqFt(LOT_SQFT[value] ?? 7_500),
+  };
+}
+
+/**
+ * Leaf cleanup — rake, blow, bag, haul. Chips are typical GF lots; a measured
+ * square footage (typed or read from a photo) replaces the chip range.
  */
 const LEAF_SIZES: SizeOption[] = [
-  {
-    value: "small",
-    label: "Small city lot",
-    hint: "One or two trees, light cover",
-    range: { low: 95, high: 155 },
-  },
-  {
-    value: "medium",
-    label: "Standard lot",
-    hint: "Full cover, front and back",
-    range: { low: 145, high: 245 },
-  },
-  {
-    value: "large",
-    label: "Large / corner lot",
-    hint: "Heavy cover, mature trees",
-    range: { low: 245, high: 395 },
-  },
+  leafChip("small", "Small city lot", "~5,000 sq ft — one or two trees"),
+  leafChip("medium", "Standard lot", "~7,500 sq ft — front and back"),
+  leafChip("large", "Large / corner lot", "~12,000 sq ft — mature trees"),
+  leafChip("half", "Half acre", "~21,800 sq ft"),
+  leafChip("acre", "One acre", "43,560 sq ft"),
   {
     value: "acreage",
-    label: "Acreage or tree-heavy",
-    hint: "We walk it first, then quote",
-    range: { low: 395, high: 650 },
+    label: "Two acres+",
+    hint: "We walk it first",
+    range: leafRangeForSqFt(LOT_SQFT.acreage),
   },
 ];
 
@@ -258,29 +326,21 @@ const LOAD_SIZES: SizeOption[] = [
  * not. PRICEBOOK.md's "what to check after a real season" list is where the
  * measured numbers replace these.
  */
-const SPRING_SIZES: SizeOption[] = [
-  {
-    value: "small",
-    label: "Small city lot",
-    hint: "One or two trees, light winter debris",
-    range: { low: 75, high: 125 },
+const SPRING_SIZES: SizeOption[] = LEAF_SIZES.filter((s) =>
+  s.value === "small" || s.value === "medium" || s.value === "large",
+).map((s) => ({
+  ...s,
+  hint:
+    s.value === "small"
+      ? "One or two trees, light winter debris"
+      : s.value === "large"
+        ? "Heavy thatch, mature trees"
+        : "Full yard, thatch and street sand",
+  range: {
+    low: roundFive(s.range.low * 0.8),
+    high: roundFive(s.range.high * 0.8),
   },
-  {
-    value: "medium",
-    label: "Standard lot",
-    hint: "Full yard, thatch and street sand",
-    range: { low: 115, high: 195 },
-  },
-  {
-    value: "large",
-    label: "Large / corner lot",
-    hint: "Heavy thatch, mature trees",
-    range: { low: 195, high: 315 },
-  },
-  // Acreage deliberately absent — see PLAN_DISCOUNT_CAP below and
-  // `needsWalkthrough`. We do not sell a fixed annual price for the one tier
-  // the estimator already refuses to quote sight-unseen.
-];
+}));
 
 export function springSizeOptions(): SizeOption[] {
   return SPRING_SIZES;
@@ -312,13 +372,20 @@ export function springSizeOptions(): SizeOption[] {
 export const PLAN_DISCOUNT_PERCENT = PROMO_PERCENT;
 export const PLAN_DISCOUNT_CAP = PROMO_CAP * 2;
 
+/**
+ * Seasonal plan list prices are LOCKED to the Stripe amounts already sold.
+ * Per-visit leaf rates moved to $/sqft in Sept 2026; do not let that drift
+ * rewrite what subscribers pay. Reprice Stripe, then update these integers.
+ */
+const PLAN_PAIR_LOCKED: Record<string, number> = {
+  small: 225,
+  medium: 350,
+  large: 575,
+};
+
 /** List price of a plan tier before the commitment discount. */
 export function planPairTotal(sizeValue: string): number | null {
-  const fall = LEAF_SIZES.find((s) => s.value === sizeValue);
-  const spring = SPRING_SIZES.find((s) => s.value === sizeValue);
-  if (!fall || !spring) return null;
-  const mid = (r: Range) => (r.low + r.high) / 2;
-  return Math.round(mid(fall.range) + mid(spring.range));
+  return PLAN_PAIR_LOCKED[sizeValue] ?? null;
 }
 
 /** What a plan tier should cost per year. Stripe holds the sold price. */
@@ -534,9 +601,7 @@ export function packDefaultSize(pack: LandlordPack) {
 }
 
 export function sizesForPack(pack: LandlordPack): SizeOption[] {
-  if (pack === "leaves") {
-    return sizeOptionsFor("leaf-cleanup").filter((s) => s.value !== "acreage");
-  }
+  if (pack === "leaves") return sizeOptionsFor("leaf-cleanup");
   return sizeOptionsFor("junk-removal")
     .filter((s) => s.value in TURN_LABELS)
     .map((s) => ({ ...s, ...TURN_LABELS[s.value] }));
@@ -586,6 +651,9 @@ export type EstimateInput = {
   /** Owner packs — extra stops this week at route rate. First stop stays full. */
   pack?: LandlordPack;
   stops?: number;
+  /** Measured lot. Beats the chip when set. Leaves only. */
+  lotSqFt?: number;
+  acres?: number;
 };
 
 /** Which credit actually got applied. Never both — see `estimate()`. */
@@ -667,7 +735,13 @@ export function estimate(input: EstimateInput): Estimate {
   const sizes = pack
     ? sizesForPack(pack === "leaves" ? "leaves" : "turns")
     : sizeOptionsFor(input.service);
-  const size = sizes.find((s) => s.value === input.size) ?? sizes[0];
+  const picked = sizes.find((s) => s.value === input.size) ?? sizes[0];
+  const measured = clampLotSqFt(input.lotSqFt) || (Number(input.acres) > 0 ? clampLotSqFt(Number(input.acres) * SQFT_PER_ACRE) : 0);
+  const leafJob = pack === "leaves" || (!pack && input.service === "leaf-cleanup");
+  const size: SizeOption =
+    leafJob && measured
+      ? { ...picked, label: lotLabel(measured), hint: `${measured.toLocaleString("en-US")} sq ft`, range: leafRangeForSqFt(measured) }
+      : picked;
   const lines: { label: string; range: Range }[] = [];
   const notes: string[] = [];
 
@@ -693,7 +767,11 @@ export function estimate(input: EstimateInput): Estimate {
   total = add(total, size.range);
 
   const noun = pack === "leaves" ? "yard" : pack === "combo" ? "address" : "unit";
-  const yard = sizeOptionsFor("leaf-cleanup").find((s) => s.value === "medium") ?? sizeOptionsFor("leaf-cleanup")[1];
+  const yardChip = sizeOptionsFor("leaf-cleanup").find((s) => s.value === "medium") ?? sizeOptionsFor("leaf-cleanup")[1];
+  const yard: SizeOption | undefined =
+    pack === "combo" && measured
+      ? { ...yardChip, label: lotLabel(measured), range: leafRangeForSqFt(measured) }
+      : yardChip;
   if (pack) {
     lines[0].label = `${size.label} — first ${noun}`;
     if (pack === "combo" && yard) {
@@ -781,7 +859,16 @@ export function estimate(input: EstimateInput): Estimate {
   const discount = beforeDiscount.high - discounted.high;
 
   const needsWalkthrough =
-    size.value === "acreage" || Boolean(pack && (size.value === "overflow" || stops >= 6));
+    (size.value === "acreage" && !measured) ||
+    measured >= SQFT_PER_ACRE * 3 ||
+    Boolean(pack && (size.value === "overflow" || stops >= 6));
+  if (leafJob || (pack === "combo" && measured)) {
+    notes.push(
+      measured
+        ? `${measured.toLocaleString("en-US")} sq ft at $32–$46 / 1,000 on the first 8,000, then $20–$30, then $14–$22 on acreage. Haul included.`
+        : "City lots run $32–$46 per 1,000 sq ft. Half acre and up drop to $14–$22 per 1,000. Haul included.",
+    );
+  }
   if (pack) {
     notes.push(
       stops === 1

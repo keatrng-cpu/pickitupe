@@ -36,10 +36,11 @@ type Props = {
   service: ServiceKey;
   pack?: LandlordPack;
   stops?: number;
-  onApply: (next: { size: string; addOns: AddOnKey[] }) => void;
+  lotSqFt?: number;
+  onApply: (next: { size: string; addOns: AddOnKey[]; lotSqFt?: number }) => void;
 };
 
-export function PhotoQuote({ service, pack, stops = 1, onApply }: Props) {
+export function PhotoQuote({ service, pack, stops = 1, lotSqFt = 0, onApply }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -52,6 +53,7 @@ export function PhotoQuote({ service, pack, stops = 1, onApply }: Props) {
     confidence: "high" | "medium" | "low";
     regional: RegionalComp | null;
     refused: string[];
+    lotSqFt: number | null;
   } | null>(null);
 
   const priced = useMemo(() => {
@@ -62,9 +64,10 @@ export function PhotoQuote({ service, pack, stops = 1, onApply }: Props) {
       addOns: result.addOns,
       pack,
       stops,
+      lotSqFt: result.lotSqFt || lotSqFt || undefined,
       earlyBird: isPromoActive(),
     });
-  }, [result, service, pack, stops]);
+  }, [result, service, pack, stops, lotSqFt]);
 
   async function addFiles(list: FileList | null) {
     if (!list?.length) return;
@@ -103,7 +106,7 @@ export function PhotoQuote({ service, pack, stops = 1, onApply }: Props) {
         return;
       }
       setResult(res);
-      if (res.size) onApply({ size: res.size, addOns: res.addOns });
+      if (res.size) onApply({ size: res.size, addOns: res.addOns, lotSqFt: res.lotSqFt ?? undefined });
     } catch {
       setError("Couldn't size it up. Try again or text 701-213-3969.");
     } finally {
