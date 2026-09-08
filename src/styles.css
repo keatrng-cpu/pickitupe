@@ -297,7 +297,17 @@
   }
 
   .hero-fill-complex {
-    object-position: center 58%;
+    width: 100%;
+    height: 100%;
+    min-width: 100%;
+    min-height: 100%;
+    object-fit: cover;
+    object-position: center 42%;
+  }
+
+  .landlord-hero .hero-fill,
+  .landlord-strip .hero-fill {
+    opacity: 0.7;
   }
 
   .landlord-hero {
@@ -309,6 +319,8 @@
     inset: 0;
     aspect-ratio: auto;
     height: 100%;
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 
   .landlord-hero .hero-copy {
@@ -324,21 +336,21 @@
       linear-gradient(
         to top,
         var(--color-bg) 0%,
-        color-mix(in srgb, var(--color-bg) 82%, transparent) 34%,
-        color-mix(in srgb, var(--color-bg-deep) 28%, transparent) 62%,
-        transparent 100%
+        color-mix(in srgb, var(--color-bg) 72%, transparent) 26%,
+        color-mix(in srgb, var(--color-bg-deep) 16%, transparent) 50%,
+        transparent 76%
       ),
       linear-gradient(
         to right,
-        color-mix(in srgb, var(--color-bg) 78%, transparent) 0%,
-        color-mix(in srgb, var(--color-bg) 22%, transparent) 46%,
-        transparent 74%
+        color-mix(in srgb, var(--color-bg) 48%, transparent) 0%,
+        color-mix(in srgb, var(--color-bg) 10%, transparent) 24%,
+        transparent 48%
       );
   }
 
   .landlord-strip {
     position: relative;
-    min-height: 17rem;
+    min-height: 20rem;
     color: var(--color-fg);
   }
 
@@ -402,7 +414,7 @@
     }
 
     .landlord-strip {
-      min-height: 22rem;
+      min-height: 26rem;
     }
   }
 
