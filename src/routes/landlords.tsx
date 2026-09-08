@@ -1,23 +1,67 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
+import { useMemo, useState } from "react";
 import { HaulVideo } from "@/components/haul-video";
-import { SiteFooter, SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
+import {
+  COMBO_CREDIT,
+  EXTRA_STOP_CUT,
+  LANDLORD_PACKS,
+  STOP_COUNTS,
+  clampStops,
+  formatRange,
+  isPromoLive,
+  landlordDeposit,
+  packDefaultSize,
+  packService,
+  quote,
+  sizesForPack,
+  type LandlordPack,
+} from "@/lib/pricebook";
 
 export const Route = createFileRoute("/landlords")({
   head: () => ({
     meta: [
-      { title: "Investor special — stacked complexes | Pick It Up E" },
+      { title: "Landlord bundles — tenant turns & leaf routes | Pick It Up E" },
       {
         name: "description",
         content:
-          "Two or more apartment complexes in one week: investor rate, one PICK code, stacked days. Grand Forks and East Grand Forks turnover hauls.",
+          "Grand Forks landlords: bundle tenant cleanouts or leaf routes. First stop is full rate. Extra stops this week run cheaper. One PICK code, one deposit.",
       },
+      { property: "og:title", content: "Landlord bundles — tenant turns & leaf routes | Pick It Up E" },
+      { property: "og:image", content: "/og.jpg" },
     ],
   }),
   component: LandlordsPage,
 });
 
 function LandlordsPage() {
+  const [pack, setPack] = useState<LandlordPack>("turns");
+  const [stops, setStops] = useState<(typeof STOP_COUNTS)[number]>(3);
+  const sized = sizesForPack(pack);
+  const [size, setSize] = useState(packDefaultSize(pack));
+  const currentSize = sized.find((s) => s.value === size)?.value ?? sized[0]?.value ?? size;
+  const q = useMemo(
+    () =>
+      quote({
+        service: packService(pack),
+        size: currentSize,
+        addOns: [],
+        pack,
+        stops,
+        earlyBird: isPromoLive(),
+      }),
+    [pack, currentSize, stops],
+  );
+  const deposit = landlordDeposit(stops, pack);
+
+  function pickPack(next: LandlordPack) {
+    setPack(next);
+    const nextSizes = sizesForPack(next);
+    if (!nextSizes.some((s) => s.value === size)) setSize(packDefaultSize(next));
+  }
+
   return (
     <div className="relative z-10 min-h-dvh bg-bg text-fg">
       <SiteHeader />
@@ -30,22 +74,28 @@ function LandlordsPage() {
           />
           <div className="hero-copy">
             <div className="mx-auto w-full max-w-6xl">
-              <p className="kicker">Landlords & investors</p>
+              <p className="kicker">Landlords & owners</p>
               <h1 className="mt-3 max-w-2xl font-display text-4xl leading-none sm:text-6xl">
-                Portfolio week.
-                <span className="mt-2 block italic text-gold">Every complex. One crew.</span>
+                Bundle the week.
+                <span className="mt-2 block italic text-gold">Turns. Leaves. Same crew.</span>
               </h1>
               <p className="mt-5 max-w-xl text-sm text-muted">
-                Two, three, four buildings — we stack them in the same week, one
-                PICK code, one deposit. Extra complexes run at investor rate, not
-                another full-building price.
+                First stop pays the truck. Extra units or yards this week run at
+                route rate — not another full trip fee. One PICK code, one
+                invoice, deposit holds the stack.
               </p>
               <Link
                 to="/call"
-                search={{ service: "junk-removal", size: "full", src: "landlord" }}
+                search={{
+                  service: packService(pack),
+                  size: currentSize,
+                  src: "landlord",
+                  pack,
+                  stops,
+                }}
                 className="btn-press mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-fg px-7 text-sm font-medium text-ink hover:bg-gold"
               >
-                Shop line
+                Landlord shop line
                 <ArrowRight className="size-4" />
               </Link>
             </div>
@@ -53,65 +103,165 @@ function LandlordsPage() {
         </section>
 
         <section className="mx-auto max-w-6xl px-4 py-14">
-          <ol className="grid gap-6 sm:grid-cols-3">
-            <li className="card-green rounded-2xl p-6">
-              <p className="text-xs tracking-[0.2em] text-gold">01</p>
-              <h2 className="mt-2 font-display text-2xl">One invoice</h2>
-              <p className="mt-2 text-sm text-muted">
-                Every complex on the same PICK code. You are not chasing three
-                vendors in August.
-              </p>
-            </li>
-            <li className="card-green rounded-2xl p-6">
-              <p className="text-xs tracking-[0.2em] text-gold">02</p>
-              <h2 className="mt-2 font-display text-2xl">Stacked days</h2>
-              <p className="mt-2 text-sm text-muted">
-                First open day holds the truck. The rest of that week we run
-                your other buildings. One crew, no extra trip fee between your
-                addresses.
-              </p>
-            </li>
-            <li className="card-green rounded-2xl p-6">
-              <p className="text-xs tracking-[0.2em] text-gold">03</p>
-              <h2 className="mt-2 font-display text-2xl">Investor rate</h2>
-              <p className="mt-2 text-sm text-muted">
-                Complex 2+ is priced as an extra stop, not another full-building
-                day. Book the stack and we quote the week.
-              </p>
-            </li>
+          <div className="grid gap-4 lg:grid-cols-3">
+            {LANDLORD_PACKS.map((p) => (
+              <button
+                key={p.value}
+                type="button"
+                onClick={() => pickPack(p.value)}
+                className={`card-green btn-press rounded-2xl p-6 text-left ${
+                  pack === p.value ? "ring-2 ring-gold" : ""
+                }`}
+              >
+                <p className="kicker">{p.kicker}</p>
+                <h2 className="mt-2 font-display text-2xl">{p.label}</h2>
+                <p className="mt-3 text-sm text-muted">{p.hint}</p>
+              </button>
+            ))}
+          </div>
+
+          <div className="card-green mt-8 rounded-2xl p-6 sm:p-8">
+            <p className="kicker">This week</p>
+            <h2 className="mt-2 font-display text-3xl">
+              How many {pack === "leaves" ? "yards" : pack === "combo" ? "addresses" : "units"}?
+            </h2>
+            <div className="mt-6 flex flex-wrap gap-2" role="radiogroup" aria-label="Number of stops">
+              {STOP_COUNTS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  role="radio"
+                  aria-checked={stops === c}
+                  onClick={() => setStops(c)}
+                  className={`btn-press h-12 rounded-full px-5 text-sm ${
+                    stops === c ? "bg-gold text-ink" : "border border-border text-fg"
+                  }`}
+                >
+                  {c === 6 ? "6+" : c}
+                </button>
+              ))}
+            </div>
+
+            <p className="mt-8 text-xs font-medium text-muted">How heavy is the first stop?</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {sized.map((s) => (
+                <button
+                  key={s.value}
+                  type="button"
+                  aria-pressed={currentSize === s.value}
+                  onClick={() => setSize(s.value)}
+                  className={`btn-press inline-flex min-h-11 items-center rounded-full px-4 text-sm ${
+                    currentSize === s.value
+                      ? "bg-gold text-ink"
+                      : "border border-border text-fg hover:bg-fg/8"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+
+            <p className="mt-8 font-display text-5xl leading-none text-gold tabular-nums">
+              {q.range ? formatRange(q.range) : "Walk-through"}
+            </p>
+            <p className="mt-3 text-sm text-muted">
+              {stops === 1
+                ? "One stop at full rate. Add a second this week and that one drops to route rate."
+                : `First stop full price. ${stops - 1} extra at route rate ($${EXTRA_STOP_CUT.low}–$${EXTRA_STOP_CUT.high} off each).`}
+              {pack === "combo" ? ` Bundle cut $${COMBO_CREDIT}.` : ""} ${deposit}{" "}
+              deposit holds the first day.
+              {q.discount > 0
+                ? ` Versus booking each stop solo, about $${q.discount} less on the high end.`
+                : ""}
+            </p>
+            <ul className="mt-4 space-y-1 text-sm text-muted">
+              {q.lines.slice(0, 6).map((line) => (
+                <li key={line.label} className="flex justify-between gap-4">
+                  <span>{line.label}</span>
+                  <span className="tabular-nums text-gold">{formatRange(line.range)}</span>
+                </li>
+              ))}
+            </ul>
+            <Link
+              to="/call"
+              search={{
+                service: packService(pack),
+                size: currentSize,
+                src: "landlord",
+                pack,
+                stops: clampStops(stops),
+              }}
+              className="btn-press mt-6 inline-flex h-12 items-center gap-2 rounded-full bg-fg px-7 text-sm font-medium text-ink hover:bg-gold"
+            >
+              Book {stops === 1 ? "this stop" : `${stops} on the landlord line`}
+              <ArrowRight className="size-4" />
+            </Link>
+          </div>
+
+          <ol className="mt-12 grid gap-6 sm:grid-cols-3">
+            <Step
+              n="01"
+              title="First stop is full rate"
+              copy="That covers the truck, the dump run, and the crew. We do not discount the job that pays the day."
+            />
+            <Step
+              n="02"
+              title="Extras this week are cheaper"
+              copy={`Same town, same dump ticket. Each extra unit or yard is $${EXTRA_STOP_CUT.low}–$${EXTRA_STOP_CUT.high} off. Stacked days, no extra trip fee between your addresses.`}
+            />
+            <Step
+              n="03"
+              title="Deposit holds the stack"
+              copy="One-off couches stay at $50. Two stops $75. Three or more $100. Combo week starts at $75 and steps up. Comes off the invoice."
+            />
           </ol>
 
           <div className="mt-12 grid gap-6 sm:grid-cols-2">
             <article className="card-green rounded-2xl p-6">
-              <p className="kicker">When</p>
+              <p className="kicker">Turns</p>
               <h2 className="mt-2 font-display text-2xl">May 1–15 and Aug 1–20</h2>
               <p className="mt-3 text-sm text-muted">
-                UND lease-out. Book the portfolio the week before they leave.
-                We will not pretend one truck empties three complexes in one
-                afternoon — we take the week.
+                UND lease-out. Book the units the week before they leave. We will
+                not pretend one truck empties four apartments in an afternoon —
+                we take the week, one code.
               </p>
             </article>
             <article className="card-green rounded-2xl p-6">
-              <p className="kicker">Who</p>
-              <h2 className="mt-2 font-display text-2xl">Owners, not one-off tenants</h2>
+              <p className="kicker">Leaves</p>
+              <h2 className="mt-2 font-display text-2xl">Fall route, same buildings</h2>
               <p className="mt-3 text-sm text-muted">
-                If you hold more than one building in Grand Forks or East Grand
-                Forks, this is the job. Tenants still book a couch. You book the
-                stack.
+                If we already know your addresses from a turn, the leaf route is
+                the cheap second pass. Mix both the same week and the stack gets
+                the ${COMBO_CREDIT} bundle cut.
               </p>
             </article>
           </div>
 
-          <Link
-            to="/call"
-            search={{ service: "junk-removal", size: "full", src: "landlord" }}
-            className="btn-press mt-12 inline-flex h-12 items-center rounded-full bg-fg px-7 text-sm font-medium text-ink hover:bg-gold"
-          >
-            Book a portfolio week
-          </Link>
+          <p className="mt-12 max-w-2xl text-sm text-muted">
+            Tenants still book a couch on the regular shop line. Owners book the
+            stack here.{" "}
+            <Link
+              to="/call"
+              search={{ src: "landlord", pack, stops, service: packService(pack), size: currentSize }}
+              className="text-gold hover:underline"
+            >
+              Landlord shop line
+            </Link>{" "}
+            asks how many addresses, not which loveseat.
+          </p>
         </section>
       </main>
       <SiteFooter />
     </div>
+  );
+}
+
+function Step({ n, title, copy }: { n: string; title: string; copy: string }) {
+  return (
+    <li className="list-none">
+      <p className="text-xs tracking-[0.2em] text-gold">{n}</p>
+      <h2 className="mt-2 font-display text-2xl">{title}</h2>
+      <p className="mt-2 text-sm text-muted">{copy}</p>
+    </li>
   );
 }

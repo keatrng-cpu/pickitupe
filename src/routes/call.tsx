@@ -2,24 +2,41 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Mic, Phone, PhoneOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DateField } from "@/components/date-field";
-import { SiteFooter, SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 import { speakShop, talkShop, type ChatTurn, type ShopLead } from "@/lib/dispatcher";
-import { submitBooking } from "@/lib/bookings";
+import { jobSourceFrom, readChannel } from "@/lib/channel";
+import { reserveJob } from "@/lib/jobs";
 import { formatPhone, isUsPhone } from "@/lib/phone";
-import { PHONE } from "@/lib/messages";
 import {
   canonicalService,
-  estimate,
+  clampStops,
   formatRange,
-  isPromoActive,
-  sizeOptionsFor,
+  isPromoLive,
+  LANDLORD_PACKS,
+  packDefaultSize,
+  packService,
+  PHONE,
+  quote,
+  SERVICES,
+  sizesFor,
+  sizesForPack,
+  STOP_COUNTS,
+  type LandlordPack,
   type ServiceKey,
 } from "@/lib/pricebook";
 import { saveLastBooking } from "@/lib/returning";
 import { formatDayLong } from "@/lib/schedule";
+import { fire } from "@/lib/track";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 
-type Search = { service?: string; size?: string; src?: string };
+type Search = {
+  service?: string;
+  size?: string;
+  src?: string;
+  pack?: LandlordPack;
+  stops?: number;
+};
 
 export const Route = createFileRoute("/call")({
   validateSearch: (search: Record<string, unknown>): Search => {
@@ -27,6 +44,16 @@ export const Route = createFileRoute("/call")({
     if (typeof search.service === "string") out.service = search.service;
     if (typeof search.size === "string") out.size = search.size;
     if (typeof search.src === "string") out.src = search.src;
+    if (search.pack === "turns" || search.pack === "leaves" || search.pack === "combo") {
+      out.pack = search.pack;
+    }
+    const rawStops =
+      typeof search.stops === "number"
+        ? search.stops
+        : typeof search.stops === "string"
+          ? Number(search.stops)
+          : NaN;
+    if (Number.isFinite(rawStops) && rawStops >= 1) out.stops = clampStops(rawStops);
     return out;
   },
   component: CallPage,
@@ -35,30 +62,40 @@ export const Route = createFileRoute("/call")({
 const GREETING =
   "Pick It Up E. Tap a day on the board, or tell me what we're hauling — I'll lock it.";
 
-const SERVICES: { value: ServiceKey; short: string }[] = [
-  { value: "leaf-cleanup", short: "Leaves" },
-  { value: "junk-removal", short: "Junk" },
-  { value: "gutter-cleaning", short: "Gutters" },
-];
+function landlordGreeting(pack?: LandlordPack, stops?: number) {
+  if (pack && stops && stops > 1) {
+    const label = LANDLORD_PACKS.find((p) => p.value === pack)?.label.toLowerCase();
+    return `Landlord desk. ${stops} ${label ?? "stops"} this week. Name on the invoice and I'll lock the first open day.`;
+  }
+  if (pack) {
+    const label = LANDLORD_PACKS.find((p) => p.value === pack)?.label.toLowerCase();
+    return `Landlord desk. ${label}. How many addresses this week?`;
+  }
+  return "Landlord desk. Tenant turns, a leaf route, or both this week? I'll stack the days on one code.";
+}
 
 function isService(v: string | undefined): v is ServiceKey {
-  return (
-    v === "leaf-cleanup" ||
-    v === "junk-removal" ||
-    v === "furniture-appliances" ||
-    v === "gutter-cleaning"
-  );
+  return SERVICES.some((s) => s.value === v) || v === "furniture-appliances";
 }
 
 function CallPage() {
   const params = Route.useSearch();
+  const landlord = params.src === "landlord" || Boolean(params.pack);
+  const initialPack: LandlordPack | undefined = params.pack;
   const initialService: ServiceKey = isService(params.service)
     ? canonicalService(params.service)
-    : "junk-removal";
-  const initialSizes = sizeOptionsFor(initialService);
+    : initialPack
+      ? packService(initialPack)
+      : "junk-removal";
+  const initialSizes = landlord
+    ? sizesForPack(initialPack ?? "turns")
+    : sizesFor(initialService);
   const initialSize =
-    initialSizes.find((s) => s.value === params.size)?.value ?? initialSizes[0]?.value ?? "sofa";
+    initialSizes.find((s) => s.value === params.size)?.value ??
+    (initialPack ? packDefaultSize(initialPack) : initialSizes[0]?.value ?? "sofa");
 
+  const [pack, setPack] = useState<LandlordPack | undefined>(initialPack ?? (landlord ? "turns" : undefined));
+  const [stops, setStops] = useState(params.stops ?? (landlord ? 2 : 1));
   const [service, setService] = useState<ServiceKey>(initialService);
   const [size, setSize] = useState(initialSize);
   const [day, setDay] = useState("");
@@ -66,7 +103,9 @@ function CallPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [turns, setTurns] = useState<ChatTurn[]>([{ role: "assistant", content: GREETING }]);
+  const [turns, setTurns] = useState<ChatTurn[]>([
+    { role: "assistant", content: landlord ? landlordGreeting(initialPack, params.stops) : GREETING },
+  ]);
   const [draft, setDraft] = useState("");
   const [hearing, setHearing] = useState(false);
   const [thinking, setThinking] = useState(false);
@@ -82,6 +121,7 @@ function CallPage() {
   const { user } = useCurrentUserState();
 
   useEffect(() => {
+    fire("call_open", readChannel(), "/call");
     return () => {
       recRef.current?.stop();
       audioRef.current?.pause();
@@ -92,23 +132,32 @@ function CallPage() {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: "smooth" });
   }, [turns, thinking]);
 
-  const sized = sizeOptionsFor(service);
+  const sized = landlord ? sizesForPack(pack ?? "turns") : sizesFor(service);
   const currentSize = sized.find((s) => s.value === size)?.value ?? sized[0]?.value ?? size;
   const priced = useMemo(
-    () => estimate({ service, size: currentSize, addOns: [], earlyBird: isPromoActive() }),
-    [service, currentSize],
+    () =>
+      quote({
+        service: pack ? packService(pack) : service,
+        size: currentSize,
+        addOns: [],
+        pack,
+        stops: landlord ? stops : 1,
+        earlyBird: isPromoLive(),
+      }),
+    [service, currentSize, pack, stops, landlord],
   );
 
   function leadSnap(): ShopLead {
     return {
-      service,
+      service: pack ? packService(pack) : service,
       size: currentSize,
       name: name.trim() || undefined,
       phone: phone.trim() || undefined,
       address: address.trim() || undefined,
-      email: user?.primaryEmail || undefined,
       day: asap ? undefined : day,
       asap,
+      pack,
+      stops: landlord ? stops : undefined,
     };
   }
 
@@ -148,6 +197,11 @@ function CallPage() {
     if (next.name) setName(next.name);
     if (next.phone) setPhone(next.phone);
     if (next.address) setAddress(next.address);
+    if (next.pack) {
+      setPack(next.pack);
+      setService(packService(next.pack));
+    }
+    if (next.stops) setStops(clampStops(next.stops));
     if (typeof next.asap === "boolean") setAsap(next.asap);
     if (next.day) setDay(next.day);
     if (next.booked && next.code && (next.bookedDay || next.day)) {
@@ -158,12 +212,14 @@ function CallPage() {
   function finish(lockedDay: string, code: string, snap?: ShopLead) {
     setLocked({ day: lockedDay, code });
     setFillKey((n) => n + 1);
+    fire("call_book", readChannel(), "/call");
     saveLastBooking({
       name: (snap?.name ?? name).trim(),
       phone: (snap?.phone ?? phone).trim(),
       address: (snap?.address ?? address).trim(),
       service: snap?.service ?? service,
       size: snap?.size ?? currentSize,
+      code,
       at: new Date().toISOString(),
     });
   }
@@ -177,7 +233,11 @@ function CallPage() {
     setLive(true);
     setThinking(true);
     const reply = await talkShop({
-      data: { turns: next, lead: leadSnap() },
+      data: {
+        turns: next,
+        source: jobSourceFrom(readChannel()),
+        lead: leadSnap(),
+      },
     }).catch(() => ({ text: "Line crackled. Say that again?", lead: leadSnap() }));
     setThinking(false);
     const said = reply.text || "Say that again?";
@@ -227,35 +287,27 @@ function CallPage() {
       return;
     }
     setBusy(true);
-    const held = await submitBooking({
+    const held = await reserveJob({
       data: {
-        name: name.trim(),
-        phone,
-        address: address.trim(),
-        email: user?.primaryEmail || "",
         service,
-        jobSize: currentSize,
-        preferredDate: day,
+        size: currentSize,
+        day: day || "1970-01-01",
         asap: asap || !day,
-        notes: "Shop line",
-        estimateLow: priced.range?.low,
-        estimateHigh: priced.range?.high,
+        source: jobSourceFrom(readChannel()),
+        phone,
+        name: name.trim(),
+        address: address.trim() + (landlord && stops > 1 ? ` · ${stops} ${pack ?? "stops"} this week` : ""),
       },
-    }).catch((err: unknown) => ({
-      ok: false as const,
-      error: err instanceof Error ? err.message : "Couldn't hold the day. Try again.",
-    }));
+    }).catch(() => ({ ok: false as const, error: "Couldn't hold the day. Try again." }));
     setBusy(false);
-    if (!held || !("ok" in held) || !held.ok) {
-      setError("error" in held ? String(held.error) : "Couldn't hold the day.");
+    if (!held.ok) {
+      setError(held.error);
       setFillKey((n) => n + 1);
       return;
     }
-    const lockedDay = held.preferredDate || day;
-    const code = `#${held.id}`;
-    finish(lockedDay || "", code);
+    finish(held.day, held.code ?? "");
     const range = priced.range ? formatRange(priced.range) : "we'll confirm on site";
-    const said = `Locked. ${lockedDay ? formatDayLong(lockedDay) : "First open day"}. ${range}. Job ${code}. We'll text ${formatPhone(phone)}.`;
+    const said = `Locked. ${formatDayLong(held.day)}. ${range}. Code ${held.code}. We'll text ${formatPhone(phone)}.`;
     setTurns((cur) => [...cur, { role: "assistant", content: said }]);
     setLive(true);
     await say(said);
@@ -269,9 +321,8 @@ function CallPage() {
           <p className="kicker">On the truck</p>
           <h1 className="mt-3 font-display text-5xl leading-none">You're booked.</h1>
           <p className="mt-4 text-base text-muted">
-            {locked.day ? `${formatDayLong(locked.day)}. ` : null}
-            {priced.range ? `${formatRange(priced.range)} on file. ` : null}
-            Job {locked.code}. We'll text {formatPhone(phone) || "the number you gave"}.
+            {formatDayLong(locked.day)}. {priced.range ? `${formatRange(priced.range)} on file.` : null}{" "}
+            Code {locked.code}. We'll text {formatPhone(phone) || "the number you gave"}.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
@@ -288,10 +339,7 @@ function CallPage() {
                 Save on an account
               </Link>
             ) : null}
-            <a
-              href={`tel:${PHONE.replaceAll("-", "")}`}
-              className="btn-press inline-flex h-12 items-center rounded-full border border-border px-6 text-sm text-fg"
-            >
+            <a href={`tel:${PHONE.replaceAll("-", "")}`} className="btn-press inline-flex h-12 items-center rounded-full border border-border px-6 text-sm text-fg">
               {PHONE}
             </a>
           </div>
@@ -305,17 +353,20 @@ function CallPage() {
     <div className="relative z-10 min-h-dvh bg-bg text-fg">
       <SiteHeader />
       <main id="main" className="mx-auto max-w-6xl px-4 py-8 lg:py-12">
-        <p className="kicker">Shop line</p>
-        <h1 className="mt-2 font-display text-4xl leading-none sm:text-5xl">Book with the shop.</h1>
+        <p className="kicker">{landlord ? "Landlord desk" : "Shop line"}</p>
+        <h1 className="mt-2 font-display text-4xl leading-none sm:text-5xl">
+          {landlord ? "Book the stack." : "Book with the shop."}
+        </h1>
         <p className="mt-3 max-w-xl text-sm text-muted">
-          Same crew calendar the website uses. Tap a day, tell us the stop, we lock it. Chat if you'd
-          rather talk it through.
+          {landlord
+            ? "Tenant turns, leaf routes, or both. First stop full rate. Extra stops this week at route rate. Same crew calendar."
+            : "Same crew calendar the website uses. Tap a day, tell us the stop, we lock it. Chat if you'd rather talk it through."}
         </p>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]">
           <section className="card-green rounded-3xl p-5 sm:p-6">
             <DateField
-              service={service}
+              service={pack ? packService(pack) : service}
               size={currentSize}
               day={day}
               asap={asap}
@@ -326,17 +377,68 @@ function CallPage() {
               }}
             />
 
+            {landlord ? (
+              <>
+                <fieldset className="mt-6">
+                  <legend className="text-xs font-medium text-muted">Owner pack</legend>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {LANDLORD_PACKS.map((p) => (
+                      <button
+                        key={p.value}
+                        type="button"
+                        aria-pressed={pack === p.value}
+                        onClick={() => {
+                          setPack(p.value);
+                          setService(packService(p.value));
+                          const next = sizesForPack(p.value);
+                          if (!next.some((x) => x.value === size)) setSize(packDefaultSize(p.value));
+                        }}
+                        className={`btn-press inline-flex min-h-11 items-center rounded-full px-4 text-sm ${
+                          pack === p.value
+                            ? "bg-gold text-ink"
+                            : "border border-border text-fg hover:bg-fg/8"
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+                <fieldset className="mt-4">
+                  <legend className="text-xs font-medium text-muted">
+                    {pack === "leaves" ? "Yards this week" : pack === "combo" ? "Addresses this week" : "Units this week"}
+                  </legend>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {STOP_COUNTS.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        aria-pressed={stops === c}
+                        onClick={() => setStops(c)}
+                        className={`btn-press inline-flex min-h-11 items-center rounded-full px-4 text-sm ${
+                          stops === c
+                            ? "bg-gold text-ink"
+                            : "border border-border text-fg hover:bg-fg/8"
+                        }`}
+                      >
+                        {c === 6 ? "6+" : c}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+              </>
+            ) : (
             <fieldset className="mt-6">
               <legend className="text-xs font-medium text-muted">What we're hauling</legend>
               <div className="mt-2 flex flex-wrap gap-2">
-                {SERVICES.map((s) => (
+                {SERVICES.filter((s) => s.value !== "other").map((s) => (
                   <button
                     key={s.value}
                     type="button"
                     aria-pressed={service === s.value}
                     onClick={() => {
                       setService(s.value);
-                      const next = sizeOptionsFor(s.value);
+                      const next = sizesFor(s.value);
                       if (!next.some((x) => x.value === size)) setSize(next[0]?.value ?? "");
                     }}
                     className={`btn-press inline-flex min-h-11 items-center rounded-full px-4 text-sm ${
@@ -345,14 +447,15 @@ function CallPage() {
                         : "border border-border text-fg hover:bg-fg/8"
                     }`}
                   >
-                    {s.short}
+                    {s.label.replace("Fall leaf & yard cleanup", "Leaves").replace("Junk & furniture", "Junk").replace("Gutter cleaning", "Gutters")}
                   </button>
                 ))}
               </div>
             </fieldset>
+            )}
 
             <fieldset className="mt-4">
-              <legend className="text-xs font-medium text-muted">Size</legend>
+              <legend className="text-xs font-medium text-muted">{landlord ? "First stop" : "Size"}</legend>
               <div className="mt-2 flex flex-wrap gap-2">
                 {sized.map((s) => (
                   <button
@@ -375,6 +478,12 @@ function CallPage() {
             {priced.range ? (
               <p className="mt-4 font-display text-3xl leading-none text-gold tabular-nums">
                 {formatRange(priced.range)}
+              </p>
+            ) : null}
+            {landlord && priced.deposit ? (
+              <p className="mt-2 text-sm text-muted">
+                ${priced.deposit} deposit holds the first day
+                {stops > 1 ? ` · ${stops} stops this week` : ""}.
               </p>
             ) : null}
 
@@ -417,27 +526,13 @@ function CallPage() {
               disabled={busy}
               className="btn-press mt-5 h-14 w-full rounded-full bg-fg text-base font-medium text-ink hover:bg-gold disabled:opacity-60"
             >
-              {busy
-                ? "Holding the day…"
-                : asap
-                  ? "Lock first open day"
-                  : day
-                    ? `Lock ${formatDayLong(day)}`
-                    : "Pick a day first"}
+              {busy ? "Holding the day…" : asap ? "Lock first open day" : day ? `Lock ${formatDayLong(day)}` : "Pick a day first"}
             </button>
           </section>
 
           <section className="flex min-h-[28rem] flex-col">
             <p className="kicker">
-              {speaking
-                ? "Shop talking"
-                : hearing
-                  ? "Listening"
-                  : thinking
-                    ? "Checking the board"
-                    : live
-                      ? "Connected"
-                      : "Talk it through"}
+              {speaking ? "Shop talking" : hearing ? "Listening" : thinking ? "Checking the board" : live ? "Connected" : "Talk it through"}
             </p>
             <ol
               ref={logRef}
@@ -465,7 +560,11 @@ function CallPage() {
               <input
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                placeholder="Couch, 123 Main, ASAP…"
+                placeholder={
+                  landlord
+                    ? "3 units on University, ASAP…"
+                    : "Couch, 123 Main, ASAP…"
+                }
                 className="field h-12"
                 disabled={thinking || speaking}
                 aria-label="Message the shop"

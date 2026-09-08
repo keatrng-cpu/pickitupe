@@ -6,59 +6,45 @@ import { HaulVideo } from "@/components/haul-video";
 import { QuickQuote } from "@/components/quick-quote";
 import { RateReel } from "@/components/rate-reel";
 import { DateField } from "@/components/date-field";
-import { SiteFooter, SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 import { StickyDock } from "@/components/sticky-dock";
-import { getOfferStatus } from "@/lib/bookings";
+import { getProof, type Proof } from "@/lib/jobs";
+import {
+  BLOCK_TIERS,
+  canonicalService,
+  isPromoLive,
+  PHONE,
+  PHONE_TEL,
+  PROMO_DEADLINE_LABEL,
+  SERVICES,
+  type ServiceKey,
+} from "@/lib/pricebook";
 import { firstName, readLastBooking, type SavedBooking } from "@/lib/returning";
-import { faqJsonLd, localBusinessJsonLd, SITE_URL } from "@/lib/seo";
+import { AFTER_HOURS, HOURS_LINE, HOURS_NOTE, TOWNS, YARD_LINE } from "@/lib/shop";
 
-const TITLE =
-  "Leaf Cleanup, Gutters & Junk Removal in Grand Forks, ND | Pick It Up E";
-const DESCRIPTION =
-  "Fall leaf & yard cleanup, gutter cleaning and junk hauling in Grand Forks and East Grand Forks. We rake, blow, and haul it — you never touch a bag. Book by September 20 for 20% off, up to $75. 701-213-3969.";
-
-export const Route = createFileRoute("/")({
-  loader: () => getOfferStatus(),
-  head: () => ({
-    meta: [
-      { title: TITLE },
-      { name: "description", content: DESCRIPTION },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESCRIPTION },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: SITE_URL },
-      { property: "og:image", content: `${SITE_URL}/og.jpg` },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "geo.region", content: "US-ND" },
-      { name: "geo.placename", content: "Grand Forks" },
-    ],
-    links: [{ rel: "canonical", href: SITE_URL }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify(localBusinessJsonLd()),
-      },
-      {
-        type: "application/ld+json",
-        children: JSON.stringify(faqJsonLd()),
-      },
-    ],
-  }),
-  component: Home,
-});
+export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
-  const offer = Route.useLoaderData();
+  const promo = isPromoLive();
   const [last, setLast] = useState<SavedBooking | null>(null);
+  const [proof, setProof] = useState<Proof | null>(null);
   const [boardDay, setBoardDay] = useState("");
   const [boardAsap, setBoardAsap] = useState(true);
 
   useEffect(() => {
     setLast(readLastBooking());
+    getProof()
+      .then(setProof)
+      .catch(() => setProof(null));
   }, []);
 
+  const lastLabel =
+    SERVICES.find((s) => s.value === (last ? canonicalService(last.service as ServiceKey) : undefined))
+      ?.label ?? "last haul";
+
   return (
-    <div className="page-home relative z-10 min-h-screen bg-bg text-fg">
+    <div className="page-home relative z-10 min-h-dvh bg-bg text-fg">
       <SiteHeader />
       <main id="main">
         <section className="hero-frame">
@@ -68,14 +54,14 @@ function Home() {
               {last ? (
                 <Link
                   to="/call"
-                  search={{ service: last.service, size: last.size }}
+                  search={{ service: String(last.service), size: last.size }}
                   className="card-paper mb-6 inline-flex max-w-full items-center gap-3 rounded-full px-4 py-2 text-sm text-print"
                 >
-                  Welcome back, {firstName(last.name)}. Rebook?
+                  Welcome back, {firstName(last.name)}. Rebook {lastLabel}?
                   <ArrowRight className="size-4 shrink-0" />
                 </Link>
               ) : null}
-              <p className="kicker">Grand Forks</p>
+              <p className="kicker">{TOWNS.join(" · ")}</p>
               <h1 className="mt-3 max-w-xl font-display text-5xl leading-[0.92] tracking-[-0.03em] sm:text-7xl lg:text-8xl">
                 We haul it.
                 <span className="mt-1 block italic text-gold">You don't.</span>
@@ -92,13 +78,22 @@ function Home() {
                   Prefer a form?
                 </Link>
               </div>
-              {offer.active ? (
+              {promo ? (
                 <p className="mt-4 text-xs text-fg/80">
-                  {Math.round(offer.percent * 100)}% off through {offer.deadlineLabel}
+                  20% off through {PROMO_DEADLINE_LABEL}
                 </p>
               ) : null}
             </div>
           </div>
+        </section>
+
+        <section className="border-b border-border">
+          <dl className="mx-auto grid max-w-6xl grid-cols-2 gap-px sm:grid-cols-4">
+            <Stat n={String(proof?.towns ?? TOWNS.length)} l={TOWNS.join(" · ")} />
+            <Stat n={`${proof?.slots ?? 4}/day`} l="slots on the truck" />
+            <Stat n={String(proof?.onTruck ?? 0)} l="jobs this fall" />
+            <Stat n={String(proof?.hauled ?? 0)} l="hauled" />
+          </dl>
         </section>
 
         <QuickQuote />
@@ -160,6 +155,19 @@ function Home() {
           </ol>
         </section>
 
+        <section className="mx-auto max-w-6xl px-4 pb-4">
+          <div className="card-green rounded-2xl p-6 sm:p-8">
+            <p className="kicker">Come back</p>
+            <h2 className="mt-2 font-display text-3xl">Loyalty is on the quote.</h2>
+            <p className="mt-3 max-w-xl text-sm text-muted">
+              We keep your last haul — rebook in a tap. Neighbors on the same
+              street, same day: ${BLOCK_TIERS[0].credit} off two houses, $
+              {BLOCK_TIERS[1].credit} off three. You get that or the{" "}
+              {PROMO_DEADLINE_LABEL} rate, whichever is bigger — never stacked.
+            </p>
+          </div>
+        </section>
+
         <section className="mx-auto max-w-6xl px-4 py-8">
           <Link
             to="/landlords"
@@ -174,7 +182,7 @@ function Home() {
               <div>
                 <p className="kicker">Landlords</p>
                 <p className="mt-2 max-w-xl font-display text-2xl sm:text-3xl">
-                  Investor special — 2+ complexes, one week, one code.
+                  Bundle tenant turns or a leaf route. Extra stops this week cost less.
                 </p>
               </div>
               <ArrowRight className="size-5 shrink-0 text-gold" />
@@ -182,10 +190,44 @@ function Home() {
           </Link>
         </section>
 
+        <section className="mx-auto max-w-6xl px-4 pb-8">
+          <div className="rounded-2xl border border-border px-5 py-6">
+            <p className="kicker">Hours</p>
+            <p className="mt-2 font-display text-2xl">
+              {HOURS_LINE}. {HOURS_NOTE}
+            </p>
+            <p className="mt-3 text-sm text-muted">{YARD_LINE}</p>
+            <p className="mt-2 text-sm text-muted">{AFTER_HOURS}</p>
+            <div className="mt-4 flex flex-wrap gap-4 text-sm">
+              <Link to="/call" className="text-gold hover:underline">
+                Shop line
+              </Link>
+              <a href={`tel:${PHONE_TEL}`} className="text-gold hover:underline">
+                {PHONE}
+              </a>
+              <Link to="/about" className="text-gold hover:underline">
+                About the shop
+              </Link>
+              <Link to="/status" className="text-gold hover:underline">
+                Your hauls
+              </Link>
+            </div>
+          </div>
+        </section>
+
         <FinePrint />
       </main>
       <SiteFooter />
       <StickyDock />
+    </div>
+  );
+}
+
+function Stat({ n, l }: { n: string; l: string }) {
+  return (
+    <div className="px-4 py-6">
+      <dt className="font-display text-3xl leading-none text-gold">{n}</dt>
+      <dd className="mt-2 text-xs text-muted">{l}</dd>
     </div>
   );
 }
