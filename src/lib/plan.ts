@@ -109,10 +109,7 @@ export const SERVICE_WINDOW = {
 
 /** Exclusions that must appear anywhere the plan is sold. */
 export const PLAN_EXCLUSIONS = [
-  // The standard market definition of "spring cleanup" bundles gutter
-  // cleaning. This business owns no ladder and no fall-protection gear, so
-  // saying so up front is what stops the ask happening on every single visit.
-  "Gutter cleaning is not included.",
+  "Gutter cleaning is not in the $50 hold. Ranch gutters on the fall visit are optional at $80–$110/year.",
   "Snow removal is not included.",
   "Mowing is not included.",
   "The refused-items list applies: no paint, chemicals, oil, propane, concrete, dirt, roofing, or asbestos.",

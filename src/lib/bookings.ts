@@ -8,6 +8,7 @@ import {
   PROMO_PERCENT,
   type AddOnKey,
   type ServiceKey,
+  parseAddOns,
 } from "@/lib/pricebook";
 import {
   DAILY_SLOTS,
@@ -106,8 +107,8 @@ export async function loadFill(): Promise<DayFill[]> {
   try {
     const sql = await getSql();
     await ensurePayColumns(sql);
-    const rows = await sql<{ preferred_date: string | null; job_size: string | null; service: string }>`
-      select preferred_date, job_size, service
+    const rows = await sql<{ preferred_date: string | null; job_size: string | null; service: string; add_ons: string | null }>`
+      select preferred_date, job_size, service, add_ons
       from bookings
       where preferred_date is not null
         and preferred_date >= ${todayISO()}
@@ -117,7 +118,11 @@ export async function loadFill(): Promise<DayFill[]> {
     for (const r of rows) {
       const day = (r.preferred_date || "").slice(0, 10);
       if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) continue;
-      const need = slotsFor((r.service as ServiceKey) || "junk-removal", r.job_size || "single");
+      const need = slotsFor(
+        (r.service as ServiceKey) || "junk-removal",
+        r.job_size || "single",
+        parseAddOns(r.add_ons),
+      );
       used.set(day, (used.get(day) ?? 0) + need);
     }
     return [...used.entries()].map(([day, usedSlots]) => ({ day, used: usedSlots }));
@@ -153,7 +158,11 @@ export const submitBooking = createServerFn({ method: "POST" })
       urgency: data.urgency || undefined,
     });
 
-    const need = slotsFor(data.service as ServiceKey, data.jobSize || "single");
+    const need = slotsFor(
+      data.service as ServiceKey,
+      data.jobSize || "single",
+      (data.addOns ?? []) as AddOnKey[],
+    );
     const fill = await loadFill();
     let preferredDate = data.preferredDate || null;
     if (data.asap || preferredDate === "asap") {

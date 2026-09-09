@@ -5,7 +5,8 @@ import {
   isPromoActive,
   landlordDeposit,
   DEPOSIT,
-  type AddOnKey,
+  parseAddOns,
+  serializeAddOns,
   type LandlordPack,
   type ServiceKey,
 } from "@/lib/pricebook";
@@ -37,6 +38,7 @@ const lockInput = z.object({
   estimateHigh: z.number().int().min(0).max(100_000).optional(),
   pack: z.enum(["turns", "leaves", "combo"]).optional(),
   stops: z.number().int().min(1).max(8).optional(),
+  addOns: z.array(z.string().max(40)).max(10).optional(),
 });
 
 function depositDollars(pack: LandlordPack | undefined, stops: number) {
@@ -74,18 +76,19 @@ export const lockWithDeposit = createServerFn({ method: "POST" })
       return { ok: false as const, error: `Street for each of the ${stops} stops.` };
     }
 
+    const addOns = parseAddOns(data.addOns);
     const earlyBird = isPromoActive();
     const priced = estimate({
       service: data.service as ServiceKey,
       size: data.jobSize || "",
-      addOns: [] as AddOnKey[],
+      addOns,
       earlyBird,
       notes: data.notes || "",
       pack,
       stops: pack ? stops : 1,
     });
     const deposit = depositDollars(pack, stops);
-    const need = slotsFor(data.service as ServiceKey, data.jobSize || "single");
+    const need = slotsFor(data.service as ServiceKey, data.jobSize || "single", addOns);
     const fill = await loadFill();
     let preferredDate = data.preferredDate || null;
     if (data.asap || preferredDate === "asap") {
@@ -96,8 +99,8 @@ export const lockWithDeposit = createServerFn({ method: "POST" })
     const inserted = await sql.query<{ id: number }>(
       `insert into bookings
         (name, phone, email, address, service, notes, preferred_date, early_bird, status,
-         job_size, estimate_low, estimate_high, deposit_cents, deposit_paid, extra_addresses, pack, stops)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,'hold',$9,$10,$11,$12,false,$13,$14,$15)
+         job_size, add_ons, estimate_low, estimate_high, deposit_cents, deposit_paid, extra_addresses, pack, stops)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,'hold',$9,$10,$11,$12,$13,false,$14,$15,$16)
        returning id`,
       [
         data.name,
@@ -109,6 +112,7 @@ export const lockWithDeposit = createServerFn({ method: "POST" })
         preferredDate,
         earlyBird,
         data.jobSize || null,
+        serializeAddOns(addOns),
         priced.range?.low ?? data.estimateLow ?? null,
         priced.range?.high ?? data.estimateHigh ?? null,
         deposit * 100,
@@ -226,6 +230,7 @@ export const startSpringHold = createServerFn({ method: "POST" })
         email: z.string().trim().email().optional().or(z.literal("")),
         address: z.string().trim().min(5).max(200),
         tier: z.enum(["small", "standard", "large"]),
+        fallGutters: z.boolean().optional(),
       })
       .parse(input),
   )
@@ -253,7 +258,10 @@ export const startSpringHold = createServerFn({ method: "POST" })
         data.phone,
         data.email || null,
         data.address,
-        "Spring plan hold — $50 at this year's rate, two visits once the plan is on the card.",
+        "Spring plan hold — $50 at this year's rate, two visits once the plan is on the card." +
+          (data.fallGutters
+            ? " Fall visit: ranch gutters +$80–$110, billed with the year — not in the $50 hold."
+            : ""),
         size,
       ],
     );

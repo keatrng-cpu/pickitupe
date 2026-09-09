@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { FinePrint } from "@/components/fine-print";
 import { HaulVideo } from "@/components/haul-video";
+import { HousePacks } from "@/components/house-packs";
 import { QuickQuote } from "@/components/quick-quote";
 import { RateReel } from "@/components/rate-reel";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
@@ -103,6 +104,7 @@ function Home() {
         </section>
 
         <QuickQuote />
+        <HousePacks />
         <RateReel />
 
         <section className="mx-auto max-w-6xl px-4 py-8">

@@ -5,9 +5,12 @@ import {
   clampStops,
   estimate,
   formatRange,
+  hasGutterBundle,
   isPromoActive,
+  normalizeAddOns,
   packDefaultSize,
   packService,
+  parseAddOns,
   PROMO_DEADLINE_LABEL,
   sizeOptionsFor,
   type AddOnKey,
@@ -38,6 +41,7 @@ export type ShopLead = {
   pack?: LandlordPack;
   stops?: number;
   extraAddresses?: string[];
+  addOns?: AddOnKey[];
   desk?: "landlord";
 };
 
@@ -74,6 +78,7 @@ const leadSchema = z.object({
   pack: z.enum(["turns", "leaves", "combo"]).optional(),
   stops: z.number().int().min(1).max(8).optional(),
   extraAddresses: z.array(z.string().max(200)).max(8).optional(),
+  addOns: z.array(z.string().max(40)).max(10).optional(),
   desk: z.enum(["landlord"]).optional(),
 });
 
@@ -87,8 +92,13 @@ ASAP means the first day with room for that job's size. The customer can also ta
 Services:
 ${SIZE_HINTS}
 
-Add-ons: stairs, long-carry, cleanout, fridge (junk); bagging (leaves); downspout (gutters).
-Promo: ${isPromoActive() ? `${PROMO_DEADLINE_LABEL} still takes 20% off, capped at $75, floor $55.` : "Percent-off window is closed. Book before the city vacuum (mid-Oct to mid-Nov). Neighbor/block credit for same-street density. Floor still $55. No extra coupon."}
+Add-ons: stairs, long-carry, cleanout, fridge (junk); bagging and wet-heavy (leaves).
+On a leaf stop, same-stop extras — keep service=leaf-cleanup, do NOT switch to gutter-cleaning:
+- gutters-here: ranch / single-story $80–$110
+- gutters-wrap: wraparound or split $110–$145
+- porch-piece: one bulky piece $55–$85
+Ask once after they pick leaves: "Gutters while we're there?" Sequence: rake first, climb second. Bundle extras never take the September percent. Deposit stays $50. Do not offer gutter add-ons on landlord stacks.
+Promo: ${isPromoActive() ? `${PROMO_DEADLINE_LABEL} still takes 20% off the leaf/junk base, capped at $75, floor $55. Bundle extras are already trip-priced — no percent on those.` : "Percent-off window is closed. Book before the city vacuum (mid-Oct to mid-Nov). Neighbor/block credit for same-street density. Floor still $55. No extra coupon."}
 Deposit: $50 on the card holds the day (landlord stacks $75–$100) and comes off the invoice. No hold without the card. Owner cell if they insist: ${PHONE}.
 
 HOW TO TALK
@@ -156,7 +166,7 @@ const tools = [
         properties: {
           service: { type: "string", enum: ["leaf-cleanup", "junk-removal", "gutter-cleaning"] },
           size: { type: "string" },
-          addOns: { type: "array", items: { type: "string" } },
+          addOns: { type: "array", items: { type: "string" }, description: "Same-stop extras on a leaf job: gutters-here, gutters-wrap, porch-piece." },
           pack: { type: "string", enum: ["turns", "leaves", "combo"] },
           stops: { type: "integer", description: "How many units, yards, or addresses this week." },
         },
@@ -174,6 +184,7 @@ const tools = [
         properties: {
           service: { type: "string", enum: ["leaf-cleanup", "junk-removal", "gutter-cleaning"] },
           size: { type: "string" },
+          addOns: { type: "array", items: { type: "string" } },
         },
         required: ["service", "size"],
       },
@@ -198,6 +209,7 @@ const tools = [
           email: { type: "string" },
           pack: { type: "string", enum: ["turns", "leaves", "combo"] },
           stops: { type: "integer" },
+          addOns: { type: "array", items: { type: "string" } },
         },
         required: ["service", "size", "name", "phone", "address"],
       },
@@ -304,6 +316,7 @@ function applyToolToLead(lead: ShopLead, tool: string, raw: string, result: stri
   if (typeof args.address === "string" && args.address.trim().length >= 5) {
     next.address = args.address.trim();
   }
+  if (Array.isArray(args.addOns)) next.addOns = parseAddOns(args.addOns.map(String));
   if (typeof args.day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(args.day)) {
     next.day = args.day;
     next.asap = false;
@@ -332,7 +345,9 @@ async function runTool(name: string, raw: string, lead: ShopLead, email: string 
   const args = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
   const service = asService(args.service ?? lead.service);
   const size = String(args.size || lead.size || "");
-  const addOns = Array.isArray(args.addOns) ? (args.addOns.map(String) as AddOnKey[]) : [];
+  const addOns = parseAddOns(
+    Array.isArray(args.addOns) ? args.addOns.map(String) : (lead.addOns ?? []),
+  );
 
   if (name === "quote_job") {
     const pack = asPack(args.pack) ?? lead.pack;
@@ -357,7 +372,7 @@ async function runTool(name: string, raw: string, lead: ShopLead, email: string 
 
   if (name === "open_days") {
     const fill = await loadFill();
-    const need = slotsFor(service, size);
+    const need = slotsFor(service, size, addOns);
     const asap = firstOpenDay(fill, need);
     const days = dayOptions(fill, need)
       .filter((d) => d.open)
@@ -408,9 +423,12 @@ async function runTool(name: string, raw: string, lead: ShopLead, email: string 
           asap: Boolean(args.asap ?? lead.asap ?? true) && !args.day && !lead.day,
           notes: lead.pack
             ? `Landlord desk · ${lead.stops ?? 1} ${lead.pack}`
-            : "Shop line",
+            : addOns.length
+              ? `Shop line · ${addOns.join(",")}`
+              : "Shop line",
           pack: lead.pack,
           stops: lead.pack ? lead.stops ?? 1 : 1,
+          addOns: lead.pack ? [] : addOns,
         },
       });
       if (!held.ok) {
@@ -468,6 +486,7 @@ function deskSnapshot(lead: ShopLead) {
     lead.stops && lead.stops > 1 ? `stops=${lead.stops}` : null,
     lead.service ? `service=${lead.service}` : null,
     lead.size ? `size=${lead.size}` : null,
+    lead.addOns?.length ? `addons=${lead.addOns.join(",")}` : null,
     lead.name ? `name=${lead.name}` : null,
     lead.phone && isUsPhone(lead.phone) ? `phone=${digitsPhone(lead.phone)}` : null,
     lead.address ? `address=${lead.address}` : null,
@@ -537,10 +556,13 @@ async function grokLoop(
   return { text: "", booked, lead: current };
 }
 
-function guessService(text: string): ServiceKey | undefined {
+function guessService(text: string, lead?: ShopLead): ServiceKey | undefined {
   const t = text.toLowerCase();
   if (/(leaf|yard|rake|bag of leaves|lawn)/.test(t)) return "leaf-cleanup";
-  if (/gutter/.test(t)) return "gutter-cleaning";
+  if (/gutter/.test(t)) {
+    if (lead?.service === "leaf-cleanup" || hasGutterBundle(lead?.addOns)) return "leaf-cleanup";
+    return "gutter-cleaning";
+  }
   if (/(junk|couch|sofa|mattress|fridge|furniture|appliance|dresser|cleanout|haul)/.test(t)) {
     return "junk-removal";
   }
@@ -590,8 +612,37 @@ function absorb(lead: ShopLead, text: string): ShopLead {
     const word: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6 };
     next.stops = clampStops(word[counted[1]] ?? counted[1]);
   }
-  const service = guessService(text);
-  if (service) next.service = service;
+
+  const extras = [...(lead.addOns ?? [])];
+  const saysLeaves = /(leaf|yard|rake|bag of leaves|lawn)/.test(t);
+  const wantsGutters = /gutter/.test(t);
+  const wantsPorch =
+    /(couch on the porch|the porch piece|grab the couch|take the couch|and the couch)/.test(t);
+  const leafContext =
+    lead.service === "leaf-cleanup" || saysLeaves || lead.pack === "leaves";
+  if (!next.pack && leafContext && wantsGutters) {
+    extras.push(
+      /(wraparound|wrap around|split|long runs)/.test(t) ? "gutters-wrap" : "gutters-here",
+    );
+    next.service = "leaf-cleanup";
+  }
+  if (!next.pack && leafContext && wantsPorch) {
+    extras.push("porch-piece");
+    next.service = "leaf-cleanup";
+  }
+  if (extras.length) next.addOns = normalizeAddOns(extras);
+
+  const service = guessService(text, next);
+  if (service) {
+    if (
+      service === "gutter-cleaning" &&
+      (next.service === "leaf-cleanup" || hasGutterBundle(next.addOns))
+    ) {
+      next.service = "leaf-cleanup";
+    } else {
+      next.service = service;
+    }
+  }
   if (next.service) {
     const size = guessSize(next.service, text);
     if (size) next.size = size;
@@ -671,9 +722,10 @@ async function fallbackReply(
           jobSize: next.size,
           preferredDate: next.day || "",
           asap: next.asap !== false,
-          notes: next.pack ? `Landlord desk · ${next.stops ?? 1} ${next.pack}` : "Shop line",
+          notes: next.pack ? `Landlord desk · ${next.stops ?? 1} ${next.pack}` : next.addOns?.length ? `Shop line · ${next.addOns.join(",")}` : "Shop line",
           pack: next.pack,
           stops: next.pack ? next.stops ?? 1 : 1,
+          addOns: next.pack ? [] : next.addOns,
         },
       });
       if (!held.ok) {
@@ -682,7 +734,7 @@ async function fallbackReply(
       const q = estimate({
         service: next.service as ServiceKey,
         size: next.size as string,
-        addOns: [],
+        addOns: next.addOns ?? [],
         pack: next.pack,
         stops: next.stops,
         earlyBird: isPromoActive(),
@@ -702,13 +754,13 @@ async function fallbackReply(
     const q = estimate({
       service: next.service,
       size: next.size,
-      addOns: [],
+      addOns: next.addOns ?? [],
       pack: next.pack,
       stops: next.stops,
       earlyBird: isPromoActive(),
     });
     const fill = await loadFill();
-    const asap = firstOpenDay(fill, slotsFor(next.service, next.size));
+    const asap = firstOpenDay(fill, slotsFor(next.service, next.size, next.addOns ?? []));
     const range = q.range ? formatRange(q.range) : "we'll quote after a look";
     const ask = nextAsk(gap, next);
     if (!lead.service || !lead.size) {
@@ -736,7 +788,11 @@ export const talkShop = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const incoming: ShopLead = { ...(data.lead ?? {}), asap: data.lead?.asap ?? true };
+    const incoming: ShopLead = {
+      ...(data.lead ?? {}),
+      asap: data.lead?.asap ?? true,
+      addOns: parseAddOns(data.lead?.addOns),
+    };
     if (!incoming.email && context.email) incoming.email = context.email;
     const lastUser = data.turns.filter((t) => t.role === "user").at(-1)?.content ?? "";
     const merged = fillPack(absorb(incoming, lastUser));

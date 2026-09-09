@@ -188,6 +188,12 @@ Slow or overflowing downspouts are an add-on, listed below. Two-story and multi-
 ADD-ONS:
 ${addons}
 
+SAME-STOP ON A LEAF JOB (keep the service as leaf-cleanup — do not switch to the gutter service):
+- Gutters while we're here (ranch, one story): $80–$110. Trip already paid.
+- Wraparound or split-level gutters: $110–$145.
+- The couch on the porch: $55–$85.
+Rake first, then we climb. The September percent applies to the leaf/junk base only, never these extras. Deposit stays $50.
+
 SAME-WEEK RUSH: adding "this week" urgency costs an extra ${formatRange(RUSH_SURCHARGE)}. "Before city vacuum" is the normal seasonal window and costs nothing extra.
 
 PROMO: ${promo}

@@ -16,9 +16,18 @@ type Props = {
   asap: boolean;
   onChange: (next: { day: string; asap: boolean }) => void;
   refreshKey?: number;
+  addOns?: string[];
 };
 
-export function DateField({ service, size, day, asap, onChange, refreshKey = 0 }: Props) {
+export function DateField({
+  service,
+  size,
+  day,
+  asap,
+  onChange,
+  refreshKey = 0,
+  addOns = [],
+}: Props) {
   const [fill, setFill] = useState<{ day: string; used: number }[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -28,9 +37,9 @@ export function DateField({ service, size, day, asap, onChange, refreshKey = 0 }
       .then((rows) => setFill(rows))
       .catch(() => setFill([]))
       .finally(() => setLoaded(true));
-  }, [refreshKey, service, size]);
+  }, [refreshKey, service, size, addOns.join(",")]);
 
-  const need = slotsFor(service, size);
+  const need = slotsFor(service, size, addOns);
   const options = useMemo(() => dayOptions(fill, need), [fill, need]);
   const asapDay = useMemo(() => firstOpenDay(fill, need), [fill, need]);
   const visible = options.slice(0, 10);

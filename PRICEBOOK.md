@@ -110,6 +110,23 @@ cannot argue gutter price against a competitor — it just states ours.
 | Long carry (>75 ft) | Everything | $20–$40 | |
 | Fridge, freezer, or AC | Haul work | $25–$45 | Refrigerant units carry a real disposal fee |
 | Downspouts draining slow | Gutter cleaning | $25–$50 | Flushed per visit, not per spout — keeps the quote one number |
+| Gutters while we're here | Leaf cleanup | $80–$110 | Same-stop ranch. Trip already paid. Standalone ranch is $135–$165. Promo never applies. |
+| Wraparound or split-level gutters | Leaf cleanup | $110–$145 | Same stop, longer runs. Mutually exclusive with ranch. |
+| The couch on the porch | Leaf cleanup | $55–$85 | One bulky piece on the same leaf stop |
+
+### Same-stop house packs
+
+Three merchandised SKUs on the home page, all a standard lot, $50 deposit:
+
+| Pack | What's on the truck | Add-ons |
+|---|---|---|
+| Yard | Leaves | — |
+| Yard + gutters | Leaves + ranch gutters | `gutters-here` |
+| Yard + gutters + the couch | Leaves + ranch gutters + one bulky piece | `gutters-here`, `porch-piece` |
+
+The September percent applies to the leaf base only. Bundle extras are trip-priced — not a second roll, not another percent off. Strikethrough is what those jobs cost booked apart (standalone gutter + one-piece haul). Landlord stacks do not offer these chips.
+
+On the yearly plan, ranch gutters on the fall visit are optional at **$80–$110/year**, billed with the year, not in the $50 spring hold.
 
 ## Rules
 

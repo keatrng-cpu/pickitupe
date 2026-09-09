@@ -17,6 +17,7 @@ const {
   formatRange,
   planPriceFor,
   RUSH_SURCHARGE,
+  LEAF_KSF,
 } = await import("../src/lib/pricebook.ts");
 
 /**
@@ -144,6 +145,10 @@ test("the facts contain no price that the pricebook does not produce", () => {
   for (const a of ADD_ONS) addRange(a.range);
   for (const t of BLOCK_TIERS) legal.add(String(t.credit));
   addRange(RUSH_SURCHARGE);
+  for (const band of Object.values(LEAF_KSF)) {
+    if ("low" in band) legal.add(String(band.low));
+    if ("high" in band) legal.add(String(band.high));
+  }
   for (const v of ["small", "medium", "large"]) legal.add(String(planPriceFor(v)));
   [DEPOSIT, PROMO_CAP, 50, 100, 20].forEach((n) => legal.add(String(n)));
   // Competitor figures are legitimately NOT pricebook-produced, but each one

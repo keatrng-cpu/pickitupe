@@ -1,4 +1,5 @@
 import type { ServiceKey } from "@/lib/pricebook";
+import { hasGutterBundle, normalizeAddOns } from "@/lib/pricebook";
 
 /** One truck, one crew. Four slots is a full day. */
 export const DAILY_SLOTS = 4;
@@ -21,20 +22,27 @@ export function isSingleItem(service: ServiceKey, size: string) {
     : false;
 }
 
-export function slotsFor(service: ServiceKey, size: string): number {
+export function slotsFor(service: ServiceKey, size: string, addOns: string[] = []): number {
+  let n = 1;
   if (service === "leaf-cleanup") {
-    if (size === "small") return 2;
-    if (size === "large") return 4;
-    if (size === "acreage") return 4;
-    return 3;
+    if (size === "small") n = 2;
+    else if (size === "large" || size === "acreage") n = 4;
+    else n = 3;
+  } else if (service === "gutter-cleaning") {
+    n = size === "complex" ? 3 : 2;
+  } else if (size === "overflow" || size === "full") {
+    n = 4;
+  } else if (size === "half" || size === "three") {
+    n = 3;
+  } else if (size === "quarter" || size === "two") {
+    n = 2;
+  } else {
+    n = 1;
   }
-  if (service === "gutter-cleaning") {
-    return size === "complex" ? 3 : 2;
-  }
-  if (size === "overflow" || size === "full") return 4;
-  if (size === "half" || size === "three") return 3;
-  if (size === "quarter" || size === "two") return 2;
-  return 1;
+  const extras = normalizeAddOns(addOns);
+  if (hasGutterBundle(extras)) n = Math.min(DAILY_SLOTS, n + 1);
+  if (extras.includes("porch-piece")) n = Math.min(DAILY_SLOTS, n + 1);
+  return n;
 }
 
 export function todayISO(now = new Date()): string {

@@ -106,6 +106,10 @@ export const FAQ: { q: string; a: string }[] = [
     q: "How fast can you come out?",
     a: "Tap a day on the shop line. A $50 card deposit holds it and comes off the invoice. I'll text the morning of.",
   },
+  {
+    q: "Gutters with the leaves?",
+    a: "Rake first, then we climb. Ranch $80–$110 while we're there — trip already paid. Not a second roll, not another percent off.",
+  },
 ];
 
 export function faqJsonLd() {

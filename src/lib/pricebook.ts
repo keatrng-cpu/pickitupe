@@ -508,7 +508,10 @@ export type AddOnKey =
   | "appliance-freon"
   | "wet-heavy"
   | "cleanout"
-  | "downspout";
+  | "downspout"
+  | "gutters-here"
+  | "gutters-wrap"
+  | "porch-piece";
 
 export const ADD_ONS: {
   key: AddOnKey;
@@ -550,6 +553,30 @@ export const ADD_ONS: {
     appliesTo: ["gutter-cleaning"],
   },
   {
+    // Trip already paid on a leaf stop. Standalone ranch gutters are $135–$165;
+    // this is labor + dump of the trough, not a second roll. Promo never
+    // applies here — the September percent is on the leaf base only.
+    key: "gutters-here",
+    label: "Gutters while we're here",
+    hint: "Rake first, then we climb. Ranch, one story. Trip already paid.",
+    range: { low: 80, high: 110 },
+    appliesTo: ["leaf-cleanup"],
+  },
+  {
+    key: "gutters-wrap",
+    label: "Wraparound or split-level gutters",
+    hint: "Long runs, still the same stop.",
+    range: { low: 110, high: 145 },
+    appliesTo: ["leaf-cleanup"],
+  },
+  {
+    key: "porch-piece",
+    label: "The couch on the porch",
+    hint: "One bulky piece, same bed.",
+    range: { low: 55, high: 85 },
+    appliesTo: ["leaf-cleanup"],
+  },
+  {
     key: "long-carry",
     label: "Long carry",
     hint: "More than about 75 ft to the truck",
@@ -582,6 +609,119 @@ export function addOnsFor(service: ServiceKey) {
     (a) => a.appliesTo === "all" || a.appliesTo.includes(service),
   );
 }
+
+/** Same-stop extras on a leaf job. Trip is already paid — never take the percent off these. */
+export const BUNDLE_ADD_ON_KEYS = ["gutters-here", "gutters-wrap", "porch-piece"] as const;
+
+export function isBundleAddOn(key: string) {
+  return (BUNDLE_ADD_ON_KEYS as readonly string[]).includes(key);
+}
+
+export function normalizeAddOns(keys: string[] | undefined | null): AddOnKey[] {
+  const set = new Set((keys ?? []).map((k) => k.trim()).filter(Boolean));
+  if (set.has("gutters-wrap") && set.has("gutters-here")) set.delete("gutters-here");
+  const valid = new Set(ADD_ONS.map((a) => a.key));
+  return [...set].filter((k): k is AddOnKey => valid.has(k as AddOnKey));
+}
+
+export function hasGutterBundle(addOns?: string[] | null) {
+  const n = normalizeAddOns(addOns);
+  return n.includes("gutters-here") || n.includes("gutters-wrap");
+}
+
+export function parseAddOns(raw: string | string[] | null | undefined): AddOnKey[] {
+  if (!raw) return [];
+  const keys = Array.isArray(raw)
+    ? raw
+    : String(raw)
+        .split(/[,\n]/)
+        .map((k) => k.trim());
+  return normalizeAddOns(keys);
+}
+
+export function serializeAddOns(keys: string[] | undefined | null): string | null {
+  const n = normalizeAddOns(keys);
+  return n.length ? n.join(",") : null;
+}
+
+export function toggleBundleAddOn(current: string[], key: string): AddOnKey[] {
+  const set = new Set(normalizeAddOns(current));
+  if (key === "gutters-here") {
+    if (set.has("gutters-here")) set.delete("gutters-here");
+    else {
+      set.delete("gutters-wrap");
+      set.add("gutters-here");
+    }
+  } else if (key === "gutters-wrap") {
+    if (set.has("gutters-wrap")) set.delete("gutters-wrap");
+    else {
+      set.delete("gutters-here");
+      set.add("gutters-wrap");
+    }
+  } else if (set.has(key as AddOnKey)) set.delete(key as AddOnKey);
+  else set.add(key as AddOnKey);
+  return normalizeAddOns([...set]);
+}
+
+export function addOnLabel(key: string) {
+  return ADD_ONS.find((a) => a.key === key)?.label ?? key;
+}
+
+export function formatAddOns(raw: string | string[] | null | undefined) {
+  return parseAddOns(raw).map(addOnLabel).join(" · ");
+}
+
+export function bundleAddOns() {
+  return ADD_ONS.filter((a) => isBundleAddOn(a.key));
+}
+
+/** Generic chips — bagging, stairs, etc. Bundle extras have their own shop line. */
+export function shopAddOnsFor(service: ServiceKey) {
+  return addOnsFor(service).filter((a) => !isBundleAddOn(a.key));
+}
+
+export type HousePack = "yard" | "yard-gutters" | "yard-gutters-couch";
+
+export const HOUSE_PACKS: {
+  value: HousePack;
+  label: string;
+  kicker: string;
+  hint: string;
+  service: ServiceKey;
+  size: string;
+  addOns: AddOnKey[];
+}[] = [
+  {
+    value: "yard",
+    label: "Yard",
+    kicker: "Leaves",
+    hint: "Front, back, the boulevard. You don't bag them.",
+    service: "leaf-cleanup",
+    size: "medium",
+    addOns: [],
+  },
+  {
+    value: "yard-gutters",
+    label: "Yard + gutters",
+    kicker: "One stop",
+    hint: "Rake first, then we climb. Ranch gutters at trip rate — not a second roll.",
+    service: "leaf-cleanup",
+    size: "medium",
+    addOns: ["gutters-here"],
+  },
+  {
+    value: "yard-gutters-couch",
+    label: "Yard + gutters + the couch",
+    kicker: "The porch piece",
+    hint: "Leaves, ranch gutters, and one bulky piece. Same bed. Takes the day.",
+    service: "leaf-cleanup",
+    size: "medium",
+    addOns: ["gutters-here", "porch-piece"],
+  },
+];
+
+/** Fall-visit gutter add on the yearly plan. Same-stop ranch rate, billed with the year. */
+export const PLAN_FALL_GUTTERS: Range = { low: 80, high: 110 };
 
 export type LandlordPack = "turns" | "leaves" | "combo";
 
@@ -713,7 +853,7 @@ export type EstimateInput = {
 };
 
 /** Which credit actually got applied. Never both — see `estimate()`. */
-export type DiscountKind = "none" | "promo" | "block" | "route" | "combo";
+export type DiscountKind = "none" | "promo" | "block" | "route" | "combo" | "bundle";
 
 export type Estimate = {
   /** Null when the job genuinely needs eyes on it before any number. */
@@ -785,6 +925,30 @@ function isBetter(candidate: Range, incumbent: Range): boolean {
   return candidate.high < incumbent.high;
 }
 
+/** What the same jobs cost if booked as two (or three) separate stops. */
+function bookedApart(leaf: Range, addOns: string[]): Range | null {
+  let extra: Range | null = null;
+  if (addOns.includes("gutters-wrap")) {
+    extra = add(
+      extra ?? { low: 0, high: 0 },
+      GUTTER_SIZES.find((s) => s.value === "complex")?.range ?? { low: 175, high: 215 },
+    );
+  } else if (addOns.includes("gutters-here")) {
+    extra = add(
+      extra ?? { low: 0, high: 0 },
+      GUTTER_SIZES.find((s) => s.value === "standard")?.range ?? { low: 135, high: 165 },
+    );
+  }
+  if (addOns.includes("porch-piece")) {
+    extra = add(
+      extra ?? { low: 0, high: 0 },
+      LOAD_SIZES.find((s) => s.value === "single")?.range ?? { low: 59, high: 95 },
+    );
+  }
+  if (!extra) return null;
+  return add(leaf, extra);
+}
+
 export function estimate(input: EstimateInput): Estimate {
   const pack = input.pack;
   const stops = clampStops(input.stops ?? 1);
@@ -850,12 +1014,15 @@ export function estimate(input: EstimateInput): Estimate {
     }
   }
 
-  const available = addOnsFor(input.service);
-  for (const key of input.addOns) {
+  const available = addOnsFor(pack === "leaves" ? "leaf-cleanup" : input.service);
+  const addOns = normalizeAddOns(input.addOns);
+  let bundleExtra: Range = { low: 0, high: 0 };
+  for (const key of addOns) {
     const addOn = available.find((a) => a.key === key);
     if (!addOn) continue;
     lines.push({ label: addOn.label, range: addOn.range });
-    total = add(total, addOn.range);
+    if (isBundleAddOn(key)) bundleExtra = add(bundleExtra, addOn.range);
+    else total = add(total, addOn.range);
   }
 
   // Rush last, so it reads as a surcharge on the assembled job rather than
@@ -865,12 +1032,14 @@ export function estimate(input: EstimateInput): Estimate {
     total = add(total, RUSH_SURCHARGE);
   }
 
+  const apart = !pack ? bookedApart(size.range, addOns) : null;
+  const withBundle = (r: Range) => (bundleExtra.high ? add(r, bundleExtra) : r);
   const beforeDiscount = pack
     ? {
         low: (size.range.low + (pack === "combo" && yard ? yard.range.low : 0)) * stops,
         high: (size.range.high + (pack === "combo" && yard ? yard.range.high : 0)) * stops,
       }
-    : total;
+    : apart ?? withBundle(total);
 
   if (pack === "combo") {
     total = applyFlat(total, COMBO_CREDIT);
@@ -888,19 +1057,23 @@ export function estimate(input: EstimateInput): Estimate {
   // whole quote so the number and the explanation always agree.
   //
   // Owner packs skip the Sept 20 percent. Route rate is the owner deal.
+  // Bundle extras sit OUTSIDE the promo base — trip already paid, not another
+  // percent off. Block credit still sees the whole stop (withBundle) so a
+  // leaf+gutter job can qualify for the same-street deal.
   const routeDeal = Boolean(pack);
   const promoApplied = !routeDeal && input.earlyBird ? applyPromo(total) : total;
-  const blockCredit = routeDeal ? 0 : blockCreditFor(input.households ?? 1, total.low);
+  const blockCredit = routeDeal ? 0 : blockCreditFor(input.households ?? 1, withBundle(total).low);
   const blockApplied =
-    blockCredit > 0 ? applyFlat(total, blockCredit) : total;
+    blockCredit > 0 ? applyFlat(withBundle(total), blockCredit) : withBundle(total);
 
   let appliedDiscount: DiscountKind = pack === "combo" ? "combo" : pack && stops > 1 ? "route" : "none";
-  let discounted = total;
+  let discounted = withBundle(total);
   if (!routeDeal) {
-    appliedDiscount = "none";
-    if (input.earlyBird && isBetter(promoApplied, discounted)) {
-      appliedDiscount = "promo";
-      discounted = promoApplied;
+    appliedDiscount = bundleExtra.high ? "bundle" : "none";
+    const promoFinal = withBundle(promoApplied);
+    if (input.earlyBird && isBetter(promoFinal, discounted)) {
+      appliedDiscount = bundleExtra.high ? "bundle" : "promo";
+      discounted = promoFinal;
     }
     if (blockCredit > 0 && isBetter(blockApplied, discounted)) {
       appliedDiscount = "block";
@@ -942,6 +1115,11 @@ export function estimate(input: EstimateInput): Estimate {
   if (appliedDiscount === "promo" && discount > 0) {
     notes.push(
       `Book by ${PROMO_DEADLINE_LABEL} to lock this rate — ${Math.round(PROMO_PERCENT * 100)}% off (up to $${PROMO_CAP}) is already taken off this range.`,
+    );
+  }
+  if (appliedDiscount === "bundle") {
+    notes.push(
+      "Rake first, then we climb. Same-stop gutters and the porch piece are trip-priced — not a second roll, not another percent off.",
     );
   }
   if (appliedDiscount === "block" && discount > 0) {

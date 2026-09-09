@@ -1,6 +1,6 @@
 import { getSql } from "@/lib/db";
 import { ensurePayColumns } from "@/lib/pay-columns";
-import { formatRange, type ServiceKey } from "@/lib/pricebook";
+import { formatRange, parseAddOns, type ServiceKey } from "@/lib/pricebook";
 import { DAILY_SLOTS, firstOpenDay, slotsFor } from "@/lib/schedule";
 import { loadFill } from "@/lib/bookings";
 import { notifyOwnerOfBooking } from "@/lib/booking-alert.server";
@@ -28,9 +28,10 @@ export async function finalizePaidDeposit(bookingId: number, sessionId: string) 
     deposit_cents: number;
     deposit_paid: boolean;
     extra_addresses: string | null;
+    add_ons: string | null;
   }>(
     `select id, name, phone, email, address, service, job_size, estimate_low, estimate_high,
-            preferred_date, notes, deposit_cents, deposit_paid, extra_addresses
+            preferred_date, notes, deposit_cents, deposit_paid, extra_addresses, add_ons
        from bookings where id = $1`,
     [bookingId],
   );
@@ -38,7 +39,11 @@ export async function finalizePaidDeposit(bookingId: number, sessionId: string) 
   if (!row || row.deposit_paid) return;
 
   const fill = await loadFill();
-  const need = slotsFor((row.service as ServiceKey) || "junk-removal", row.job_size || "single");
+  const need = slotsFor(
+    (row.service as ServiceKey) || "junk-removal",
+    row.job_size || "single",
+    parseAddOns(row.add_ons),
+  );
   let day = row.preferred_date;
   if (day && /^\d{4}-\d{2}-\d{2}$/.test(day)) {
     const used = fill.find((f) => f.day === day)?.used ?? 0;

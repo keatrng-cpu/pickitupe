@@ -17,6 +17,10 @@ const FAQS = [
     q: "How do I hold a day?",
     a: "$50 on the card locks it. Landlord stacks run $75–$100. Deposit comes off the invoice.",
   },
+  {
+    q: "Gutters with the leaves?",
+    a: "Rake first, then we climb. Ranch $80–$110 while we're there — trip already paid. Not a second roll, not another percent off.",
+  },
 ];
 
 export function FinePrint() {
@@ -26,7 +30,7 @@ export function FinePrint() {
       <h2 className="mt-3 font-display text-3xl leading-none sm:text-4xl">
         Fine print, in plain words.
       </h2>
-      <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {FAQS.map((f) => (
           <li key={f.q} className="card-green rounded-2xl p-5">
             <p className="font-display text-xl leading-snug">{f.q}</p>

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { DateField } from "@/components/date-field";
 import { LotSizeField } from "@/components/lot-size-field";
 import { PhotoQuote } from "@/components/photo-quote";
+import { SameStop } from "@/components/same-stop";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { StickyDock } from "@/components/sticky-dock";
 import { speakShop, talkShop, type ChatTurn, type ShopLead } from "@/lib/dispatcher";
@@ -17,14 +18,18 @@ import {
   estimate,
   featuredSizesFor,
   formatRange,
+  HOUSE_PACKS,
   isPromoActive,
   LANDLORD_PACKS,
   listedSizesFor,
   landlordDeposit,
   packDefaultSize,
   packService,
+  parseAddOns,
   sizesForPack,
   STOP_COUNTS,
+  type AddOnKey,
+  type HousePack,
   type LandlordPack,
   type ServiceKey,
 } from "@/lib/pricebook";
@@ -44,6 +49,8 @@ type Search = {
   when?: string;
   code?: string;
   cancelled?: boolean;
+  house?: HousePack;
+  addons?: string;
 };
 
 export const Route = createFileRoute("/call")({
@@ -80,6 +87,14 @@ export const Route = createFileRoute("/call")({
     if (Number.isFinite(job) && job > 0) out.job = job;
     if (typeof search.day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search.day)) out.when = search.day;
     if (typeof search.code === "string") out.code = search.code;
+    if (
+      search.house === "yard" ||
+      search.house === "yard-gutters" ||
+      search.house === "yard-gutters-couch"
+    ) {
+      out.house = search.house;
+    }
+    if (typeof search.addons === "string") out.addons = search.addons;
     return out;
   },
   component: CallPage,
@@ -119,21 +134,27 @@ function CallPage() {
   const params = Route.useSearch();
   const landlord = params.src === "landlord" || Boolean(params.pack);
   const initialPack: LandlordPack | undefined = params.pack;
+  const housePack = HOUSE_PACKS.find((p) => p.value === params.house);
   const initialService: ServiceKey = isService(params.service)
     ? canonicalService(params.service)
-    : initialPack
-      ? packService(initialPack)
-      : "junk-removal";
+    : params.house
+      ? "leaf-cleanup"
+      : initialPack
+        ? packService(initialPack)
+        : "junk-removal";
   const initialSizes = landlord
     ? sizesForPack(initialPack ?? "turns")
     : listedSizesFor(initialService);
   const wantedSize = landlord
     ? params.size
-    : canonicalSize(initialService, params.size || "");
+    : canonicalSize(initialService, params.size || housePack?.size || "");
   const initialSize =
     initialSizes.find((s) => s.value === wantedSize)?.value ??
     (initialPack ? packDefaultSize(initialPack) : initialSizes[0]?.value ?? "single");
 
+  const initialAddOns: AddOnKey[] = landlord
+    ? []
+    : parseAddOns([...(housePack?.addOns ?? []), ...parseAddOns(params.addons)]);
   const [pack, setPack] = useState<LandlordPack | undefined>(
     initialPack ?? (landlord ? "turns" : undefined),
   );
@@ -163,6 +184,7 @@ function CallPage() {
   const [fillKey, setFillKey] = useState(0);
   const [showAllSizes, setShowAllSizes] = useState(false);
   const [extras, setExtras] = useState<string[]>([]);
+  const [addOns, setAddOns] = useState<AddOnKey[]>(initialAddOns);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recRef = useRef<SpeechRecognition | null>(null);
   const logRef = useRef<HTMLOListElement | null>(null);
@@ -212,13 +234,13 @@ function CallPage() {
       estimate({
         service: pack ? packService(pack) : service,
         size: currentSize,
-        addOns: [],
+        addOns: landlord ? [] : addOns,
         pack,
         stops: landlord ? stops : 1,
         lotSqFt: service === "leaf-cleanup" || pack === "leaves" || pack === "combo" ? lotSqFt : 0,
         earlyBird: isPromoActive(),
       }),
-    [service, currentSize, pack, stops, landlord, lotSqFt],
+    [service, currentSize, pack, stops, landlord, lotSqFt, addOns],
   );
 
   function leadSnap(): ShopLead {
@@ -234,6 +256,7 @@ function CallPage() {
       pack,
       stops: landlord ? stops : undefined,
       desk: landlord ? "landlord" : undefined,
+      addOns: landlord ? [] : addOns,
     };
   }
 
@@ -278,6 +301,7 @@ function CallPage() {
       setService(packService(next.pack));
     }
     if (next.stops) setStops(clampStops(next.stops));
+    if (next.addOns?.length) setAddOns(parseAddOns(next.addOns));
     if (typeof next.asap === "boolean") setAsap(next.asap);
     if (next.day) setDay(next.day);
     if (next.booked && next.code && (next.bookedDay || next.day)) {
@@ -372,11 +396,16 @@ function CallPage() {
         jobSize: currentSize,
         preferredDate: day,
         asap: asap || !day,
-        notes: landlord ? `Landlord desk · ${stops} ${pack ?? "stops"}` : "Shop line",
+        notes: landlord
+          ? `Landlord desk · ${stops} ${pack ?? "stops"}`
+          : addOns.length
+            ? `Shop line · ${addOns.join(",")}`
+            : "Shop line",
         estimateLow: priced.range?.low,
         estimateHigh: priced.range?.high,
         pack,
         stops: landlord ? stops : 1,
+        addOns: landlord ? [] : addOns,
       },
     }).catch((err: unknown) => ({
       ok: false as const,
@@ -516,6 +545,7 @@ function CallPage() {
                     onClick={() => {
                       setService(s.value);
                       setShowAllSizes(false);
+                      setAddOns([]);
                       const next = featuredSizesFor(s.value);
                       if (!next.some((x) => x.value === size)) setSize(next[0]?.value ?? "");
                     }}
@@ -565,10 +595,15 @@ function CallPage() {
               ) : null}
             </fieldset>
 
+            {!landlord && service === "leaf-cleanup" ? (
+              <SameStop addOns={addOns} onChange={(next) => setAddOns(next as AddOnKey[])} />
+            ) : null}
+
             <div className="mt-6">
               <DateField
                 service={pack ? packService(pack) : service}
                 size={currentSize}
+                addOns={landlord ? [] : addOns}
                 day={day}
                 asap={asap}
                 refreshKey={fillKey}

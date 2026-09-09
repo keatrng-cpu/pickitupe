@@ -23,6 +23,9 @@ const {
   leafRangeForSqFt,
   leafRangeForAcres,
   LOT_SQFT,
+  HOUSE_PACKS,
+  toggleBundleAddOn,
+  PLAN_FALL_GUTTERS,
 } = await import("../src/lib/pricebook.ts");
 
 const FLOOR = 55;
@@ -442,4 +445,51 @@ test("chip ranges equal the typical-lot formula", () => {
     if (!typical) continue;
     assert.deepEqual(size.range, leafRangeForSqFt(typical), size.value);
   }
+});
+
+test("same-stop gutters never take the September percent", () => {
+  const leaf = estimate({ ...base, addOns: [], earlyBird: true });
+  const ranch = ADD_ONS.find((a) => a.key === "gutters-here");
+  const bundled = estimate({ ...base, addOns: ["gutters-here"], earlyBird: true });
+  assert.ok(leaf.range && bundled.range && ranch);
+  assert.equal(bundled.range.low, leaf.range.low + ranch.range.low);
+  assert.equal(bundled.range.high, leaf.range.high + ranch.range.high);
+  assert.equal(bundled.appliedDiscount, "bundle");
+  assert.ok(bundled.notes.some((n) => /trip-priced/i.test(n)));
+});
+
+test("strikethrough on a bundle is booked-apart, not the trip rate", () => {
+  const bundled = estimate({ ...base, addOns: ["gutters-here"], earlyBird: true });
+  const gutter = sizeOptionsFor("gutter-cleaning").find((s) => s.value === "standard");
+  const leafList = sizeOptionsFor("leaf-cleanup").find((s) => s.value === "medium");
+  assert.ok(bundled.beforeDiscount && gutter && leafList);
+  assert.equal(bundled.beforeDiscount.low, leafList.range.low + gutter.range.low);
+  assert.equal(bundled.beforeDiscount.high, leafList.range.high + gutter.range.high);
+  assert.ok(bundled.range.high < bundled.beforeDiscount.high);
+});
+
+test("ranch and wraparound gutters are mutually exclusive", () => {
+  const next = toggleBundleAddOn(["gutters-here"], "gutters-wrap");
+  assert.deepEqual(next, ["gutters-wrap"]);
+  const back = toggleBundleAddOn(next, "gutters-here");
+  assert.deepEqual(back, ["gutters-here"]);
+});
+
+test("house packs price a standard lot and keep the $50 deposit", () => {
+  for (const pack of HOUSE_PACKS) {
+    const q = estimate({
+      service: pack.service,
+      size: pack.size,
+      addOns: pack.addOns,
+      earlyBird: true,
+    });
+    assert.ok(q.range, pack.value);
+    assert.equal(q.deposit, 50);
+    if (pack.addOns.length) assert.equal(q.appliedDiscount, "bundle");
+  }
+});
+
+test("plan fall gutters match the ranch same-stop rate", () => {
+  const ranch = ADD_ONS.find((a) => a.key === "gutters-here");
+  assert.deepEqual(PLAN_FALL_GUTTERS, ranch.range);
 });

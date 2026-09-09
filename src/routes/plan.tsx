@@ -7,6 +7,7 @@ import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { getPlanStatus, openBillingPortal, startPlanCheckout } from "@/lib/plan-actions";
 import { startSpringHold, stripeReady } from "@/lib/pay-actions";
 import { PLAN_EXCLUSIONS, SERVICE_WINDOW, type PlanTier } from "@/lib/plan";
+import { formatRange, PLAN_FALL_GUTTERS } from "@/lib/pricebook";
 
 const TITLE = "Seasonal Cleanup Plan — Spring + Fall | Pick It Up E";
 const DESCRIPTION =
@@ -50,6 +51,7 @@ function PlanPage() {
   const [holdEmail, setHoldEmail] = useState("");
   const [holdAddress, setHoldAddress] = useState("");
   const [holdTier, setHoldTier] = useState<PlanTier>("standard");
+  const [fallGutters, setFallGutters] = useState(false);
 
   useEffect(() => {
     getPlanStatus()
@@ -200,6 +202,7 @@ function PlanPage() {
                           email: holdEmail,
                           address: holdAddress,
                           tier: holdTier,
+                          fallGutters,
                         },
                       });
                       setHoldBusy(false);
@@ -239,6 +242,18 @@ function PlanPage() {
                     <label className="text-xs font-medium text-muted">
                       Address
                       <input className="field mt-1 h-12" value={holdAddress} onChange={(e) => setHoldAddress(e.target.value)} required />
+                    </label>
+                    <label className="flex min-h-11 items-start gap-3 text-sm text-fg sm:col-span-2">
+                      <input
+                        type="checkbox"
+                        className="mt-1 size-4 accent-gold"
+                        checked={fallGutters}
+                        onChange={(e) => setFallGutters(e.target.checked)}
+                      />
+                      <span>
+                        Ranch gutters on the fall visit — {formatRange(PLAN_FALL_GUTTERS)}
+                        /year, billed with the plan. Not in the $50 hold.
+                      </span>
                     </label>
                     <button
                       type="submit"

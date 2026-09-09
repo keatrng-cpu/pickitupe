@@ -1,6 +1,7 @@
 import { ArrowRight, Droplets, Leaf, Trash2 } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
+import { SameStop } from "@/components/same-stop";
 import {
   canonicalService,
   estimate,
@@ -8,6 +9,7 @@ import {
   formatRange,
   isPromoActive,
   listedSizesFor,
+  type AddOnKey,
   type ServiceKey,
 } from "@/lib/pricebook";
 
@@ -25,6 +27,7 @@ export function QuickQuote() {
   const [service, setService] = useState<ServiceKey>("leaf-cleanup");
   const [size, setSize] = useState("medium");
   const [allSizes, setAllSizes] = useState(false);
+  const [addOns, setAddOns] = useState<AddOnKey[]>([]);
   const sizes = allSizes ? listedSizesFor(service) : featuredSizesFor(service);
 
   const result = useMemo(
@@ -32,10 +35,10 @@ export function QuickQuote() {
       estimate({
         service,
         size: sizes.some((s) => s.value === size) ? size : sizes[0]?.value ?? "",
-        addOns: [],
+        addOns: service === "leaf-cleanup" ? addOns : [],
         earlyBird: isPromoActive(),
       }),
-    [service, size, sizes],
+    [service, size, sizes, addOns],
   );
 
   function pick(next: ServiceKey) {
@@ -43,6 +46,7 @@ export function QuickQuote() {
     setService(s);
     setAllSizes(false);
     setSize(featuredSizesFor(s)[0]?.value ?? "");
+    if (s !== "leaf-cleanup") setAddOns([]);
   }
 
   const current = sizes.some((s) => s.value === size)
@@ -119,6 +123,10 @@ export function QuickQuote() {
       ) : null}
       {currentHint ? <p className="mt-3 text-sm text-muted">{currentHint}</p> : null}
 
+      {service === "leaf-cleanup" ? (
+        <SameStop addOns={addOns} onChange={(next) => setAddOns(next as AddOnKey[])} />
+      ) : null}
+
       <div className="card-estimate relative mt-8 overflow-hidden rounded-2xl p-6">
         <p className="kicker">Your range</p>
         <div className="mt-3 flex flex-wrap items-end gap-3">
@@ -137,7 +145,13 @@ export function QuickQuote() {
         </div>
         <Link
           to="/call"
-          search={{ service, size: current }}
+          search={{
+            service,
+            size: current,
+            ...(addOns.length && service === "leaf-cleanup"
+              ? { addons: addOns.join(",") }
+              : {}),
+          }}
           className="btn-press mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-mahogany text-sm font-medium text-paper hover:bg-mahogany-deep sm:w-auto sm:px-8"
         >
           Lock this

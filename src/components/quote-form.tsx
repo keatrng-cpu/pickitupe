@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AddressField } from "@/components/address-field";
 import { DateField } from "@/components/date-field";
+import { SameStop } from "@/components/same-stop";
 import { lockWithDeposit } from "@/lib/pay-actions";
 import { assessJob } from "@/lib/assess-actions";
 import {
@@ -24,6 +25,7 @@ import {
   PROMO_DEADLINE_LABEL,
   refusedItemsIn,
   listedSizesFor,
+  shopAddOnsFor,
   type AddOnKey,
   type ServiceKey,
 } from "@/lib/pricebook";
@@ -192,6 +194,7 @@ export function QuoteForm({
 
   const sizes = useMemo(() => listedSizesFor(service), [service]);
   const availableAddOns = useMemo(() => addOnsFor(service), [service]);
+  const shopChips = useMemo(() => shopAddOnsFor(service), [service]);
 
   // Keep the size and add-ons valid whenever the service changes.
   const activeSize = sizes.some((s) => s.value === size) ? size : sizes[0].value;
@@ -237,6 +240,7 @@ export function QuoteForm({
           notes: described,
           estimateLow: quote.range?.low,
           estimateHigh: quote.range?.high,
+          addOns: activeAddOns,
         },
       });
       if (!result.ok) {
@@ -374,6 +378,7 @@ export function QuoteForm({
           <DateField
             service={service}
             size={activeSize}
+            addOns={activeAddOns}
             day={form.watch("preferredDate") || ""}
             asap={asap}
             onChange={({ day, asap: nextAsap }) => {
@@ -472,11 +477,15 @@ export function QuoteForm({
         </fieldset>
       ) : null}
 
-      {service !== "other" && availableAddOns.length > 0 ? (
+      {service === "leaf-cleanup" ? (
+        <SameStop addOns={addOns} onChange={(next) => setAddOns(next as AddOnKey[])} />
+      ) : null}
+
+      {service !== "other" && shopChips.length > 0 ? (
         <fieldset className="mt-8">
           <legend className={labelClass}>Anything else we should know?</legend>
           <div className="mt-3 flex flex-wrap gap-2.5">
-            {availableAddOns.map((a) => {
+            {shopChips.map((a) => {
               const on = activeAddOns.includes(a.key);
               return (
                 <label

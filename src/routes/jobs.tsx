@@ -11,7 +11,7 @@ import {
 } from "@/lib/bookings";
 import { smsLink, templatesForStage } from "@/lib/messages";
 import { startBalanceInvoice } from "@/lib/pay-actions";
-import { PROMO_CAP, PROMO_PERCENT } from "@/lib/pricebook";
+import { formatAddOns, PROMO_CAP, PROMO_PERCENT } from "@/lib/pricebook";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/jobs")({ component: JobsPage });
@@ -132,7 +132,7 @@ function JobsPage() {
                       <p className="text-sm text-muted">
                         {job.service.replaceAll("-", " ")}
                         {job.job_size ? ` · ${job.job_size}` : ""}
-                        {job.add_ons ? ` · ${job.add_ons.replaceAll(",", ", ")}` : ""}
+                        {job.add_ons ? ` · ${formatAddOns(job.add_ons)}` : ""}
                       </p>
                       <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                         <a className="text-gold" href={`tel:${job.phone}`}>
