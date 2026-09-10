@@ -26,6 +26,9 @@ import {
   packDefaultSize,
   packService,
   parseAddOns,
+  PROMO_CAP,
+  PROMO_DEADLINE_LABEL,
+  PROMO_PERCENT,
   sizesForPack,
   STOP_COUNTS,
   type AddOnKey,
@@ -476,6 +479,16 @@ function CallPage() {
             ? "Turns, leaves, or both. First stop full rate. Extra stops this week at route rate."
             : "What it is, how big, which day. Then we hold it."}
         </p>
+        {/* The ads promise the percent off and land here. If this line is not on
+            the page the offer is invisible at the exact moment money is
+            committed. Rendered from pricebook constants — including the cap,
+            which the code has always applied and the copy never said. */}
+        {isPromoActive() ? (
+          <p className="mt-2 text-sm text-gold">
+            {Math.round(PROMO_PERCENT * 100)}% off through {PROMO_DEADLINE_LABEL}, up to $
+            {PROMO_CAP}. Deposit comes off the invoice.
+          </p>
+        ) : null}
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]">
           <section className="card-green rounded-3xl p-5 sm:p-6">

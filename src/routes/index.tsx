@@ -92,7 +92,8 @@ function Home() {
               </div>
               {offer.active ? (
                 <p className="mt-4 text-xs text-fg/80">
-                  {Math.round(offer.percent * 100)}% off through {offer.deadlineLabel}
+                  {Math.round(offer.percent * 100)}% off through {offer.deadlineLabel}, up to $
+                  {offer.cap}
                 </p>
               ) : (
                 <p className="mt-4 text-xs text-fg/80">
