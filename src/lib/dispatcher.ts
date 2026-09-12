@@ -412,6 +412,7 @@ async function runTool(name: string, raw: string, lead: ShopLead, email: string 
     try {
       const held = await lockWithDeposit({
         data: {
+          source: "chat",
           name: nameOnJob,
           phone,
           address,
@@ -713,6 +714,7 @@ async function fallbackReply(
     try {
       const held = await lockWithDeposit({
         data: {
+          source: "chat",
           name: next.name as string,
           phone: next.phone as string,
           address: next.address as string,

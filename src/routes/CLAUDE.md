@@ -7,7 +7,10 @@ Read the root [`CLAUDE.md`](../../CLAUDE.md) first.
 | `__root.tsx` | HTML shell. Used to mount `FallingLeaves` here — removed at the owner's request. If it ever comes back it mounts once here, never per-page. |
 | `index.tsx` | Home. Promo lines, FAQ (keep in sync with `src/lib/seo.ts`), block deal. **No booking form** — see below. SEO workstream owns copy; visual owns the haul video. |
 | `book.tsx` | Booking page — the only place `QuoteForm` renders. Validates `?service/?size/?addons` from the hero card. No extra phone button — header/footer already have it. |
-| `jobs.tsx` | Owner ops board. Don't rewrite marketing copy from here. |
+| `jobs.tsx` | Owner ops board: summary strip, follow-up, same-day clusters, job cards. Don't rewrite marketing copy from here. |
+| `jobs_.$id.tsx` | One job: status pipeline, final bill + payments (cash/check/Venmo/Zelle; Stripe rows arrive via webhook), job costs, mileage with suggested miles, owner notes, contact log. The `_` suffix keeps it a sibling of `/jobs`, not a child. |
+| `jobs_.books.tsx` | Books & taxes: Schedule C by line, expenses, mileage log, income, setup (home/landfill for suggested miles, reserve %) and the deduction checklist. CSV export. |
+| `jobs_.customers.tsx` | Customers by phone + the follow-up queue derived from booking status and `last_contact_at`. |
 | `login.tsx` | Auth. |
 | `api/auth/$.ts` | better-auth catch-all. |
 

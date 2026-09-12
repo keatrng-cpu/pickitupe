@@ -74,9 +74,9 @@ export const Route = createFileRoute("/api/stripe/webhook")({
                 const id = Number(session.metadata?.bookingId);
                 if (Number.isFinite(id) && id > 0) {
                   if (session.metadata?.kind === "balance") {
-                    await finalizeBalance(id, session.id);
+                    await finalizeBalance(id, session.id, session.amount_total);
                   } else {
-                    await finalizePaidDeposit(id, session.id);
+                    await finalizePaidDeposit(id, session.id, session.amount_total);
                   }
                 }
                 break;

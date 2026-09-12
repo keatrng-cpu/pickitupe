@@ -39,6 +39,7 @@ const lockInput = z.object({
   pack: z.enum(["turns", "leaves", "combo"]).optional(),
   stops: z.number().int().min(1).max(8).optional(),
   addOns: z.array(z.string().max(40)).max(10).optional(),
+  source: z.string().trim().max(24).regex(/^[a-z0-9_-]*$/i).optional(),
 });
 
 function depositDollars(pack: LandlordPack | undefined, stops: number) {
@@ -67,8 +68,10 @@ export const lockWithDeposit = createServerFn({ method: "POST" })
     const { getSql } = await import("@/lib/db");
     const { ensurePayColumns, BOOKING_SELECT } = await import("@/lib/pay-columns");
     const { loadFill } = await import("@/lib/bookings");
+    const { ensureOwnerTables, logEvent } = await import("@/lib/owner-schema");
     const sql = await getSql();
     await ensurePayColumns(sql);
+    await ensureOwnerTables(sql);
     const pack = data.pack;
     const stops = Math.min(8, Math.max(1, data.stops ?? 1));
     const extras = (data.extraAddresses ?? []).map((a) => a.trim()).filter(Boolean);
@@ -99,8 +102,8 @@ export const lockWithDeposit = createServerFn({ method: "POST" })
     const inserted = await sql.query<{ id: number }>(
       `insert into bookings
         (name, phone, email, address, service, notes, preferred_date, early_bird, status,
-         job_size, add_ons, estimate_low, estimate_high, deposit_cents, deposit_paid, extra_addresses, pack, stops)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,'hold',$9,$10,$11,$12,$13,false,$14,$15,$16)
+         job_size, add_ons, estimate_low, estimate_high, deposit_cents, deposit_paid, extra_addresses, pack, stops, source)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,'hold',$9,$10,$11,$12,$13,false,$14,$15,$16,$17)
        returning id`,
       [
         data.name,
@@ -119,9 +122,11 @@ export const lockWithDeposit = createServerFn({ method: "POST" })
         extraText,
         pack ?? null,
         pack ? stops : 1,
+        data.source || null,
       ],
     );
     const id = inserted[0]?.id ?? 0;
+    await logEvent(sql, id, "system", `Started card checkout${data.source ? ` · via ${data.source}` : ""}`);
     const stripe = getStripe();
     const dayLabel = preferredDate || "first open day";
     const session = await stripe.checkout.sessions.create({

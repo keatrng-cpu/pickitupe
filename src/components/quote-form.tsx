@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { readSource } from "@/lib/source";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -241,6 +242,7 @@ export function QuoteForm({
           estimateLow: quote.range?.low,
           estimateHigh: quote.range?.high,
           addOns: activeAddOns,
+          source: readSource(),
         },
       });
       if (!result.ok) {

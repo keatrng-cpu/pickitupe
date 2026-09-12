@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
+import { SourceCapture } from "@/components/source-capture";
 import { Toaster } from "sonner";
 import appCss from "../styles.css?url";
 
@@ -39,6 +40,7 @@ export const Route = createRootRoute({
       </head>
       <body className="min-h-screen overflow-x-hidden bg-bg text-fg">
         <PreviewHostBridge />
+        <SourceCapture />
         <AuthProvider>
           <Outlet />
           <Toaster

@@ -19,6 +19,7 @@ import {
 } from "@/lib/schedule";
 import { z } from "zod";
 import { BOOKING_SELECT, ensurePayColumns } from "@/lib/pay-columns";
+import { ensureOwnerTables, logEvent } from "@/lib/owner-schema";
 import { notifyOwnerOfBooking } from "@/lib/booking-alert.server";
 import { sessionEmail } from "@/lib/optional-session";
 import { isOwnerEmail } from "@/lib/owner";
@@ -52,6 +53,8 @@ const bookingInput = z.object({
   neighborOf: z.string().trim().max(200).optional().or(z.literal("")),
   households: z.number().int().min(1).max(6).optional(),
   asap: z.boolean().optional(),
+  // ?s= tag the visitor landed with (dh, gbp, chat). Never trusted for anything but reporting.
+  source: z.string().trim().max(24).regex(/^[a-z0-9_-]*$/i).optional(),
 });
 
 export type BookingRow = {
@@ -84,7 +87,16 @@ export type BookingRow = {
   pack?: string | null;
   stops?: number | null;
   balance_paid?: boolean | null;
+  // owner books (migration 0007) — present when selected through listBookings
+  source?: string | null;
+  final_cents?: number | null;
+  owner_notes?: string | null;
+  completed_at?: string | null;
+  last_contact_at?: string | null;
 };
+
+/** Board select: the pay columns plus the owner-books columns. */
+export const OWNER_BOOKING_SELECT = `${BOOKING_SELECT}, source, final_cents, owner_notes, completed_at, last_contact_at`;
 
 /**
  * The promo is now a fixed calendar deadline (see `isPromoActive` in
@@ -139,6 +151,7 @@ export const submitBooking = createServerFn({ method: "POST" })
   .validator((input: unknown) => bookingInput.parse(input))
   .handler(async ({ data }) => {
     const sql = await getSql();
+    await ensureOwnerTables(sql);
     // Recomputed server-side from the server clock — never trust a
     // client-supplied flag for something that changes the price.
     const earlyBird = isPromoActive();
@@ -184,7 +197,7 @@ export const submitBooking = createServerFn({ method: "POST" })
       insert into bookings
         (name, phone, email, address, service, notes, preferred_date, early_bird, status,
          urgency, job_size, add_ons, estimate_low, estimate_high, lat, lon, area_tier, neighbor_of,
-         households, applied_discount, discount_amount)
+         households, applied_discount, discount_amount, source)
       values
         (
           ${data.name},
@@ -207,11 +220,13 @@ export const submitBooking = createServerFn({ method: "POST" })
           ${data.neighborOf || null},
           ${households},
           ${priced.appliedDiscount},
-          ${priced.discount}
+          ${priced.discount},
+          ${data.source || null}
         )
       returning id
     `;
     const id = inserted[0]?.id ?? 0;
+    await logEvent(sql, id, "system", `Booked on the site${data.source ? ` · via ${data.source}` : ""}`);
 
     // The row is saved. Now tell the owner — this cannot throw and cannot
     // fail the booking (see booking-alert.server.ts). Awaited on purpose: a
@@ -256,8 +271,9 @@ export const listBookings = createServerFn({ method: "GET" })
     }
     const sql = await getSql();
     await ensurePayColumns(sql);
+    await ensureOwnerTables(sql);
     return sql.query<BookingRow>(
-      `select ${BOOKING_SELECT} from bookings order by created_at desc limit 200`,
+      `select ${OWNER_BOOKING_SELECT} from bookings order by created_at desc limit 200`,
     );
   });
 
@@ -277,9 +293,17 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
     }
     const sql = await getSql();
     await ensurePayColumns(sql);
+    await ensureOwnerTables(sql);
+    const before = await sql.query<{ status: string }>(`select status from bookings where id = $1`, [data.id]);
     await sql`
-      update bookings set status = ${data.status} where id = ${data.id}
+      update bookings
+         set status = ${data.status},
+             completed_at = case when ${data.status} = 'done' then coalesce(completed_at, now()) else completed_at end
+       where id = ${data.id}
     `;
+    if (before[0] && before[0].status !== data.status) {
+      await logEvent(sql, data.id, "status", `${before[0].status} → ${data.status}`);
+    }
     if (data.status === "done") {
       const rows = await sql.query<{ name: string; phone: string; email: string | null; estimate_low: number | null; estimate_high: number | null }>(
         `select name, phone, email, estimate_low, estimate_high from bookings where id = $1`,

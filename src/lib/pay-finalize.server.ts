@@ -1,5 +1,6 @@
 import { getSql } from "@/lib/db";
 import { ensurePayColumns } from "@/lib/pay-columns";
+import { ensureOwnerTables, logEvent } from "@/lib/owner-schema";
 import { formatRange, parseAddOns, type ServiceKey } from "@/lib/pricebook";
 import { DAILY_SLOTS, firstOpenDay, slotsFor } from "@/lib/schedule";
 import { loadFill } from "@/lib/bookings";
@@ -10,7 +11,28 @@ if (typeof window !== "undefined") {
   throw new Error("pay-finalize.server.ts is server-only");
 }
 
-export async function finalizePaidDeposit(bookingId: number, sessionId: string) {
+/**
+ * Record money that arrived through Stripe in the owner books. The session id
+ * is unique in `payments`, so a replayed webhook cannot count it twice.
+ */
+async function recordStripePayment(
+  sql: Awaited<ReturnType<typeof getSql>>,
+  bookingId: number,
+  sessionId: string,
+  amountCents: number,
+  kind: "deposit" | "balance",
+) {
+  await ensureOwnerTables(sql);
+  await sql.query(
+    `insert into payments (booking_id, paid_on, amount_cents, method, kind, stripe_session_id, note)
+     values ($1, current_date, $2, 'stripe', $3, $4, 'Paid on the site')
+     on conflict (stripe_session_id) do nothing`,
+    [bookingId, amountCents, kind, sessionId],
+  );
+  await logEvent(sql, bookingId, "payment", `${kind === "deposit" ? "Deposit" : "Balance"} $${(amountCents / 100).toFixed(2)} paid by card`);
+}
+
+export async function finalizePaidDeposit(bookingId: number, sessionId: string, amountCents?: number | null) {
   const sql = await getSql();
   await ensurePayColumns(sql);
   const rows = await sql.query<{
@@ -63,6 +85,7 @@ export async function finalizePaidDeposit(bookingId: number, sessionId: string) 
   );
 
   const deposit = Math.round((row.deposit_cents || 5000) / 100);
+  await recordStripePayment(sql, bookingId, sessionId, amountCents ?? row.deposit_cents ?? 5000, "deposit");
   const range =
     row.estimate_low != null && row.estimate_high != null
       ? formatRange({ low: row.estimate_low, high: row.estimate_high })
@@ -87,11 +110,14 @@ export async function finalizePaidDeposit(bookingId: number, sessionId: string) 
   });
 }
 
-export async function finalizeBalance(bookingId: number, sessionId: string) {
+export async function finalizeBalance(bookingId: number, sessionId: string, amountCents?: number | null) {
   const sql = await getSql();
   await ensurePayColumns(sql);
   await sql.query(
     `update bookings set balance_paid = true, invoice_session_id = $2 where id = $1`,
     [bookingId, sessionId],
   );
+  if (amountCents && amountCents > 0) {
+    await recordStripePayment(sql, bookingId, sessionId, amountCents, "balance");
+  }
 }

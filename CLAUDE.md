@@ -49,7 +49,7 @@ Pull before you start. Commit only the files you meant to change.
 |---|---|---|
 | **Visual / motion** | `src/components/falling-leaves.tsx`, `haul-on-scroll.tsx`, `door-hanger.tsx`, `src/styles.css`, `src/routes/__root.tsx`, `public/hero-truck.jpg`, `public/haul-*.webp`, `public/haul-junk.mp4`, `public/haul-junk-poster.jpg`, `public/grain.png`, `public/og.jpg` | pricebook, bookings, jobs |
 | **Pricing / quoting** | `src/lib/pricebook.ts`, `PRICEBOOK.md`, `src/components/quote-form.tsx`, `hero-quote-teaser.tsx`, `address-field.tsx`, `src/lib/service-area.ts` | haul animation, leaf overlay |
-| **Owner ops** | `src/routes/jobs.tsx`, `src/lib/messages.ts`, `src/lib/bookings.ts`, `migrations/` | marketing copy on the home hero |
+| **Owner ops** | `src/routes/jobs.tsx`, `src/routes/jobs_.$id.tsx`, `src/routes/jobs_.books.tsx`, `src/routes/jobs_.customers.tsx`, `src/components/owner-shell.tsx`, `src/lib/books.ts`, `src/lib/tax.ts`, `src/lib/owner-schema.ts`, `src/lib/messages.ts`, `src/lib/bookings.ts`, `migrations/` | marketing copy on the home hero |
 | **SEO / copy** | `src/lib/seo.ts` (FAQ on page **must match** JSON-LD), `src/routes/index.tsx` promo lines | don't invent prices — they live in pricebook.ts |
 | **Print** | `print/DOOR-HANGER.md`, `attachments/PickItUpE-DoorHanger.pdf`, `attachments/Ks1nw.jpg`, `door-hanger.tsx` | keep 4.25×11 knob hole, never mailbox |
 | **Deploy** | `DEPLOY.md`, `netlify.toml`, `.env.example` | |
@@ -67,7 +67,15 @@ If a task spans two columns, touch the minimum files and say so in the commit me
 - Quote / book form → `bookings` table
 - **Instant estimate** — deterministic flat-rate math, no API key (`pricebook.ts`, calibrate in `PRICEBOOK.md`)
 - **Address autocomplete + service-area verdict** — keyless OpenStreetMap, boxed to Greater Grand Forks
-- `/jobs` owner board with same-day clusters and one-tap customer texts
+- **Owner account** (`/jobs`, `/jobs/$id`, `/jobs/books`, `/jobs/customers`) — board with same-day clusters, a
+  summary strip (today, open leads, collected YTD, owed, expenses, miles), a per-job page (status, final bill,
+  payments incl. cash/check/Venmo, job costs, mileage with suggested miles, contact log, one-tap texts that log
+  themselves, owner-only notes), a customers page with a derived follow-up queue (reply <4h, confirm day before,
+  review ask 2 days after), and **Books & taxes** — Schedule C by line, expenses, IRS-rate mileage log
+  (72.5¢ H1 / 76¢ H2 2026, stamped per trip), income, SE-tax estimate, 25% tax set-aside, one-time deduction
+  checklist, CSV export for the CPA. Gate: `isOwnerEmail` — `pickitupe@gmail.com` plus `OWNER_EMAILS`. Money is
+  integer cents. Stripe deposits/balances land in `payments` through the webhook (idempotent on session id).
+  Bookings carry a `source` tag from `?s=` (dh = door hanger, gbp, chat).
 - LocalBusiness + FAQ structured data
 - PGLite when no `DATABASE_URL`; Supabase/Neon when set
 
@@ -116,7 +124,10 @@ public/icon-192.png
 src/routes/__root.tsx            html shell — FallingLeaves is NOT mounted here anymore
 src/routes/index.tsx             home, SEO, FAQ, block deal — NO booking form (it lives on /book)
 src/routes/book.tsx              booking page — the ONLY place QuoteForm renders; validates ?service/?size/?addons
-src/routes/jobs.tsx              owner board
+src/routes/jobs.tsx              owner board (summary strip + follow-up + job cards)
+src/routes/jobs_.$id.tsx         one job: status, money, costs, miles, contact log
+src/routes/jobs_.books.tsx       Schedule C, expenses, mileage, income, setup & checklist, CSV export
+src/routes/jobs_.customers.tsx   customers by phone + derived follow-up queue
 src/routes/login.tsx
 src/routes/api/auth/$.ts         better-auth catch-all
 
@@ -127,9 +138,16 @@ src/components/haul-on-scroll.tsx  the crew video — not a scroll-driven illust
 src/components/quote-form.tsx    booking + instant estimate
 src/components/address-field.tsx autocomplete + "do you come out here?"
 src/components/site-header.tsx   header + footer (phone lives here)
+src/components/owner-shell.tsx   owner pages' chrome, gate, tabs, shared money/date helpers
+src/components/source-capture.tsx remembers ?s= on landing (door hanger QR = ?s=dh)
 src/components/ui/button.tsx
 
 src/lib/bookings.ts              server fns
+src/lib/books.ts                 owner books server fns (summary, job detail, payments, expenses, trips, settings, customers)
+src/lib/tax.ts                   IRS mileage rates, Schedule C categories, SE tax, trip suggestion — pure, tested
+src/lib/owner-schema.ts          ensureOwnerTables() (mirrors 0007) + logEvent()
+src/lib/owner.ts                 isOwnerEmail() gate — pickitupe@gmail.com + OWNER_EMAILS
+src/lib/source.ts                ?s= tag remember/read
 src/lib/pricebook.ts             the only place money numbers live
 src/lib/service-area.ts          distance bands + keyless geocoding
 src/lib/messages.ts              one-tap customer texts
@@ -141,6 +159,7 @@ src/styles.css                   tokens + motion (Sioux green, cream, mahogany, 
 migrations/0001_auth.sql
 migrations/0002_bookings.sql
 migrations/0003_booking_intel.sql  size, estimate, urgency, lat/lon, neighbor
+migrations/0007_owner_books.sql    source, final_cents, owner_notes; booking_events, payments, expenses, mileage_trips, owner_settings
 
 scripts/migrate.mjs
 vite.config.ts

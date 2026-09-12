@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { readSource } from "@/lib/source";
 import { Mic, Phone, PhoneOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DateField } from "@/components/date-field";
@@ -399,6 +400,7 @@ function CallPage() {
         jobSize: currentSize,
         preferredDate: day,
         asap: asap || !day,
+        source: readSource(),
         notes: landlord
           ? `Landlord desk · ${stops} ${pack ?? "stops"}`
           : addOns.length

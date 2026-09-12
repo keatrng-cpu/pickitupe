@@ -18,6 +18,9 @@ import { Route as LandlordsRouteImport } from './routes/landlords'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PlanRouteImport } from './routes/plan'
 import { Route as StatusRouteImport } from './routes/status'
+import { Route as JobsIdRouteImport } from './routes/jobs_.$id'
+import { Route as JobsBooksRouteImport } from './routes/jobs_.books'
+import { Route as JobsCustomersRouteImport } from './routes/jobs_.customers'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiCronRenewalNoticesRouteImport } from './routes/api/cron/renewal-notices'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe/webhook'
@@ -67,6 +70,21 @@ const StatusRoute = StatusRouteImport.update({
   path: '/status',
   getParentRoute: () => rootRouteImport,
 } as any)
+const JobsIdRoute = JobsIdRouteImport.update({
+  id: '/jobs_/$id',
+  path: '/jobs/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JobsBooksRoute = JobsBooksRouteImport.update({
+  id: '/jobs_/books',
+  path: '/jobs/books',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JobsCustomersRoute = JobsCustomersRouteImport.update({
+  id: '/jobs_/customers',
+  path: '/jobs/customers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -93,6 +111,9 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
   '/status': typeof StatusRoute
+  '/jobs/$id': typeof JobsIdRoute
+  '/jobs/books': typeof JobsBooksRoute
+  '/jobs/customers': typeof JobsCustomersRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -107,6 +128,9 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
   '/status': typeof StatusRoute
+  '/jobs/$id': typeof JobsIdRoute
+  '/jobs/books': typeof JobsBooksRoute
+  '/jobs/customers': typeof JobsCustomersRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -122,6 +146,9 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
   '/status': typeof StatusRoute
+  '/jobs_/$id': typeof JobsIdRoute
+  '/jobs_/books': typeof JobsBooksRoute
+  '/jobs_/customers': typeof JobsCustomersRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -138,6 +165,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/plan'
     | '/status'
+    | '/jobs/$id'
+    | '/jobs/books'
+    | '/jobs/customers'
     | '/api/auth/$'
     | '/api/cron/renewal-notices'
     | '/api/stripe/webhook'
@@ -152,6 +182,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/plan'
     | '/status'
+    | '/jobs/$id'
+    | '/jobs/books'
+    | '/jobs/customers'
     | '/api/auth/$'
     | '/api/cron/renewal-notices'
     | '/api/stripe/webhook'
@@ -166,6 +199,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/plan'
     | '/status'
+    | '/jobs_/$id'
+    | '/jobs_/books'
+    | '/jobs_/customers'
     | '/api/auth/$'
     | '/api/cron/renewal-notices'
     | '/api/stripe/webhook'
@@ -181,6 +217,9 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PlanRoute: typeof PlanRoute
   StatusRoute: typeof StatusRoute
+  JobsIdRoute: typeof JobsIdRoute
+  JobsBooksRoute: typeof JobsBooksRoute
+  JobsCustomersRoute: typeof JobsCustomersRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCronRenewalNoticesRoute: typeof ApiCronRenewalNoticesRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
@@ -251,6 +290,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StatusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/jobs_/$id': {
+      id: '/jobs_/$id'
+      path: '/jobs/$id'
+      fullPath: '/jobs/$id'
+      preLoaderRoute: typeof JobsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jobs_/books': {
+      id: '/jobs_/books'
+      path: '/jobs/books'
+      fullPath: '/jobs/books'
+      preLoaderRoute: typeof JobsBooksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jobs_/customers': {
+      id: '/jobs_/customers'
+      path: '/jobs/customers'
+      fullPath: '/jobs/customers'
+      preLoaderRoute: typeof JobsCustomersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -285,6 +345,9 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PlanRoute: PlanRoute,
   StatusRoute: StatusRoute,
+  JobsIdRoute: JobsIdRoute,
+  JobsBooksRoute: JobsBooksRoute,
+  JobsCustomersRoute: JobsCustomersRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCronRenewalNoticesRoute: ApiCronRenewalNoticesRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
