@@ -4,20 +4,51 @@ Physical card for Grand Forks neighborhoods. Hang on the **doorknob**. Never the
 
 ## Size
 
-- 4.25 in × 11 in
-- Die-cut knob hole near the top (about 1 in diameter) with a slit to the edge
-- Cardstock, CMYK
-- Front: mahogany field, cream lettering
-- Back: what we haul / what we don't / book-by date / mailbox warning
+- **VistaPrint "4.5 × 11" door hanger** (their large size; there is no 4.25 option).
+  Full-bleed artboard **4.72 × 11.22 in**, trim 0.11 in in, safety 0.28 in in.
+- Die-cut knob hole Ø≈1.1 in, centered 2.36 in from the left / 1.42 in from the
+  top of the artboard; slit exits **left** on the front (mirrors right on the back).
+  **Nothing sits above y = 2.25 in except the mahogany field.**
+- 16pt "Premium" cardstock, matte, two-sided.
+- Front: mahogany field, cream lettering, offer, prices, truck, towns
+- Back: URL / truck / what we haul / what we don't / phone / QR / deposit line
+
+## Build (print-ready files live in this folder)
+
+```bash
+node scripts/make-door-hanger-pdf.mjs
+```
+
+Source is [`door-hanger.html`](door-hanger.html) (Playfair Display + Outfit from
+Google Fonts, palette from `src/styles.css`, QR inlined from `qr-pickitupe.svg`,
+truck from `public/haul-truck.webp`). Outputs `door-hanger-front.png` and
+`door-hanger-back.png` at exactly 300 dpi (1419 × 3369) — **upload the PNGs, not
+the PDF**: VistaPrint rejects Chromium's PDF for "un-embedded fonts". The PNGs are
+rendered 0.04 in taller than the artboard on purpose so VistaPrint's fit-to-width
+never leaves a hairline at the bottom.
+
+VistaPrint Studio gotchas learned 2026-09-11: setting a Background color
+*replaces* a full-canvas image (undo it); an image added from the Uploads panel
+lands at 50 % — drag the top-left handle to the canvas corner first (it snaps),
+then the bottom-right; the back side's "Upload your design" path auto-fills and
+exposes a **Fill** button, the front's does not.
 
 ## Copy (keep in sync with `src/components/door-hanger.tsx`)
 
 - Name: PICK IT UP E
-- Line: Leaf Cleanup & Junk Removal
+- Line: Fall leaf cleanup · Junk removal · Single-story gutter cleaning
 - Offer: **20% OFF**, up to $75, lock the rate by **Sept 20**
-- Phone: **218-779-2553**
-- City: Grand Forks, ND
-- "Hang on the knob — never the mailbox."
+- Prices (from `pricebook.ts`, "typical"): Most city lots $160–$345 ·
+  Junk & furniture from $59 · Gutters from $135 · Furniture & appliances
+  $59–$130 for 1–2 pieces · Single-story gutters $135–$165
+- Refusals: paint, chemicals, oil, propane, concrete, dirt, roofing, asbestos
+- Phone: **701-213-3969** — **owner decision 2026-09-11**: the same number as
+  the site goes on this print run. Print response is therefore measured by the
+  QR's `?s=dh` tag, not by the phone number (218-779-2553 stays unused on print
+  until the owner says otherwise).
+- Towns: Grand Forks · East Grand Forks · Thompson · Manvel
+- "$50 card hold at booking, credited to your invoice."
+- Knob-hang instruction is for the crew, not the customer — it is NOT printed.
 
 ## QR code
 

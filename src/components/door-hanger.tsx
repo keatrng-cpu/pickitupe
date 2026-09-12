@@ -5,7 +5,7 @@ export function DoorHanger() {
       <p className="font-display text-4xl leading-none tracking-wide text-paper">
         PICK IT UP E
       </p>
-      <p className="kicker mt-3">Leaf Cleanup & Junk Removal</p>
+      <p className="kicker mt-3">Leaf Cleanup · Junk Removal · Single-Story Gutters</p>
       <p className="mt-3 text-sm italic text-paper/75">
         We rake, blow & haul it — you never touch a bag.
       </p>
@@ -20,20 +20,20 @@ export function DoorHanger() {
 
       <p className="kicker">What we haul</p>
       <ul className="mt-3 space-y-1 text-sm text-paper/90">
-        <li>Raking & full leaf cleanup</li>
+        <li>Rake, blow, bag & haul leaves</li>
+        <li>Furniture & appliances · $59–$130, 1–2 pieces</li>
         <li>Garage & basement cleanouts</li>
-        <li>Furniture · Appliances</li>
-        <li>Single-item pickups</li>
+        <li>Single-story gutter cleaning · $135–$165</li>
       </ul>
 
       <p className="mt-7 font-display text-3xl tracking-wide text-paper">
-        218-779-2553
+        701-213-3969
       </p>
       <p className="mt-1 text-sm text-paper/70">Call or text</p>
       <p className="mt-5 text-xs leading-relaxed text-paper/55">
-        Grand Forks, ND
+        Grand Forks · East Grand Forks · Thompson · Manvel
         <br />
-        Hang on the knob — never the mailbox.
+        $50 card hold at booking, credited to your invoice.
       </p>
     </article>
   );

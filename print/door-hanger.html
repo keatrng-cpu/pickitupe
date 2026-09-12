@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Pick It Up E — door hanger (VistaPrint 4.5×11 full bleed)</title>
+<!--
+  Print source for the door hanger. Build with:  node scripts/make-door-hanger-pdf.mjs
+  Page = VistaPrint 4.5"×11" door hanger, FULL-BLEED artboard 4.72" × 11.22"
+  (trim 0.11" in from every edge, safety 0.28" in). Knob hole: Ø1.1" centered
+  2.36" from the left / 1.42" from the top of the artboard; slit exits LEFT.
+  Nothing lives above y = 2.25" except the mahogany field.
+  Copy mirrors src/lib/pricebook.ts — change the numbers there first.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@400;600;700&display=block" rel="stylesheet" />
+<style>
+  @page { size: 4.72in 11.26in; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #3c1e14; }
+  :root {
+    --mahogany: #3c1e14;
+    --mahogany-deep: #2f1610;
+    --paper: #f3ead6;
+    --gold: #d4c4a0;
+    --display: "Playfair Display", Georgia, serif;
+    --sans: "Outfit", "Segoe UI", system-ui, sans-serif;
+  }
+  .page {
+    position: relative;
+    width: 4.72in; height: 11.26in;
+    overflow: hidden;
+    background: var(--mahogany);
+    color: var(--paper);
+    font-family: var(--sans);
+    page-break-after: always;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .page:last-child { page-break-after: auto; }
+  /* everything sits below the knob-hole zone, inside the 0.28" safety */
+  .content {
+    position: absolute; left: 0.3in; right: 0.3in; top: 2.28in; bottom: 0.34in;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+  }
+  .brand {
+    font-family: var(--display); font-weight: 900; font-size: 38pt; line-height: 1;
+    letter-spacing: 0.02em; color: var(--paper); margin: 0;
+  }
+  .kicker {
+    font-family: var(--sans); font-weight: 600; font-size: 8pt; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--gold); line-height: 1.5; margin: 0;
+  }
+  .rule { width: 1.9in; height: 1px; background: var(--gold); opacity: 0.8; margin: 0.16in 0; }
+  .offer {
+    font-family: var(--display); font-weight: 900; font-size: 76pt; line-height: 0.95;
+    letter-spacing: -0.01em; color: var(--paper); margin: 0.04in 0 0;
+  }
+  .sub { font-size: 11pt; line-height: 1.35; color: var(--paper); margin: 0.1in 0 0; }
+  .sub .muted { color: var(--gold); }
+  .price { font-family: var(--display); font-weight: 700; font-size: 17pt; line-height: 1.2; margin: 0; }
+  .small { font-size: 9.5pt; line-height: 1.4; color: var(--paper); opacity: 0.85; margin: 0.06in 0 0; }
+  .cta { font-weight: 600; font-size: 11pt; color: var(--gold); margin: 0.12in 0 0; }
+  .truck { display: block; width: 4.12in; height: auto; margin-top: auto; }
+  .towns {
+    font-weight: 600; font-size: 7.5pt; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--gold); margin: 0.14in 0 0;
+  }
+  /* back */
+  .url { font-family: var(--display); font-weight: 900; font-size: 27pt; line-height: 1; margin: 0; }
+  .truck-sm { display: block; width: 3.1in; height: auto; margin: 0.16in 0 0.06in; }
+  .list { list-style: none; padding: 0; margin: 0.1in 0 0; text-align: left; width: 3.75in; }
+  .list li {
+    position: relative; padding-left: 0.2in; font-size: 11pt; line-height: 1.32; margin: 0.08in 0;
+  }
+  .list li::before {
+    content: ""; position: absolute; left: 0.02in; top: 0.09in; width: 0.075in; height: 0.075in;
+    background: var(--gold); transform: rotate(45deg);
+  }
+  .list b { font-weight: 600; color: var(--gold); }
+  .refuse { font-size: 8pt; line-height: 1.35; opacity: 0.75; margin: 0.1in 0 0; max-width: 3.6in; }
+  .phone { font-family: var(--display); font-weight: 900; font-size: 29pt; line-height: 1; margin: 0.06in 0 0; letter-spacing: 0.01em; }
+  .qr-panel {
+    margin-top: 0.2in; width: 1.5in; height: 1.5in; background: var(--paper);
+    display: flex; align-items: center; justify-content: center; border-radius: 0.06in;
+  }
+  .qr-panel svg { width: 1.44in; height: 1.44in; display: block; }
+  .deposit { font-size: 8.5pt; line-height: 1.35; opacity: 0.75; margin: 0.16in 0 0; }
+</style>
+</head>
+<body>
+
+<!-- FRONT -->
+<section class="page">
+  <div class="content">
+    <h1 class="brand">PICK IT UP E</h1>
+    <p class="kicker" style="margin-top:0.12in">Fall leaf cleanup · Junk removal<br>Single-story gutter cleaning</p>
+    <div class="rule"></div>
+    <p class="kicker">Book early</p>
+    <p class="offer">20% OFF</p>
+    <p class="sub">up to $75 <span class="muted">·</span> lock the rate by <b style="font-weight:600">Sept 20</b></p>
+    <div class="rule"></div>
+    <p class="price">Most city lots $160–$345</p>
+    <p class="small">Junk &amp; furniture from $59 <span style="color:var(--gold)">·</span> Gutters from $135</p>
+    <p class="cta">Free instant estimate at pickitupe.com</p>
+    <img class="truck" src="../public/haul-truck.webp" alt="" />
+    <p class="towns">Grand Forks · East Grand Forks · Thompson · Manvel</p>
+  </div>
+</section>
+
+<!-- BACK -->
+<section class="page">
+  <div class="content">
+    <p class="url">pickitupe.com</p>
+    <img class="truck-sm" src="../public/haul-truck.webp" alt="" />
+    <p class="kicker" style="margin-top:0.08in">What we haul</p>
+    <ul class="list">
+      <li>Rake, blow, bag &amp; haul leaves</li>
+      <li>Furniture &amp; appliances <b>$59–$130</b> · 1–2 pieces</li>
+      <li>Garage &amp; basement cleanouts</li>
+      <li>Single-story gutter cleaning <b>$135–$165</b></li>
+    </ul>
+    <p class="refuse">We don't take paint, chemicals, oil, propane, concrete, dirt, roofing or asbestos.</p>
+    <div class="rule"></div>
+    <p class="kicker">Call or text</p>
+    <p class="phone">701-213-3969</p>
+    <div class="qr-panel">__QR_SVG__</div>
+    <p class="kicker" style="margin-top:0.08in">Scan to book</p>
+    <p class="deposit">$50 card hold at booking, credited to your invoice.</p>
+  </div>
+</section>
+
+</body>
+</html>

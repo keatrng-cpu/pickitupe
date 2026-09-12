@@ -23,7 +23,7 @@ Path-scoped rules also live in [`.claude/rules/`](.claude/rules/).
 
 - Name: Pick It Up E (temporary)
 - Owner market: Grand Forks, ND / East Grand Forks
-- Phone — TWO numbers, both the owner's, split on purpose so print response can be measured apart from web: **701-213-3969 is the SITE number** (header + footer only, plus error toasts / emails / JSON-LD — do not repeat it on every section). **218-779-2553 is the PRINT number** — door hanger only (`door-hanger.tsx`, `print/DOOR-HANGER.md`, the printed artwork). Never swap them and never put both on one surface.
+- Phone — TWO numbers, both the owner's, split on purpose so print response can be measured apart from web: **701-213-3969 is the SITE number** (header + footer only, plus error toasts / emails / JSON-LD — do not repeat it on every section). **218-779-2553 is the PRINT number** — reserved for print. **Owner decision 2026-09-11: the VistaPrint door-hanger run uses 701-213-3969 anyway** (see `print/DOOR-HANGER.md`); print response is tracked by the QR `?s=dh` tag instead. Never put both numbers on one surface.
 - Services: fall leaf cleanup, junk/debris haul, furniture & appliances, gutter cleaning (**single-story only** — 120V ground vacuum, no ladder work; two-story is handed off). Garage & basement cleanouts survive as the `cleanout` add-on, not a service.
 - Real truck: **2020 GMC Sierra 1500 Denali**, silver. Do not brand the company as GMC.
 - Marketing art: **vintage cream letterpress pickup** (right-facing, leaves in the bed). Owner replaced the silver photo. `public/haul-truck.webp` is still used on `/login`; source sketch `attachments/image.png`.
