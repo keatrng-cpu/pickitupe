@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /jobs
+Disallow: /login
+Disallow: /api/
+
+Sitemap: https://pickitupe.com/sitemap.xml
