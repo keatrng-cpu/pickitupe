@@ -305,18 +305,22 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
       await logEvent(sql, data.id, "status", `${before[0].status} → ${data.status}`);
     }
     if (data.status === "done") {
-      const rows = await sql.query<{ name: string; phone: string; email: string | null; estimate_low: number | null; estimate_high: number | null }>(
-        `select name, phone, email, estimate_low, estimate_high from bookings where id = $1`,
+      const rows = await sql.query<{ name: string; phone: string; email: string | null; service: string; estimate_low: number | null; estimate_high: number | null; final_cents: number | null }>(
+        `select name, phone, email, service, estimate_low, estimate_high, final_cents from bookings where id = $1`,
         [data.id],
       );
       const row = rows[0];
       if (row) {
         const { doneReviewMessage, notifyCustomer } = await import("@/lib/customer-notify.server");
+        const { doneEmail } = await import("@/lib/email-theme");
+        // The final bill if the owner set one; the estimate range otherwise.
         const est =
-          row.estimate_low != null && row.estimate_high != null
-            ? `$${row.estimate_low}–$${row.estimate_high}`
-            : null;
-        await notifyCustomer(row.phone, row.email, doneReviewMessage(row.name, est));
+          row.final_cents != null
+            ? `$${(row.final_cents / 100).toFixed(row.final_cents % 100 ? 2 : 0)}`
+            : row.estimate_low != null && row.estimate_high != null
+              ? `$${row.estimate_low}–$${row.estimate_high}`
+              : null;
+        await notifyCustomer(row.phone, row.email, doneReviewMessage(row.name, est), doneEmail({ id: data.id, name: row.name, service: row.service, estimate: est }));
       }
     }
     return { ok: true as const };

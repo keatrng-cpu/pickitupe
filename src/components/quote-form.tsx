@@ -367,11 +367,12 @@ export function QuoteForm({
           {err.phone ? <FieldError message={err.phone.message!} /> : null}
         </label>
         <label className="block">
-          <span className={labelClass}>Email (optional)</span>
+          <span className={labelClass}>Email — for your confirmation &amp; calendar invite</span>
           <input
             className={field}
             type="email"
             autoComplete="email"
+            placeholder="optional, but the confirmation is worth it"
             {...form.register("email")}
           />
           {err.email ? <FieldError message={err.email.message!} /> : null}

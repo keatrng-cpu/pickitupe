@@ -23,6 +23,7 @@ const SOURCE_LABEL: Record<string, string> = {
   dh: "Door hanger",
   gbp: "Google profile",
   chat: "Phone line",
+  call: "Called in",
 };
 
 function estimateText(job: BookingRow): string {

@@ -6,6 +6,7 @@ import { DAILY_SLOTS, firstOpenDay, slotsFor } from "@/lib/schedule";
 import { loadFill } from "@/lib/bookings";
 import { notifyOwnerOfBooking } from "@/lib/booking-alert.server";
 import { bookedMessage, notifyCustomer } from "@/lib/customer-notify.server";
+import { bookedEmail } from "@/lib/email-theme";
 
 if (typeof window !== "undefined") {
   throw new Error("pay-finalize.server.ts is server-only");
@@ -94,6 +95,19 @@ export async function finalizePaidDeposit(bookingId: number, sessionId: string, 
     row.phone,
     row.email,
     bookedMessage({ name: row.name, id: row.id, day, range, deposit }),
+    bookedEmail({
+      id: row.id,
+      name: row.name,
+      service: row.service,
+      jobSize: row.job_size,
+      addOns: row.add_ons,
+      address: row.address,
+      extraAddresses: row.extra_addresses,
+      day,
+      range: row.estimate_low != null && row.estimate_high != null ? { low: row.estimate_low, high: row.estimate_high } : null,
+      deposit,
+      notes: row.notes,
+    }),
   );
   await notifyOwnerOfBooking({
     id: row.id,

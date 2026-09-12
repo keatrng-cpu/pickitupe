@@ -94,6 +94,16 @@ If a task spans two columns, touch the minimum files and say so in the commit me
 - **RLS is on for every table** (`migrations/0010_rls.sql`), no policies. The app connects as the `postgres`
   owner role, which RLS never applies to; the Supabase Data API (anon key) is a locked door. Keep it that way —
   a new table gets `enable row level security` in its migration and in `ensureOwnerTables()`.
+- **Confirmation emails in the site's clothes** — `src/lib/email-theme.ts` (pure, previewed with
+  `node scripts/email-preview.mjs` → `artifacts/email-*.html`): green ground, paper card, mahogany ticket, one
+  green button. `bookedEmail` goes out the moment the Stripe deposit clears (with the SMS, not instead of it —
+  `notifyCustomer` sends both when it can), `doneEmail` when the owner marks a job done (review ask),
+  `leadEmail` is the owner's missed-call alert. Copy is fun but says nothing the pricebook doesn't.
+- **Missed-call line** — the cell forwards unanswered calls to a Twilio toll-free number; the site texts the
+  caller the booking link, plays a greeting, records + transcribes a message, opens a lead on `/jobs`
+  (source `call`), and alerts the owner by text + email. Webhooks: `/api/voice/{missed,after,voicemail}`,
+  `/api/sms/inbound`, all signature-checked. Set-up, forwarding codes, costs and the AI-receptionist phase 2
+  are in `PHONE-LINE.md`. Off until `TWILIO_*` is set.
 - LocalBusiness + FAQ structured data
 - PGLite when no `DATABASE_URL`; Supabase/Neon when set
 
@@ -115,6 +125,7 @@ CLAUDE.md                        this file — start here
 README.md                        human overview
 DEPLOY.md                        Netlify + env
 PRICEBOOK.md                     why the numbers are what they are
+PHONE-LINE.md                    missed-call line: Twilio set-up, carrier forwarding codes, costs, phase-2 AI receptionist
 .env.example                     DATABASE_URL, auth, Stripe, Resend, ANTHROPIC_API_KEY
 netlify.toml                     build = vite only, no migrate on CI
 package.json                     scripts, no second package manager
@@ -149,6 +160,10 @@ src/routes/jobs_.customers.tsx   customers by phone + derived follow-up queue
 src/routes/jobs_.crew.tsx        owner: helpers, wages, punches, record pay, ND employer checklist
 src/routes/crew.tsx              crew portal: clock, hours & pay, today's jobs, directions, texts — no money
 src/routes/api/receipt.$id.ts    owner-only receipt bytes (image/PDF) for the books page
+src/routes/api/voice/missed.ts   Twilio: call arrived → text the link, greet, record
+src/routes/api/voice/after.ts    Twilio: recording ended → thank / alert owner if no message
+src/routes/api/voice/voicemail.ts Twilio: transcript → lead notes + owner alert
+src/routes/api/sms/inbound.ts    Twilio: caller texted back → log on lead, forward to the cell
 src/routes/login.tsx
 src/routes/api/auth/$.ts         better-auth catch-all
 
@@ -177,6 +192,9 @@ src/lib/source.ts                ?s= tag remember/read
 src/lib/pricebook.ts             the only place money numbers live
 src/lib/service-area.ts          distance bands + keyless geocoding
 src/lib/messages.ts              one-tap customer texts
+src/lib/email-theme.ts           themed HTML emails (booked / done / lead) — pure, previewable
+src/lib/customer-notify.server.ts SMS (Twilio) + email (Resend) senders; notifyCustomer sends both
+src/lib/phone-line.server.ts     missed-call line: signature check, TwiML, lead row, owner alert
 src/lib/seo.ts                   LocalBusiness + FAQ (keep in sync with the page)
 src/lib/db.ts                    PGLite / Postgres
 src/lib/auth/*                   leave unless the task is auth
@@ -191,6 +209,8 @@ migrations/0009_crew.sql           crew_members (wage_cents, active) + time_entr
 migrations/0010_rls.sql            enable row level security on every public table — no policies, app is the owner role
 
 scripts/migrate.mjs
+scripts/email-preview.mjs        renders the emails to artifacts/ for a look before sending
+scripts/phone-line.test.mjs      Twilio signature math (+ signed round-trip when a dev server is up)
 vite.config.ts
 ```
 

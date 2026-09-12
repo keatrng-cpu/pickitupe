@@ -78,6 +78,8 @@ Set these in **Site configuration → Environment variables**, then redeploy.
 | `BETTER_AUTH_SECRET` | A fresh 32-byte random string |
 | `BETTER_AUTH_URL` | The live site URL — `https://pickitupe.com` |
 | `VITE_SITE_URL` | Same URL — feeds canonical, OG, and JSON-LD tags |
+| `RESEND_API_KEY`, `RENEWAL_FROM_EMAIL`, `RENEWAL_REPLY_TO` | Customer confirmations + owner alerts go out through Resend. Reply-To is the owner's real inbox — the emails say "reply to this" |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM`, `OWNER_CELL` | The missed-call line — see [`PHONE-LINE.md`](PHONE-LINE.md). Also turns on SMS confirmations. All empty = webhooks answer 503, everything else unchanged |
 
 Generate the auth secret:
 

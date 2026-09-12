@@ -26,7 +26,11 @@ import { Route as JobsCustomersRouteImport } from './routes/jobs_.customers'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiCronRenewalNoticesRouteImport } from './routes/api/cron/renewal-notices'
 import { Route as ApiReceiptIdRouteImport } from './routes/api/receipt.$id'
+import { Route as ApiSmsInboundRouteImport } from './routes/api/sms/inbound'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe/webhook'
+import { Route as ApiVoiceAfterRouteImport } from './routes/api/voice/after'
+import { Route as ApiVoiceMissedRouteImport } from './routes/api/voice/missed'
+import { Route as ApiVoiceVoicemailRouteImport } from './routes/api/voice/voicemail'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -113,9 +117,29 @@ const ApiReceiptIdRoute = ApiReceiptIdRouteImport.update({
   path: '/api/receipt/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSmsInboundRoute = ApiSmsInboundRouteImport.update({
+  id: '/api/sms/inbound',
+  path: '/api/sms/inbound',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
   id: '/api/stripe/webhook',
   path: '/api/stripe/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiVoiceAfterRoute = ApiVoiceAfterRouteImport.update({
+  id: '/api/voice/after',
+  path: '/api/voice/after',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiVoiceMissedRoute = ApiVoiceMissedRouteImport.update({
+  id: '/api/voice/missed',
+  path: '/api/voice/missed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiVoiceVoicemailRoute = ApiVoiceVoicemailRouteImport.update({
+  id: '/api/voice/voicemail',
+  path: '/api/voice/voicemail',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -137,7 +161,11 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
   '/api/receipt/$id': typeof ApiReceiptIdRoute
+  '/api/sms/inbound': typeof ApiSmsInboundRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/api/voice/after': typeof ApiVoiceAfterRoute
+  '/api/voice/missed': typeof ApiVoiceMissedRoute
+  '/api/voice/voicemail': typeof ApiVoiceVoicemailRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -157,7 +185,11 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
   '/api/receipt/$id': typeof ApiReceiptIdRoute
+  '/api/sms/inbound': typeof ApiSmsInboundRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/api/voice/after': typeof ApiVoiceAfterRoute
+  '/api/voice/missed': typeof ApiVoiceMissedRoute
+  '/api/voice/voicemail': typeof ApiVoiceVoicemailRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -178,7 +210,11 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
   '/api/receipt/$id': typeof ApiReceiptIdRoute
+  '/api/sms/inbound': typeof ApiSmsInboundRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/api/voice/after': typeof ApiVoiceAfterRoute
+  '/api/voice/missed': typeof ApiVoiceMissedRoute
+  '/api/voice/voicemail': typeof ApiVoiceVoicemailRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -200,7 +236,11 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/cron/renewal-notices'
     | '/api/receipt/$id'
+    | '/api/sms/inbound'
     | '/api/stripe/webhook'
+    | '/api/voice/after'
+    | '/api/voice/missed'
+    | '/api/voice/voicemail'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -220,7 +260,11 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/cron/renewal-notices'
     | '/api/receipt/$id'
+    | '/api/sms/inbound'
     | '/api/stripe/webhook'
+    | '/api/voice/after'
+    | '/api/voice/missed'
+    | '/api/voice/voicemail'
   id:
     | '__root__'
     | '/'
@@ -240,7 +284,11 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/cron/renewal-notices'
     | '/api/receipt/$id'
+    | '/api/sms/inbound'
     | '/api/stripe/webhook'
+    | '/api/voice/after'
+    | '/api/voice/missed'
+    | '/api/voice/voicemail'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -261,7 +309,11 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCronRenewalNoticesRoute: typeof ApiCronRenewalNoticesRoute
   ApiReceiptIdRoute: typeof ApiReceiptIdRoute
+  ApiSmsInboundRoute: typeof ApiSmsInboundRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
+  ApiVoiceAfterRoute: typeof ApiVoiceAfterRoute
+  ApiVoiceMissedRoute: typeof ApiVoiceMissedRoute
+  ApiVoiceVoicemailRoute: typeof ApiVoiceVoicemailRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -385,11 +437,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiReceiptIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/sms/inbound': {
+      id: '/api/sms/inbound'
+      path: '/api/sms/inbound'
+      fullPath: '/api/sms/inbound'
+      preLoaderRoute: typeof ApiSmsInboundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/stripe/webhook': {
       id: '/api/stripe/webhook'
       path: '/api/stripe/webhook'
       fullPath: '/api/stripe/webhook'
       preLoaderRoute: typeof ApiStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/voice/after': {
+      id: '/api/voice/after'
+      path: '/api/voice/after'
+      fullPath: '/api/voice/after'
+      preLoaderRoute: typeof ApiVoiceAfterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/voice/missed': {
+      id: '/api/voice/missed'
+      path: '/api/voice/missed'
+      fullPath: '/api/voice/missed'
+      preLoaderRoute: typeof ApiVoiceMissedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/voice/voicemail': {
+      id: '/api/voice/voicemail'
+      path: '/api/voice/voicemail'
+      fullPath: '/api/voice/voicemail'
+      preLoaderRoute: typeof ApiVoiceVoicemailRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -413,7 +493,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCronRenewalNoticesRoute: ApiCronRenewalNoticesRoute,
   ApiReceiptIdRoute: ApiReceiptIdRoute,
+  ApiSmsInboundRoute: ApiSmsInboundRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
+  ApiVoiceAfterRoute: ApiVoiceAfterRoute,
+  ApiVoiceMissedRoute: ApiVoiceMissedRoute,
+  ApiVoiceVoicemailRoute: ApiVoiceVoicemailRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -93,7 +93,7 @@ function BookPage() {
             . This form writes to the same board.
           </p>
           <p className="mt-4 text-base leading-[1.6] text-muted">
-            Send the form and we'll text you back.
+            Two minutes: pick a day, $50 on the card holds it, and your confirmation lands by text and email.
             {offer.active
               ? ` Book by ${offer.deadlineLabel} for ${Math.round(offer.percent * 100)}% off, up to $${offer.cap}.`
               : ` The ${offer.deadlineLabel} rate has closed — still booking at regular rates.`}
