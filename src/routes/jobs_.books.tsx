@@ -12,7 +12,7 @@ import {
   type YearBooks,
 } from "@/lib/books";
 import { suggestAddresses } from "@/lib/service-area";
-import { resolveRebate, updateExpense } from "@/lib/receipts";
+import { mergeExpenses, resolveRebate, updateExpense } from "@/lib/receipts";
 import { ReceiptDrop } from "@/components/receipt-drop";
 import {
   DEDUCTION_CHECKLIST,
@@ -312,7 +312,9 @@ function Expenses({ data, reload }: { data: YearBooks; reload: () => void }) {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<YearBooks["expenses"][number] | null>(null);
+  const [selected, setSelected] = useState<number[]>([]);
   const cat = EXPENSE_CATEGORIES.find((c) => c.key === category);
+  const toggle = (id: number) => setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -335,6 +337,11 @@ function Expenses({ data, reload }: { data: YearBooks; reload: () => void }) {
   return (
     <div className="space-y-6">
       <ReceiptDrop onBooked={reload} />
+      {selected.length >= 2 ? (
+        <MergeBar rows={data.expenses.filter((e) => selected.includes(e.id))} onDone={() => { setSelected([]); reload(); }} onCancel={() => setSelected([])} />
+      ) : selected.length === 1 ? (
+        <p className="text-xs text-muted">Tick one more row to merge screenshots of the same receipt into one expense.</p>
+      ) : null}
       {editing ? <FixExpense row={editing} jobs={data.jobs} onDone={() => { setEditing(null); reload(); }} onCancel={() => setEditing(null)} /> : null}
       <p className="text-xs tracking-[0.25em] text-gold">OR TYPE ONE IN</p>
       <form onSubmit={submit} className="card-green grid gap-3 rounded-3xl p-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -387,8 +394,9 @@ function Expenses({ data, reload }: { data: YearBooks; reload: () => void }) {
 
       <Table
         empty="No expenses logged this year. Snap the Acme receipt above — the door hangers ($228) and the SOS fee ($135) belong here as start-up costs."
-        head={["Date", "Category", "Vendor", "Phase", "Job", "Paid with", "Amount", "Receipt", ""]}
+        head={["", "Date", "Category", "Vendor", "Phase", "Job", "Paid with", "Amount", "Receipt", ""]}
         rows={data.expenses.map((e) => [
+          <input key="s" type="checkbox" aria-label={`Select expense ${e.id}`} checked={selected.includes(e.id)} onChange={() => toggle(e.id)} className="size-4 accent-[var(--color-gold)]" />,
           fmtDate(e.spent_on),
           <span key="c">
             {EXPENSE_CATEGORIES.find((c) => c.key === e.category)?.label ?? e.category}
@@ -402,10 +410,14 @@ function Expenses({ data, reload }: { data: YearBooks; reload: () => void }) {
           e.customer ? `#${e.booking_id} ${e.customer}` : "—",
           e.paid_with ?? "—",
           <span key="a" className="tabular-nums">{money(e.amount_cents)}</span>,
-          e.receipt_id ? (
-            <a key="r" href={`/api/receipt/${e.receipt_id}`} target="_blank" rel="noreferrer noopener" className="text-xs text-gold hover:underline">
-              view
-            </a>
+          e.receipt_ids.length ? (
+            <span key="r" className="flex flex-wrap gap-1.5">
+              {e.receipt_ids.map((rid, i) => (
+                <a key={rid} href={`/api/receipt/${rid}`} target="_blank" rel="noreferrer noopener" className="text-xs text-gold hover:underline">
+                  {e.receipt_ids.length === 1 ? "view" : `view ${i + 1}`}
+                </a>
+              ))}
+            </span>
           ) : (
             "—"
           ),
@@ -739,6 +751,73 @@ function Setup({ data, reload }: { data: YearBooks; reload: () => void }) {
 }
 
 // ---------------------------------------------------------------------------
+
+function MergeBar({ rows, onDone, onCancel }: { rows: YearBooks["expenses"]; onDone: () => void; onCancel: () => void }) {
+  const sum = rows.reduce((s, r) => s + r.amount_cents, 0);
+  const biggest = rows.reduce((a, b) => (b.amount_cents > a.amount_cents ? b : a));
+  const knownVendor = rows.map((r) => r.vendor).find((v) => v && !/^unknown$/i.test(v)) ?? "";
+  const [amount, setAmount] = useState(((biggest.tax_cents != null ? biggest.amount_cents : sum) / 100).toFixed(2));
+  const [spentOn, setSpentOn] = useState(rows.map((r) => r.spent_on).sort()[0]);
+  const [vendor, setVendor] = useState(knownVendor);
+  const [category, setCategory] = useState(biggest.category);
+  const [busy, setBusy] = useState(false);
+  const partsHaveTotal = biggest.tax_cents != null;
+  return (
+    <form
+      className="grid gap-3 rounded-3xl border border-gold/50 bg-bg-deep/50 p-5 sm:grid-cols-2 lg:grid-cols-5"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const n = Math.round(Number(amount) * 100);
+        if (!Number.isFinite(n) || n === 0) return;
+        setBusy(true);
+        try {
+          await mergeExpenses({ data: { ids: rows.map((r) => r.id), keepId: biggest.id, amountCents: n, spentOn, vendor: vendor || undefined, category } });
+          onDone();
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      <p className="text-xs tracking-[0.25em] text-gold sm:col-span-2 lg:col-span-5">
+        MERGE {rows.length} ROWS INTO ONE · #{rows.map((r) => r.id).join(", #")}
+      </p>
+      <label className="text-xs text-muted">
+        True total $
+        <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className={cn(inputCls, "mt-1")} />
+        <span className="mt-1 block text-[11px]">
+          {partsHaveTotal ? `Prefilled from the part that showed tax (${money(biggest.amount_cents)}). ` : ""}Parts add to {money(sum)} — use the receipt's grand total if you can see it.
+        </span>
+      </label>
+      <label className="text-xs text-muted">
+        Date
+        <input type="date" value={spentOn} onChange={(e) => setSpentOn(e.target.value)} className={cn(inputCls, "mt-1")} />
+      </label>
+      <label className="text-xs text-muted">
+        Vendor
+        <input value={vendor} onChange={(e) => setVendor(e.target.value)} className={cn(inputCls, "mt-1")} placeholder="Menards" />
+      </label>
+      <label className="text-xs text-muted">
+        Category
+        <select value={category} onChange={(e) => setCategory(e.target.value)} className={cn(inputCls, "mt-1")}>
+          {EXPENSE_CATEGORIES.map((c) => (
+            <option key={c.key} value={c.key}>
+              {c.label} (line {c.line})
+            </option>
+          ))}
+        </select>
+      </label>
+      <div className="flex items-end gap-2">
+        <button type="submit" className={cn(btnCls, "flex-1")} disabled={busy}>
+          Merge
+        </button>
+        <button type="button" className={ghostBtnCls} onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
+      <p className="text-[11px] text-muted sm:col-span-2 lg:col-span-5">All {rows.length} receipts stay attached to the merged row; line items are combined; the row is marked reviewed.</p>
+    </form>
+  );
+}
 
 function FixExpense({
   row,

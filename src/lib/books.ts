@@ -71,6 +71,8 @@ export type ExpenseRow = {
   note: string | null;
   customer: string | null;
   receipt_id: number | null;
+  /** Every receipt attached (merged rows carry several). */
+  receipt_ids: number[];
   phase: CostPhase | null;
   tax_cents: number | null;
   review: "auto" | "needs-review" | "reviewed" | null;
@@ -300,8 +302,9 @@ export const getBookingDetail = createServerFn({ method: "GET" })
         [data.id],
       ),
       sql.query<ExpenseRow>(
-        `select id, spent_on, vendor, category, amount_cents, paid_with, booking_id, note, null::text as customer, receipt_id, phase, tax_cents, review
-           from expenses where booking_id = $1 order by spent_on desc, id desc`,
+        `select e.id, e.spent_on, e.vendor, e.category, e.amount_cents, e.paid_with, e.booking_id, e.note, null::text as customer, e.receipt_id, e.phase, e.tax_cents, e.review,
+                coalesce((select array_to_json(array_agg(r.id order by r.id)) from receipts r where r.expense_id = e.id), '[]'::json) as receipt_ids
+           from expenses e where e.booking_id = $1 order by e.spent_on desc, e.id desc`,
         [data.id],
       ),
       sql.query<TripRow>(
@@ -557,7 +560,8 @@ export const getYearBooks = createServerFn({ method: "GET" })
       ),
       sql.query<ExpenseRow>(
         `select e.id, e.spent_on, e.vendor, e.category, e.amount_cents, e.paid_with, e.booking_id, e.note, b.name as customer,
-                e.receipt_id, e.phase, e.tax_cents, e.review
+                e.receipt_id, e.phase, e.tax_cents, e.review,
+                coalesce((select array_to_json(array_agg(r.id order by r.id)) from receipts r where r.expense_id = e.id), '[]'::json) as receipt_ids
            from expenses e left join bookings b on b.id = e.booking_id
           where e.spent_on between $1 and $2 order by e.spent_on desc, e.id desc`,
         [from, to],

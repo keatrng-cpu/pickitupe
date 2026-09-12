@@ -493,6 +493,72 @@ export const resolveRebate = createServerFn({ method: "POST" })
     return { ok: true as const, expenseId };
   });
 
+/**
+ * Several bookings that are really one purchase — a long receipt photographed
+ * in parts, an order page in three screenshots — become one expense. Every
+ * attached receipt moves to the kept row, line items are concatenated, and the
+ * owner supplies the true total (a partial view never knows it). Defaults are
+ * the sum of the parts and the largest tax seen, which is right when one of the
+ * parts showed the grand total.
+ */
+export const mergeExpenses = createServerFn({ method: "POST" })
+  .middleware([sessionEmail])
+  .validator((input: unknown) =>
+    z
+      .object({
+        ids: z.array(z.number().int().positive()).min(2).max(12),
+        keepId: z.number().int().positive().optional(),
+        amountCents: z.number().int().min(-100_000_000).max(100_000_000).refine((n) => n !== 0).optional(),
+        taxCents: z.number().int().min(0).max(100_000_000).nullable().optional(),
+        spentOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        vendor: z.string().trim().max(120).optional(),
+        category: z.enum(EXPENSE_CATEGORIES.map((c) => c.key) as [string, ...string[]]).optional(),
+        paidWith: z.enum(["card", "checking", "personal", "cash", "check"]).nullable().optional(),
+        note: z.string().trim().max(600).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const sql = await ownerSql(context.email);
+    const ids = [...new Set(data.ids)];
+    const rows = await sql.query<{
+      id: number; spent_on: string; vendor: string | null; category: string; amount_cents: number; tax_cents: number | null;
+      paid_with: string | null; booking_id: number | null; note: string | null; line_items: unknown; receipt_id: number | null;
+    }>(`select id, spent_on, vendor, category, amount_cents, tax_cents, paid_with, booking_id, note, line_items, receipt_id from expenses where id = any($1::int[]) order by id`, [ids]);
+    if (rows.length !== ids.length) throw new Error("One of those expenses no longer exists.");
+    const keep = rows.find((r) => r.id === data.keepId) ?? rows.reduce((a, b) => (b.amount_cents > a.amount_cents ? b : a));
+    const others = rows.filter((r) => r.id !== keep.id);
+    const sum = rows.reduce((s, r) => s + r.amount_cents, 0);
+    const amount = data.amountCents ?? sum;
+    const tax = data.taxCents !== undefined ? data.taxCents : rows.reduce<number | null>((m, r) => (r.tax_cents != null && (m == null || r.tax_cents > m) ? r.tax_cents : m), null);
+    const spentOn = data.spentOn ?? rows.map((r) => r.spent_on).sort()[0];
+    const vendorCounts = new Map<string, number>();
+    for (const r of rows) if (r.vendor && !/^unknown$/i.test(r.vendor)) vendorCounts.set(r.vendor, (vendorCounts.get(r.vendor) ?? 0) + 1);
+    const vendor = data.vendor ?? ([...vendorCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? keep.vendor);
+    const category = data.category ?? keep.category;
+    const paidWith = data.paidWith !== undefined ? data.paidWith : (rows.find((r) => r.paid_with)?.paid_with ?? null);
+    const bookingId = rows.find((r) => r.booking_id)?.booking_id ?? null;
+    const items: unknown[] = [];
+    for (const r of rows) {
+      const li = typeof r.line_items === "string" ? JSON.parse(r.line_items) : r.line_items;
+      if (Array.isArray(li)) items.push(...li);
+    }
+    const note = data.note ?? [...new Set(rows.map((r) => r.note).filter(Boolean))].join(" · ").slice(0, 600);
+    const start = await businessStart(sql);
+    await sql.query(
+      `update expenses set spent_on = $2, vendor = $3, category = $4, amount_cents = $5, tax_cents = $6, paid_with = $7, booking_id = $8,
+              note = $9, line_items = $10, phase = $11, review = 'reviewed'
+        where id = $1`,
+      [keep.id, spentOn, vendor, category, amount, tax, paidWith, bookingId, note || null, JSON.stringify(items), phaseFor(category, spentOn, start)],
+    );
+    if (others.length) {
+      const otherIds = others.map((r) => r.id);
+      await sql.query("update receipts set expense_id = $1 where expense_id = any($2::int[])", [keep.id, otherIds]);
+      await sql.query("delete from expenses where id = any($1::int[])", [otherIds]);
+    }
+    return { ok: true as const, keptId: keep.id, amountCents: amount, merged: others.length };
+  });
+
 /** Bytes for /api/receipt/$id — server-only helper. */
 export async function readReceipt(id: number): Promise<{ mime: string; bytes: Buffer } | null> {
   const sql = await getSql();
