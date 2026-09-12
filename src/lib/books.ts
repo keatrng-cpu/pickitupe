@@ -90,10 +90,27 @@ export type TripRow = {
   customer: string | null;
 };
 
+export type FixedCost = { id: string; label: string; cents: number; deductible: "none" | "full" | "interest" };
+
+export const DEFAULT_FIXED_COSTS: FixedCost[] = [
+  { id: "truck", label: "Truck payment (2020 Sierra Denali)", cents: 55_000, deductible: "interest" },
+  { id: "warranty", label: "Extended warranty", cents: 22_000, deductible: "none" },
+  { id: "auto-ins", label: "Progressive auto ($450 / 6 mo)", cents: 7_500, deductible: "none" },
+  { id: "web", label: "Supabase Pro + Netlify + domain", cents: 4_800, deductible: "full" },
+];
+
 export type OwnerSettings = {
   businessStart: string;
   /** Start-up equipment budget the owner set aside; Books shows spend against it. */
   budgetCents: number;
+  /**
+   * Recurring monthly obligations the business must clear before the owner is
+   * paid — the truck payment, the extended warranty, insurance. `deductible`
+   * says how Schedule C sees each one: 'none' (personal; covered by the
+   * mileage rate), 'full' (a business expense you should also log when paid),
+   * or 'interest' (only the business share of loan interest — ask the CPA).
+   */
+  fixedCosts: FixedCost[];
   /** Rebate slips scanned but not yet received — see resolveRebate in receipts.ts. */
   rebates: { receiptId: number; vendor: string; cents: number; rebateNumber: string | null; purchaseDate: string | null; mailBy: string | null; createdAt: string }[];
   homeAddress: string;
@@ -148,8 +165,19 @@ async function loadSettings(sql: Sql): Promise<OwnerSettings> {
     }
   }
   rebates.sort((a, b) => (a.mailBy ?? "9999").localeCompare(b.mailBy ?? "9999"));
+  let fixedCosts: FixedCost[] = DEFAULT_FIXED_COSTS;
+  const fixedRaw = map.get("fixed.costs");
+  if (fixedRaw) {
+    try {
+      const parsed = JSON.parse(fixedRaw);
+      if (Array.isArray(parsed)) fixedCosts = parsed;
+    } catch {
+      // keep defaults
+    }
+  }
   return {
     rebates,
+    fixedCosts,
     budgetCents: num("budget.startCents") ?? 500_000,
     businessStart: start && /^\d{4}-\d{2}-\d{2}$/.test(start) ? start : DEFAULT_BUSINESS_START,
     homeAddress: map.get("home.address") ?? "",
@@ -544,6 +572,8 @@ export type YearBooks = {
     phases: Record<CostPhase, number>;
     /** Every year, not just the one on screen — "what has it cost to start, and is it paying back". */
     allTime: { investedCents: number; operatingCents: number; collectedCents: number; netCents: number; receipts: number; needsReview: number };
+    /** Cash-flow view against the fixed monthly obligations. */
+    nut: { monthlyCents: number; thisMonthCollectedCents: number; doneJobs: number; avgTicketCents: number | null };
   };
   settings: OwnerSettings;
 };
@@ -598,6 +628,21 @@ export const getYearBooks = createServerFn({ method: "GET" })
     );
     const [allPay] = await sql.query<{ c: number }>(`select coalesce(sum(amount_cents), 0)::int as c from payments`);
     const [allMiles] = await sql.query<{ c: number }>(`select coalesce(sum(round(miles * rate_cents)), 0)::int as c from mileage_trips`);
+    const monthStart = new Date().toISOString().slice(0, 7) + "-01";
+    const [mtd] = await sql.query<{ c: number }>(`select coalesce(sum(amount_cents), 0)::int as c from payments where paid_on >= $1`, [monthStart]);
+    const [done] = await sql.query<{ n: number; avg: number | null }>(
+      `select count(*)::int as n,
+              (select round(avg(x.paid))::int from (
+                 select coalesce(sum(p.amount_cents), 0) as paid from bookings b join payments p on p.booking_id = b.id
+                  where b.status = 'done' group by b.id having sum(p.amount_cents) > 0) x) as avg
+         from bookings where status = 'done'`,
+    );
+    const nut = {
+      monthlyCents: settings.fixedCosts.reduce((s, f) => s + f.cents, 0),
+      thisMonthCollectedCents: mtd?.c ?? 0,
+      doneJobs: done?.n ?? 0,
+      avgTicketCents: done?.avg ?? null,
+    };
     const allTime = {
       investedCents: allExp?.invested ?? 0,
       operatingCents: allExp?.operating ?? 0,
@@ -640,6 +685,7 @@ export const getYearBooks = createServerFn({ method: "GET" })
         byLine,
         phases,
         allTime,
+        nut,
       },
       settings,
     };
@@ -663,6 +709,17 @@ export const saveSettings = createServerFn({ method: "POST" })
         reservePct: z.number().int().min(0).max(60).optional(),
         businessStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
         budgetCents: z.number().int().min(0).max(100_000_000).optional(),
+        fixedCosts: z
+          .array(
+            z.object({
+              id: z.string().min(1).max(40),
+              label: z.string().trim().min(1).max(80),
+              cents: z.number().int().min(0).max(100_000_000),
+              deductible: z.enum(["none", "full", "interest"]),
+            }),
+          )
+          .max(20)
+          .optional(),
         checks: z.record(z.string().max(60), z.boolean()).optional(),
       })
       .parse(input),
@@ -689,6 +746,7 @@ export const saveSettings = createServerFn({ method: "POST" })
     if (data.reservePct !== undefined) await put("tax.reservePct", String(data.reservePct));
     if (data.businessStart !== undefined) await put("business.startDate", data.businessStart);
     if (data.budgetCents !== undefined) await put("budget.startCents", String(data.budgetCents));
+    if (data.fixedCosts !== undefined) await put("fixed.costs", JSON.stringify(data.fixedCosts));
     if (data.checks) {
       for (const [k, v] of Object.entries(data.checks)) await put(`check:${k}`, v ? "1" : "0");
     }

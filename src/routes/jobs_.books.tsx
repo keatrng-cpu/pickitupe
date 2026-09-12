@@ -9,8 +9,10 @@ import {
   deleteTrip,
   getYearBooks,
   saveSettings,
+  type FixedCost,
   type YearBooks,
 } from "@/lib/books";
+import { LOT_SQFT, leafRangeForSqFt } from "@/lib/pricebook";
 import { suggestAddresses } from "@/lib/service-area";
 import { mergeExpenses, resolveRebate, updateExpense } from "@/lib/receipts";
 import { ReceiptDrop } from "@/components/receipt-drop";
@@ -149,6 +151,7 @@ function Summary({ data, reload }: { data: YearBooks; reload: () => void }) {
         />
       </div>
       <BudgetBar spent={a.investedCents} budget={data.settings.budgetCents} />
+      <NutPanel data={data} />
       {data.settings.rebates.length ? <RebatesOwed data={data} reload={reload} /> : null}
       <p className="mt-3 text-xs text-muted">
         This year: start-up {money(t.phases.startup)} · equipment {money(t.phases.equipment)} · operating {money(t.phases.operating)}.
@@ -220,6 +223,52 @@ function Summary({ data, reload }: { data: YearBooks; reload: () => void }) {
         </div>
       </section>
     </div>
+    </div>
+  );
+}
+
+/**
+ * Break-even in jobs. Until there are paid jobs, the average ticket is the
+ * pricebook's standard-lot leaf cleanup midpoint; after that it's the real
+ * average collected per finished job. Net per job = ticket − 25% tax reserve −
+ * ~$15 of dump fees / bags / fuel (n = 0 until the job costs come in).
+ */
+function NutPanel({ data }: { data: YearBooks }) {
+  const n = data.totals.nut;
+  const std = leafRangeForSqFt(LOT_SQFT.medium ?? 7500);
+  const fallbackTicket = Math.round(((std.low + std.high) / 2) * 100);
+  const ticket = n.avgTicketCents ?? fallbackTicket;
+  const reserve = data.settings.reservePct / 100;
+  const jobCost = 1500;
+  const netPerJob = Math.max(1, Math.round(ticket * (1 - reserve) - jobCost));
+  const jobs = Math.ceil(n.monthlyCents / netPerJob);
+  const covered = n.monthlyCents > 0 ? Math.min(100, Math.round((n.thisMonthCollectedCents * (1 - reserve)) / n.monthlyCents * 100)) : 100;
+  return (
+    <div className="mt-4 rounded-2xl border border-border bg-bg-deep/40 p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
+        <span className="text-xs tracking-[0.25em] text-gold">MONTHLY NUT · {money(n.monthlyCents)}</span>
+        <span className="tabular-nums">
+          this month: {money(n.thisMonthCollectedCents)} collected → <b className={cn(covered >= 100 ? "text-sioux" : "text-gold")}>{covered}% covered</b> after the {data.settings.reservePct}% tax set-aside
+        </span>
+      </div>
+      <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-bg-deep">
+        <div className={cn("h-full rounded-full", covered >= 100 ? "bg-sioux" : "bg-gold")} style={{ width: `${covered}%` }} />
+      </div>
+      <p className="mt-2 text-sm">
+        Break-even: <b>{jobs} job{jobs === 1 ? "" : "s"} a month</b> at {money(ticket)} a ticket
+        {n.avgTicketCents ? ` (your real average over ${n.doneJobs} finished job${n.doneJobs === 1 ? "" : "s"})` : " (pricebook standard-lot leaf midpoint until you have paid jobs)"} — {money(netPerJob)} net each after tax set-aside and ~$15 of dump fees and bags.
+      </p>
+      <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+        {data.settings.fixedCosts.map((f) => (
+          <li key={f.id}>
+            {f.label} <span className="tabular-nums">{money(f.cents)}</span>
+            <span className="ml-1 rounded-full border border-border px-1.5 py-0.5 text-[10px]">
+              {f.deductible === "full" ? "deductible" : f.deductible === "interest" ? "interest only" : "not deductible"}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-1 text-[11px] text-muted">Truck, warranty and auto insurance are personal costs the business has to earn — the standard mileage rate is the whole vehicle deduction. Edit the list in Setup.</p>
     </div>
   );
 }
@@ -634,6 +683,7 @@ function Setup({ data, reload }: { data: YearBooks; reload: () => void }) {
   const [pct, setPct] = useState(String(s.reservePct));
   const [start, setStart] = useState(s.businessStart);
   const [budget, setBudget] = useState(String(s.budgetCents / 100));
+  const [fixed, setFixed] = useState<FixedCost[]>(s.fixedCosts);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -764,6 +814,52 @@ function Setup({ data, reload }: { data: YearBooks; reload: () => void }) {
           </div>
         </label>
         {msg ? <p className="mt-3 text-sm text-gold">{msg}</p> : null}
+      </section>
+
+      <section className="card-green rounded-3xl p-5 lg:col-span-2">
+        <h2 className="font-display text-xl">Monthly obligations</h2>
+        <p className="mt-1 text-xs text-muted">What has to be covered every month before you're paid. Drives the "monthly nut" and break-even on the Schedule C tab.</p>
+        <div className="mt-3 space-y-2">
+          {fixed.map((f, i) => (
+            <div key={f.id} className="grid gap-2 sm:grid-cols-[1fr_140px_180px_auto]">
+              <input value={f.label} onChange={(e) => setFixed(fixed.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))} className={inputCls} aria-label="Obligation" />
+              <div className="flex items-center gap-2">
+                <span className="text-muted">$</span>
+                <input inputMode="decimal" value={(f.cents / 100).toFixed(2)} onChange={(e) => { const n = Math.round(Number(e.target.value) * 100); setFixed(fixed.map((x, j) => (j === i ? { ...x, cents: Number.isFinite(n) ? Math.max(0, n) : 0 } : x))); }} className={inputCls} aria-label="Monthly amount" />
+              </div>
+              <select value={f.deductible} onChange={(e) => setFixed(fixed.map((x, j) => (j === i ? { ...x, deductible: e.target.value as FixedCost["deductible"] } : x)))} className={inputCls} aria-label="Deductible">
+                <option value="none">Not deductible (personal / in mileage rate)</option>
+                <option value="interest">Loan interest × business % only</option>
+                <option value="full">Business expense — log it when paid</option>
+              </select>
+              <button type="button" className="text-xs text-muted hover:text-gold" onClick={() => setFixed(fixed.filter((_, j) => j !== i))}>
+                remove
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button type="button" className={ghostBtnCls} onClick={() => setFixed([...fixed, { id: `c${Date.now()}`, label: "", cents: 0, deductible: "none" }])}>
+            Add a line
+          </button>
+          <button
+            type="button"
+            className={btnCls}
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                await saveSettings({ data: { fixedCosts: fixed.filter((f) => f.label.trim()) } });
+                setMsg(`Monthly nut saved: ${money(fixed.reduce((s2, f) => s2 + f.cents, 0))}.`);
+                reload();
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            Save obligations
+          </button>
+        </div>
       </section>
 
       <section className="card-green rounded-3xl p-5">
