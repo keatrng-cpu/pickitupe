@@ -65,3 +65,14 @@ test("trip suggestion: home→job→home, or via the landfill when set", () => {
   assert.ok(suggestedTripMiles(home, job, landfill) > roundTrip);
   assert.equal(suggestedTripMiles(home, null, landfill), null);
 });
+
+test("cost phase: equipment is always equipment, pre-open spend is start-up, the rest operating", async () => {
+  const { phaseFor, DEFAULT_BUSINESS_START } = await import("../src/lib/tax.ts");
+  assert.equal(DEFAULT_BUSINESS_START, "2026-09-11");
+  assert.equal(phaseFor("equipment", "2026-12-01"), "equipment");
+  assert.equal(phaseFor("supplies", "2026-09-10"), "startup");
+  assert.equal(phaseFor("supplies", "2026-09-11"), "operating");
+  assert.equal(phaseFor("startup", "2026-12-01"), "startup");
+  assert.equal(phaseFor("dump-fees", "2026-10-01", "2026-10-15"), "startup");
+  assert.equal(phaseFor("dump-fees", "2026-10-15", "2026-10-15"), "operating");
+});

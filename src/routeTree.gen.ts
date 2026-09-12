@@ -23,6 +23,7 @@ import { Route as JobsBooksRouteImport } from './routes/jobs_.books'
 import { Route as JobsCustomersRouteImport } from './routes/jobs_.customers'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiCronRenewalNoticesRouteImport } from './routes/api/cron/renewal-notices'
+import { Route as ApiReceiptIdRouteImport } from './routes/api/receipt.$id'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe/webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -95,6 +96,11 @@ const ApiCronRenewalNoticesRoute = ApiCronRenewalNoticesRouteImport.update({
   path: '/api/cron/renewal-notices',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiReceiptIdRoute = ApiReceiptIdRouteImport.update({
+  id: '/api/receipt/$id',
+  path: '/api/receipt/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
   id: '/api/stripe/webhook',
   path: '/api/stripe/webhook',
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/jobs/customers': typeof JobsCustomersRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
+  '/api/receipt/$id': typeof ApiReceiptIdRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/jobs/customers': typeof JobsCustomersRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
+  '/api/receipt/$id': typeof ApiReceiptIdRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 export interface FileRoutesById {
@@ -151,6 +159,7 @@ export interface FileRoutesById {
   '/jobs_/customers': typeof JobsCustomersRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
+  '/api/receipt/$id': typeof ApiReceiptIdRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 export interface FileRouteTypes {
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/jobs/customers'
     | '/api/auth/$'
     | '/api/cron/renewal-notices'
+    | '/api/receipt/$id'
     | '/api/stripe/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/jobs/customers'
     | '/api/auth/$'
     | '/api/cron/renewal-notices'
+    | '/api/receipt/$id'
     | '/api/stripe/webhook'
   id:
     | '__root__'
@@ -204,6 +215,7 @@ export interface FileRouteTypes {
     | '/jobs_/customers'
     | '/api/auth/$'
     | '/api/cron/renewal-notices'
+    | '/api/receipt/$id'
     | '/api/stripe/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -222,6 +234,7 @@ export interface RootRouteChildren {
   JobsCustomersRoute: typeof JobsCustomersRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCronRenewalNoticesRoute: typeof ApiCronRenewalNoticesRoute
+  ApiReceiptIdRoute: typeof ApiReceiptIdRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
 }
 
@@ -325,6 +338,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCronRenewalNoticesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/receipt/$id': {
+      id: '/api/receipt/$id'
+      path: '/api/receipt/$id'
+      fullPath: '/api/receipt/$id'
+      preLoaderRoute: typeof ApiReceiptIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/stripe/webhook': {
       id: '/api/stripe/webhook'
       path: '/api/stripe/webhook'
@@ -350,6 +370,7 @@ const rootRouteChildren: RootRouteChildren = {
   JobsCustomersRoute: JobsCustomersRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCronRenewalNoticesRoute: ApiCronRenewalNoticesRoute,
+  ApiReceiptIdRoute: ApiReceiptIdRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
 }
 export const routeTree = rootRouteImport

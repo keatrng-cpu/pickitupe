@@ -5,8 +5,8 @@ let ready = false;
 /**
  * Same idea as `ensurePayColumns`: the Netlify build runs vite only, never
  * migrate.mjs, so the owner books tables are created on first use. Every
- * statement is idempotent and mirrors migrations/0007_owner_books.sql — change
- * both or neither.
+ * statement is idempotent and mirrors migrations/0007_owner_books.sql and
+ * 0008_receipts.sql — change both or neither.
  */
 export async function ensureOwnerTables(sql: Sql) {
   if (ready) return;
@@ -65,6 +65,23 @@ export async function ensureOwnerTables(sql: Sql) {
        value text not null,
        updated_at timestamptz not null default now()
      )`,
+    // 0008 — receipts + expense enrichment
+    `create table if not exists receipts (
+       id serial primary key,
+       expense_id integer references expenses (id) on delete set null,
+       mime text not null,
+       bytes bytea not null,
+       byte_size integer not null,
+       sha256 text not null,
+       extracted jsonb,
+       created_at timestamptz not null default now()
+     )`,
+    "create unique index if not exists receipts_sha_idx on receipts (sha256)",
+    "alter table expenses add column if not exists receipt_id integer",
+    "alter table expenses add column if not exists phase text",
+    "alter table expenses add column if not exists tax_cents integer",
+    "alter table expenses add column if not exists review text",
+    "alter table expenses add column if not exists line_items jsonb",
   ];
   for (const text of stmts) {
     await sql.query(text);

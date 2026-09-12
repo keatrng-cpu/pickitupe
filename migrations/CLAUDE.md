@@ -9,5 +9,6 @@ Read the root [`CLAUDE.md`](../CLAUDE.md). This is the **owner ops** workstream.
 | `0003_booking_intel.sql` | size, estimate, urgency, lat/lon, neighbor |
 | `0004`–`0006` | block deal, seasonal plan subscriptions, deposits/invoices |
 | `0007_owner_books.sql` | owner books: `source`/`final_cents`/`owner_notes`/`completed_at`/`last_contact_at` on bookings; `booking_events`, `payments`, `expenses`, `mileage_trips`, `owner_settings`. Mirrored by `ensureOwnerTables()` in `src/lib/owner-schema.ts` — change both or neither |
+| `0008_receipts.sql` | `receipts` (bytes in Postgres, sha256 unique, model output in `extracted`) + `expenses.receipt_id/phase/tax_cents/review/line_items`. Also mirrored by `ensureOwnerTables()` |
 
 Add a new numbered file — do not rewrite history. Run `npm run db:migrate` locally; Netlify build does **not** migrate.

@@ -12,12 +12,16 @@ import {
   type YearBooks,
 } from "@/lib/books";
 import { suggestAddresses } from "@/lib/service-area";
+import { updateExpense } from "@/lib/receipts";
+import { ReceiptDrop } from "@/components/receipt-drop";
 import {
   DEDUCTION_CHECKLIST,
   ESTIMATED_TAX_DUE_2026,
   EXPENSE_CATEGORIES,
   MILEAGE_RATES,
+  PHASE_LABEL,
   mileageRateFor,
+  type CostPhase,
 } from "@/lib/tax";
 import { cn } from "@/lib/utils";
 import {
@@ -108,7 +112,7 @@ function BooksPage() {
           </nav>
 
           <div className="mt-6">
-            {tab === "summary" ? <Summary data={data} /> : null}
+            {tab === "summary" ? <Summary data={data} reload={reload} /> : null}
             {tab === "expenses" ? <Expenses data={data} reload={reload} /> : null}
             {tab === "mileage" ? <Mileage data={data} reload={reload} /> : null}
             {tab === "income" ? <Income data={data} reload={reload} /> : null}
@@ -122,9 +126,34 @@ function BooksPage() {
 
 // ---------------------------------------------------------------------------
 
-function Summary({ data }: { data: YearBooks }) {
+function Summary({ data, reload }: { data: YearBooks; reload: () => void }) {
   const t = data.totals;
+  const a = t.allTime;
   return (
+    <div className="space-y-6">
+    <ReceiptDrop onBooked={reload} />
+    <section className="card-green rounded-3xl p-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h2 className="font-display text-xl">What it cost to start, what it costs to run</h2>
+        <p className="text-xs text-muted">Every year on the books · opened {fmtDate(data.settings.businessStart)}</p>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Stat label="Invested to start" value={money(a.investedCents)} hint="start-up costs + equipment, all time" tone="gold" />
+        <Stat label="Operating spend" value={money(a.operatingCents)} hint="everything after opening day" />
+        <Stat label="Collected, all time" value={money(a.collectedCents)} tone="ok" />
+        <Stat
+          label={a.netCents >= 0 ? "Paid back — ahead by" : "Still to pay back"}
+          value={money(Math.abs(a.netCents))}
+          hint="collected − all spend − mileage"
+          tone={a.netCents >= 0 ? "ok" : "warn"}
+        />
+      </div>
+      <p className="mt-3 text-xs text-muted">
+        This year: start-up {money(t.phases.startup)} · equipment {money(t.phases.equipment)} · operating {money(t.phases.operating)}.
+        {" "}{a.receipts} receipt{a.receipts === 1 ? "" : "s"} on file{a.needsReview ? ` · ${a.needsReview} flagged "check" in Expenses` : ""}.
+        Start-up costs (§195) deduct up to $5,000 in year one; equipment goes through the de minimis election; both sit outside "operating" so the run-rate reads true.
+      </p>
+    </section>
     <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
       <section className="card-green rounded-3xl p-5">
         <h2 className="font-display text-xl">Schedule C, as it stands</h2>
@@ -189,6 +218,7 @@ function Summary({ data }: { data: YearBooks }) {
         </div>
       </section>
     </div>
+    </div>
   );
 }
 
@@ -217,6 +247,7 @@ function Expenses({ data, reload }: { data: YearBooks; reload: () => void }) {
   const [job, setJob] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState<YearBooks["expenses"][number] | null>(null);
   const cat = EXPENSE_CATEGORIES.find((c) => c.key === category);
 
   async function submit(e: FormEvent) {
@@ -239,6 +270,9 @@ function Expenses({ data, reload }: { data: YearBooks; reload: () => void }) {
 
   return (
     <div className="space-y-6">
+      <ReceiptDrop onBooked={reload} />
+      {editing ? <FixExpense row={editing} jobs={data.jobs} onDone={() => { setEditing(null); reload(); }} onCancel={() => setEditing(null)} /> : null}
+      <p className="text-xs tracking-[0.25em] text-gold">OR TYPE ONE IN</p>
       <form onSubmit={submit} className="card-green grid gap-3 rounded-3xl p-5 sm:grid-cols-2 lg:grid-cols-4">
         <label className="text-xs text-muted">
           Date
@@ -288,18 +322,37 @@ function Expenses({ data, reload }: { data: YearBooks; reload: () => void }) {
       </form>
 
       <Table
-        empty="No expenses logged this year. The door hangers ($228) and the SOS fee ($135) belong here as start-up costs."
-        head={["Date", "Category", "Vendor", "Job", "Paid with", "Amount", ""]}
+        empty="No expenses logged this year. Snap the Acme receipt above — the door hangers ($228) and the SOS fee ($135) belong here as start-up costs."
+        head={["Date", "Category", "Vendor", "Phase", "Job", "Paid with", "Amount", "Receipt", ""]}
         rows={data.expenses.map((e) => [
           fmtDate(e.spent_on),
-          EXPENSE_CATEGORIES.find((c) => c.key === e.category)?.label ?? e.category,
-          e.vendor ?? "—",
+          <span key="c">
+            {EXPENSE_CATEGORIES.find((c) => c.key === e.category)?.label ?? e.category}
+            {e.review === "needs-review" ? <span className="ml-2 rounded-full border border-gold px-2 py-0.5 text-[10px] text-gold">check</span> : null}
+          </span>,
+          <span key="v">
+            {e.vendor ?? "—"}
+            {e.note ? <span className="block max-w-[28ch] truncate text-xs text-muted" title={e.note}>{e.note}</span> : null}
+          </span>,
+          e.phase ? PHASE_LABEL[e.phase] : "—",
           e.customer ? `#${e.booking_id} ${e.customer}` : "—",
           e.paid_with ?? "—",
           <span key="a" className="tabular-nums">{money(e.amount_cents)}</span>,
-          <button key="d" type="button" className="text-xs text-muted hover:text-gold" onClick={() => void deleteExpense({ data: { id: e.id } }).then(reload)}>
-            remove
-          </button>,
+          e.receipt_id ? (
+            <a key="r" href={`/api/receipt/${e.receipt_id}`} target="_blank" rel="noreferrer noopener" className="text-xs text-gold hover:underline">
+              view
+            </a>
+          ) : (
+            "—"
+          ),
+          <span key="d" className="flex gap-2">
+            <button type="button" className="text-xs text-muted hover:text-gold" onClick={() => setEditing(e)}>
+              fix
+            </button>
+            <button type="button" className="text-xs text-muted hover:text-gold" onClick={() => void deleteExpense({ data: { id: e.id } }).then(reload)}>
+              remove
+            </button>
+          </span>,
         ])}
       />
     </div>
@@ -482,6 +535,7 @@ function Setup({ data, reload }: { data: YearBooks; reload: () => void }) {
   const [home, setHome] = useState(s.homeAddress);
   const [landfill, setLandfill] = useState(s.landfillAddress);
   const [pct, setPct] = useState(String(s.reservePct));
+  const [start, setStart] = useState(s.businessStart);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -536,6 +590,30 @@ function Setup({ data, reload }: { data: YearBooks; reload: () => void }) {
           <span className="mt-1 block text-[11px]">
             {s.landfillLat != null ? `Current point: ${s.landfillLat.toFixed(4)}, ${s.landfillLon?.toFixed(4)}` : "Not set — haul jobs suggest home → job → home only."}
           </span>
+        </label>
+        <label className="mt-4 block text-xs text-muted">
+          Opened for business on (splits start-up costs from operating costs)
+          <div className="mt-1 flex gap-2">
+            <input type="date" value={start} onChange={(e) => setStart(e.target.value)} className={cn(inputCls, "w-auto")} />
+            <button
+              type="button"
+              className={ghostBtnCls}
+              disabled={busy || !/^\d{4}-\d{2}-\d{2}$/.test(start)}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  await saveSettings({ data: { businessStart: start } });
+                  setMsg(`Business start set to ${start}. Existing expenses keep their phase; re-save one with "fix" to recompute.`);
+                  reload();
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              Save
+            </button>
+          </div>
+          <span className="mt-1 block text-[11px]">Default is the day the LLC was filed. Anything dated before this (other than equipment) counts as §195 start-up cost.</span>
         </label>
         <label className="mt-4 block text-xs text-muted">
           Tax set-aside, % of every dollar collected
@@ -598,6 +676,120 @@ function Setup({ data, reload }: { data: YearBooks; reload: () => void }) {
 
 // ---------------------------------------------------------------------------
 
+function FixExpense({
+  row,
+  jobs,
+  onDone,
+  onCancel,
+}: {
+  row: YearBooks["expenses"][number];
+  jobs: YearBooks["jobs"];
+  onDone: () => void;
+  onCancel: () => void;
+}) {
+  const [spentOn, setSpentOn] = useState(row.spent_on);
+  const [vendor, setVendor] = useState(row.vendor ?? "");
+  const [category, setCategory] = useState(row.category);
+  const [amount, setAmount] = useState((row.amount_cents / 100).toFixed(2));
+  const [paidWith, setPaidWith] = useState(row.paid_with ?? "");
+  const [job, setJob] = useState(row.booking_id ? String(row.booking_id) : "");
+  const [phase, setPhase] = useState<CostPhase | "">(row.phase ?? "");
+  const [note, setNote] = useState(row.note ?? "");
+  const [busy, setBusy] = useState(false);
+  const cat = EXPENSE_CATEGORIES.find((c) => c.key === category);
+  return (
+    <form
+      className="grid gap-3 rounded-3xl border border-gold/50 bg-bg-deep/50 p-5 sm:grid-cols-2 lg:grid-cols-4"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const n = Math.round(Number(amount) * 100);
+        if (!Number.isFinite(n) || n <= 0) return;
+        setBusy(true);
+        try {
+          await updateExpense({
+            data: {
+              id: row.id,
+              spentOn,
+              vendor: vendor || null,
+              category,
+              amountCents: n,
+              paidWith: (paidWith || null) as "card" | "checking" | "personal" | "cash" | "check" | null,
+              bookingId: job ? Number(job) : null,
+              note: note || null,
+              ...(phase ? { phase } : {}),
+            },
+          });
+          onDone();
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      <p className="text-xs tracking-[0.25em] text-gold sm:col-span-2 lg:col-span-4">
+        FIX EXPENSE #{row.id}{row.receipt_id ? <> · <a className="underline" href={`/api/receipt/${row.receipt_id}`} target="_blank" rel="noreferrer noopener">receipt</a></> : null}
+      </p>
+      <label className="text-xs text-muted">
+        Date
+        <input type="date" value={spentOn} onChange={(e) => setSpentOn(e.target.value)} className={cn(inputCls, "mt-1")} />
+      </label>
+      <label className="text-xs text-muted">
+        Amount $
+        <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className={cn(inputCls, "mt-1")} />
+      </label>
+      <label className="text-xs text-muted">
+        Vendor
+        <input value={vendor} onChange={(e) => setVendor(e.target.value)} className={cn(inputCls, "mt-1")} />
+      </label>
+      <label className="text-xs text-muted">
+        Paid with
+        <select value={paidWith} onChange={(e) => setPaidWith(e.target.value)} className={cn(inputCls, "mt-1")}>
+          <option value="">—</option>
+          <option value="card">Business card</option>
+          <option value="checking">Alerus checking</option>
+          <option value="cash">Cash</option>
+          <option value="check">Check</option>
+          <option value="personal">Personal card</option>
+        </select>
+      </label>
+      <label className="text-xs text-muted sm:col-span-2">
+        Category → line {cat?.line}
+        <select value={category} onChange={(e) => setCategory(e.target.value)} className={cn(inputCls, "mt-1")}>
+          {EXPENSE_CATEGORIES.map((c) => (
+            <option key={c.key} value={c.key}>
+              {c.label} (line {c.line})
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="text-xs text-muted">
+        Phase
+        <select value={phase} onChange={(e) => setPhase(e.target.value as CostPhase | "")} className={cn(inputCls, "mt-1")}>
+          <option value="">auto (by date & category)</option>
+          <option value="startup">Start-up</option>
+          <option value="equipment">Equipment</option>
+          <option value="operating">Operating</option>
+        </select>
+      </label>
+      <label className="text-xs text-muted">
+        Job
+        <JobPicker jobs={jobs} value={job} onChange={setJob} />
+      </label>
+      <label className="text-xs text-muted sm:col-span-2 lg:col-span-3">
+        Note
+        <input value={note} onChange={(e) => setNote(e.target.value)} className={cn(inputCls, "mt-1")} />
+      </label>
+      <div className="flex items-end gap-2">
+        <button type="submit" className={cn(btnCls, "flex-1")} disabled={busy}>
+          Save
+        </button>
+        <button type="button" className={ghostBtnCls} onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
+
 function Table({ head, rows, empty }: { head: string[]; rows: React.ReactNode[][]; empty: string }) {
   if (rows.length === 0) return <p className="card-green rounded-3xl p-6 text-sm text-muted">{empty}</p>;
   return (
@@ -644,12 +836,15 @@ function exportCsv(data: YearBooks) {
   lines.push(["", "", "", "", "", "TOTAL", (data.totals.collectedCents / 100).toFixed(2)].join(","));
   lines.push("");
   lines.push("EXPENSES");
-  lines.push(["date", "schedule_c_line", "category", "vendor", "paid_with", "job", "customer", "note", "amount"].join(","));
+  lines.push(["date", "schedule_c_line", "category", "phase", "vendor", "paid_with", "job", "customer", "note", "tax", "receipt", "amount"].join(","));
   for (const e of data.expenses) {
     const cat = EXPENSE_CATEGORIES.find((c) => c.key === e.category);
-    lines.push([e.spent_on, cat?.line ?? "27a", cat?.label ?? e.category, e.vendor ?? "", e.paid_with ?? "", e.booking_id ?? "", e.customer ?? "", e.note ?? "", (e.amount_cents / 100).toFixed(2)].map(csvCell).join(","));
+    lines.push([e.spent_on, cat?.line ?? "27a", cat?.label ?? e.category, e.phase ?? "", e.vendor ?? "", e.paid_with ?? "", e.booking_id ?? "", e.customer ?? "", e.note ?? "", e.tax_cents != null ? (e.tax_cents / 100).toFixed(2) : "", e.receipt_id ? `https://pickitupe.com/api/receipt/${e.receipt_id}` : "", (e.amount_cents / 100).toFixed(2)].map(csvCell).join(","));
   }
-  lines.push(["", "", "", "", "", "", "", "TOTAL", (data.totals.expensesCents / 100).toFixed(2)].join(","));
+  lines.push(["", "", "", "", "", "", "", "", "", "", "TOTAL", (data.totals.expensesCents / 100).toFixed(2)].join(","));
+  lines.push(`start-up (this year),${(data.totals.phases.startup / 100).toFixed(2)}`);
+  lines.push(`equipment (this year),${(data.totals.phases.equipment / 100).toFixed(2)}`);
+  lines.push(`operating (this year),${(data.totals.phases.operating / 100).toFixed(2)}`);
   lines.push("");
   lines.push("MILEAGE (standard rate)");
   lines.push(["date", "miles", "rate_cents", "deduction", "from", "to", "purpose", "job"].join(","));

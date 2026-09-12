@@ -73,7 +73,12 @@ If a task spans two columns, touch the minimum files and say so in the commit me
   themselves, owner-only notes), a customers page with a derived follow-up queue (reply <4h, confirm day before,
   review ask 2 days after), and **Books & taxes** — Schedule C by line, expenses, IRS-rate mileage log
   (72.5¢ H1 / 76¢ H2 2026, stamped per trip), income, SE-tax estimate, 25% tax set-aside, one-time deduction
-  checklist, CSV export for the CPA. Gate: `isOwnerEmail` — `pickitupe@gmail.com` plus `OWNER_EMAILS`. Money is
+  checklist, CSV export for the CPA. **Receipt scanning:** photo/PDF → `scanReceipt` (Claude, `RECEIPT_MODEL` in
+  `src/lib/receipts.ts`) reads vendor/date/total/tax/items/serials, picks a category from `EXPENSE_CATEGORIES`, and
+  books the expense with a cost **phase** (start-up / equipment / operating, `phaseFor()` in tax.ts against the
+  `business.startDate` setting). Bytes live in Postgres (`receipts`, sha256-unique), served owner-only at
+  `/api/receipt/$id`. Duplicates (same bytes, or same vendor+date+total) are refused and handed back with
+  "Book anyway". Gate: `isOwnerEmail` — `pickitupe@gmail.com` plus `OWNER_EMAILS`. Money is
   integer cents. Stripe deposits/balances land in `payments` through the webhook (idempotent on session id).
   Bookings carry a `source` tag from `?s=` (dh = door hanger, gbp, chat).
 - LocalBusiness + FAQ structured data
@@ -128,6 +133,7 @@ src/routes/jobs.tsx              owner board (summary strip + follow-up + job ca
 src/routes/jobs_.$id.tsx         one job: status, money, costs, miles, contact log
 src/routes/jobs_.books.tsx       Schedule C, expenses, mileage, income, setup & checklist, CSV export
 src/routes/jobs_.customers.tsx   customers by phone + derived follow-up queue
+src/routes/api/receipt.$id.ts    owner-only receipt bytes (image/PDF) for the books page
 src/routes/login.tsx
 src/routes/api/auth/$.ts         better-auth catch-all
 
@@ -139,12 +145,15 @@ src/components/quote-form.tsx    booking + instant estimate
 src/components/address-field.tsx autocomplete + "do you come out here?"
 src/components/site-header.tsx   header + footer (phone lives here)
 src/components/owner-shell.tsx   owner pages' chrome, gate, tabs, shared money/date helpers
+src/components/receipt-drop.tsx  snap/upload receipts → scanReceipt; result cards
 src/components/source-capture.tsx remembers ?s= on landing (door hanger QR = ?s=dh)
 src/components/ui/button.tsx
 
 src/lib/bookings.ts              server fns
 src/lib/books.ts                 owner books server fns (summary, job detail, payments, expenses, trips, settings, customers)
-src/lib/tax.ts                   IRS mileage rates, Schedule C categories, SE tax, trip suggestion — pure, tested
+src/lib/tax.ts                   IRS mileage rates, Schedule C categories, SE tax, trip suggestion, cost phases — pure, tested
+src/lib/receipts.ts              receipt scan (Claude vision/PDF) → booked expense; updateExpense; readReceipt
+src/lib/receipt-client.ts        client-side downscale (1600px JPEG) / PDF cap before upload
 src/lib/owner-schema.ts          ensureOwnerTables() (mirrors 0007) + logEvent()
 src/lib/owner.ts                 isOwnerEmail() gate — pickitupe@gmail.com + OWNER_EMAILS
 src/lib/source.ts                ?s= tag remember/read
@@ -160,6 +169,7 @@ migrations/0001_auth.sql
 migrations/0002_bookings.sql
 migrations/0003_booking_intel.sql  size, estimate, urgency, lat/lon, neighbor
 migrations/0007_owner_books.sql    source, final_cents, owner_notes; booking_events, payments, expenses, mileage_trips, owner_settings
+migrations/0008_receipts.sql       receipts (bytea, sha256) + expenses.receipt_id/phase/tax_cents/review/line_items
 
 scripts/migrate.mjs
 vite.config.ts

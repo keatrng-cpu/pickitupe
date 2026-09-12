@@ -144,3 +144,30 @@ export const DEDUCTION_CHECKLIST: { key: string; label: string; why: string }[] 
   { key: "phone-pct", label: "Phone/internet business percentage decided and written down", why: "Pick a defensible number once; use it all year." },
   { key: "cpa-hour", label: "One CPA hour booked before the first W-2", why: "Payroll registration thresholds and the elections above are filed positions." },
 ];
+
+// ---------------------------------------------------------------------------
+// Cost phases — what "cost to start" vs "cost to run" means on the books page.
+//   startup   §195 start-up/organizational costs: anything (other than
+//             equipment) dated before the business opened. Up to $5,000
+//             deductible in year one, the rest amortized over 15 years.
+//   equipment Durable tools and machines. Deducted via the de minimis
+//             election (≤ $2,500/item) or §179 — never lumped into start-up,
+//             and never "operating".
+//   operating Everything else once the doors are open.
+// The business start date lives in owner_settings (`business.startDate`) and
+// defaults to the day the LLC was filed.
+// ---------------------------------------------------------------------------
+export type CostPhase = "startup" | "equipment" | "operating";
+export const DEFAULT_BUSINESS_START = "2026-09-11";
+
+export function phaseFor(category: string, spentOn: string, businessStart: string = DEFAULT_BUSINESS_START): CostPhase {
+  if (category === "equipment") return "equipment";
+  if (category === "startup") return "startup";
+  return spentOn.slice(0, 10) < businessStart.slice(0, 10) ? "startup" : "operating";
+}
+
+export const PHASE_LABEL: Record<CostPhase, string> = {
+  startup: "Start-up",
+  equipment: "Equipment",
+  operating: "Operating",
+};

@@ -16,12 +16,15 @@ import { isOwnerEmail } from "@/lib/owner";
 import { HOME } from "@/lib/service-area";
 import { todayISO } from "@/lib/schedule";
 import {
+  DEFAULT_BUSINESS_START,
   DEFAULT_RESERVE_PCT,
   EXPENSE_CATEGORIES,
   mileageDeductionCents,
   mileageRateFor,
+  phaseFor,
   selfEmploymentTaxCents,
   suggestedTripMiles,
+  type CostPhase,
 } from "@/lib/tax";
 import type { BookingRow } from "@/lib/bookings";
 
@@ -67,6 +70,10 @@ export type ExpenseRow = {
   booking_id: number | null;
   note: string | null;
   customer: string | null;
+  receipt_id: number | null;
+  phase: CostPhase | null;
+  tax_cents: number | null;
+  review: "auto" | "needs-review" | "reviewed" | null;
 };
 
 export type TripRow = {
@@ -82,6 +89,7 @@ export type TripRow = {
 };
 
 export type OwnerSettings = {
+  businessStart: string;
   homeAddress: string;
   homeLat: number;
   homeLon: number;
@@ -123,7 +131,9 @@ async function loadSettings(sql: Sql): Promise<OwnerSettings> {
   };
   const checks: Record<string, boolean> = {};
   for (const [k, v] of map) if (k.startsWith("check:")) checks[k.slice(6)] = v === "1";
+  const start = map.get("business.startDate");
   return {
+    businessStart: start && /^\d{4}-\d{2}-\d{2}$/.test(start) ? start : DEFAULT_BUSINESS_START,
     homeAddress: map.get("home.address") ?? "",
     homeLat: num("home.lat") ?? HOME.lat,
     homeLon: num("home.lon") ?? HOME.lon,
@@ -277,7 +287,8 @@ export const getBookingDetail = createServerFn({ method: "GET" })
         [data.id],
       ),
       sql.query<ExpenseRow>(
-        `select id, spent_on, vendor, category, amount_cents, paid_with, booking_id, note, null::text as customer from expenses where booking_id = $1 order by spent_on desc, id desc`,
+        `select id, spent_on, vendor, category, amount_cents, paid_with, booking_id, note, null::text as customer, receipt_id, phase, tax_cents, review
+           from expenses where booking_id = $1 order by spent_on desc, id desc`,
         [data.id],
       ),
       sql.query<TripRow>(
@@ -426,10 +437,12 @@ export const addExpense = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const sql = await ownerSql(context.email);
+    const settings = await loadSettings(sql);
+    const phase = phaseFor(data.category, data.spentOn, settings.businessStart);
     const [row] = await sql.query<{ id: number }>(
-      `insert into expenses (spent_on, vendor, category, amount_cents, paid_with, booking_id, note)
-       values ($1,$2,$3,$4,$5,$6,$7) returning id`,
-      [data.spentOn, data.vendor || null, data.category, data.amountCents, data.paidWith || null, data.bookingId ?? null, data.note || null],
+      `insert into expenses (spent_on, vendor, category, amount_cents, paid_with, booking_id, note, phase, review)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,'reviewed') returning id`,
+      [data.spentOn, data.vendor || null, data.category, data.amountCents, data.paidWith || null, data.bookingId ?? null, data.note || null, phase],
     );
     if (data.bookingId) {
       await logEvent(sql, data.bookingId, "system", `Expense $${(data.amountCents / 100).toFixed(2)} · ${data.category}${data.vendor ? ` · ${data.vendor}` : ""}`);
@@ -507,6 +520,10 @@ export type YearBooks = {
     seTaxCents: number;
     reserveTargetCents: number;
     byLine: { line: string; label: string; cents: number }[];
+    /** This year's spend split by cost phase. */
+    phases: Record<CostPhase, number>;
+    /** Every year, not just the one on screen — "what has it cost to start, and is it paying back". */
+    allTime: { investedCents: number; operatingCents: number; collectedCents: number; netCents: number; receipts: number; needsReview: number };
   };
   settings: OwnerSettings;
 };
@@ -525,7 +542,8 @@ export const getYearBooks = createServerFn({ method: "GET" })
         [from, to],
       ),
       sql.query<ExpenseRow>(
-        `select e.id, e.spent_on, e.vendor, e.category, e.amount_cents, e.paid_with, e.booking_id, e.note, b.name as customer
+        `select e.id, e.spent_on, e.vendor, e.category, e.amount_cents, e.paid_with, e.booking_id, e.note, b.name as customer,
+                e.receipt_id, e.phase, e.tax_cents, e.review
            from expenses e left join bookings b on b.id = e.booking_id
           where e.spent_on between $1 and $2 order by e.spent_on desc, e.id desc`,
         [from, to],
@@ -544,6 +562,29 @@ export const getYearBooks = createServerFn({ method: "GET" })
     ]);
     const collectedCents = payments.reduce((s, p) => s + p.amount_cents, 0);
     const expensesCents = expenses.reduce((s, e) => s + e.amount_cents, 0);
+    const phases: Record<CostPhase, number> = { startup: 0, equipment: 0, operating: 0 };
+    for (const e of expenses) {
+      const ph = (e.phase as CostPhase | null) ?? phaseFor(e.category, e.spent_on, settings.businessStart);
+      phases[ph] += e.amount_cents;
+    }
+    const [allExp] = await sql.query<{ invested: number; operating: number; receipts: number; needs_review: number }>(
+      `select coalesce(sum(case when coalesce(phase, case when category = 'equipment' then 'equipment' when spent_on < $1 then 'startup' else 'operating' end) in ('startup','equipment') then amount_cents else 0 end), 0)::int as invested,
+              coalesce(sum(case when coalesce(phase, case when category = 'equipment' then 'equipment' when spent_on < $1 then 'startup' else 'operating' end) = 'operating' then amount_cents else 0 end), 0)::int as operating,
+              count(receipt_id)::int as receipts,
+              coalesce(sum(case when review = 'needs-review' then 1 else 0 end), 0)::int as needs_review
+         from expenses`,
+      [settings.businessStart],
+    );
+    const [allPay] = await sql.query<{ c: number }>(`select coalesce(sum(amount_cents), 0)::int as c from payments`);
+    const [allMiles] = await sql.query<{ c: number }>(`select coalesce(sum(round(miles * rate_cents)), 0)::int as c from mileage_trips`);
+    const allTime = {
+      investedCents: allExp?.invested ?? 0,
+      operatingCents: allExp?.operating ?? 0,
+      collectedCents: allPay?.c ?? 0,
+      netCents: (allPay?.c ?? 0) - (allExp?.invested ?? 0) - (allExp?.operating ?? 0) - (allMiles?.c ?? 0),
+      receipts: allExp?.receipts ?? 0,
+      needsReview: allExp?.needs_review ?? 0,
+    };
     const mileageCents = mileageDeductionCents(trips);
     const miles = Math.round(trips.reduce((s, t) => s + t.miles, 0) * 10) / 10;
     const netCents = collectedCents - expensesCents - mileageCents;
@@ -576,6 +617,8 @@ export const getYearBooks = createServerFn({ method: "GET" })
         seTaxCents: selfEmploymentTaxCents(netCents),
         reserveTargetCents: Math.round((collectedCents * settings.reservePct) / 100),
         byLine,
+        phases,
+        allTime,
       },
       settings,
     };
@@ -597,6 +640,7 @@ export const saveSettings = createServerFn({ method: "POST" })
         landfillLat: z.number().min(-90).max(90).nullable().optional(),
         landfillLon: z.number().min(-180).max(180).nullable().optional(),
         reservePct: z.number().int().min(0).max(60).optional(),
+        businessStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
         checks: z.record(z.string().max(60), z.boolean()).optional(),
       })
       .parse(input),
@@ -621,6 +665,7 @@ export const saveSettings = createServerFn({ method: "POST" })
     if (data.landfillLat !== undefined) await put("landfill.lat", data.landfillLat == null ? null : String(data.landfillLat));
     if (data.landfillLon !== undefined) await put("landfill.lon", data.landfillLon == null ? null : String(data.landfillLon));
     if (data.reservePct !== undefined) await put("tax.reservePct", String(data.reservePct));
+    if (data.businessStart !== undefined) await put("business.startDate", data.businessStart);
     if (data.checks) {
       for (const [k, v] of Object.entries(data.checks)) await put(`check:${k}`, v ? "1" : "0");
     }

@@ -17,6 +17,7 @@ import { smsLink, TEMPLATES } from "@/lib/messages";
 import { startBalanceInvoice } from "@/lib/pay-actions";
 import { formatAddOns, PROMO_CAP, PROMO_PERCENT } from "@/lib/pricebook";
 import { EXPENSE_CATEGORIES, mileageRateFor } from "@/lib/tax";
+import { ReceiptDrop } from "@/components/receipt-drop";
 import { cn } from "@/lib/utils";
 import {
   btnCls,
@@ -188,6 +189,9 @@ function JobDetail({ data, reload }: { data: BookingDetail; reload: () => void }
             Pinned to this job so its real margin shows. Paid {money(b.paid_cents)} − costs {money(jobCostCents)} − mileage {money(jobMileageCents)} ={" "}
             <b className={cn(netCents >= 0 ? "text-sioux" : "text-gold")}>{money(netCents)}</b>
           </p>
+          <div className="mt-3">
+            <ReceiptDrop bookingId={b.id} onBooked={reload} compact />
+          </div>
           <ExpenseQuickAdd bookingId={b.id} reload={reload} />
           {expenses.length ? (
             <ul className="mt-3 divide-y divide-border text-sm">
