@@ -148,6 +148,7 @@ function Summary({ data, reload }: { data: YearBooks; reload: () => void }) {
           tone={a.netCents >= 0 ? "ok" : "warn"}
         />
       </div>
+      <BudgetBar spent={a.investedCents} budget={data.settings.budgetCents} />
       {data.settings.rebates.length ? <RebatesOwed data={data} reload={reload} /> : null}
       <p className="mt-3 text-xs text-muted">
         This year: start-up {money(t.phases.startup)} · equipment {money(t.phases.equipment)} · operating {money(t.phases.operating)}.
@@ -219,6 +220,26 @@ function Summary({ data, reload }: { data: YearBooks; reload: () => void }) {
         </div>
       </section>
     </div>
+    </div>
+  );
+}
+
+function BudgetBar({ spent, budget }: { spent: number; budget: number }) {
+  if (!budget) return null;
+  const pct = Math.min(100, Math.round((spent / budget) * 100));
+  const left = budget - spent;
+  return (
+    <div className="mt-4 rounded-2xl border border-border bg-bg-deep/40 p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
+        <span className="text-xs tracking-[0.25em] text-gold">START-UP EQUIPMENT BUDGET</span>
+        <span className="tabular-nums">
+          {money(spent)} of {money(budget)} · <b className={cn(left >= 0 ? "text-sioux" : "text-gold")}>{left >= 0 ? `${money(left)} left` : `${money(-left)} over`}</b>
+        </span>
+      </div>
+      <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-bg-deep">
+        <div className={cn("h-full rounded-full", pct >= 90 ? "bg-gold" : "bg-sioux")} style={{ width: `${pct}%` }} />
+      </div>
+      <p className="mt-1 text-[11px] text-muted">Counts start-up and equipment phases, all time. Set the budget in Setup.</p>
     </div>
   );
 }
@@ -612,6 +633,7 @@ function Setup({ data, reload }: { data: YearBooks; reload: () => void }) {
   const [landfill, setLandfill] = useState(s.landfillAddress);
   const [pct, setPct] = useState(String(s.reservePct));
   const [start, setStart] = useState(s.businessStart);
+  const [budget, setBudget] = useState(String(s.budgetCents / 100));
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -690,6 +712,31 @@ function Setup({ data, reload }: { data: YearBooks; reload: () => void }) {
             </button>
           </div>
           <span className="mt-1 block text-[11px]">Default is the day the LLC was filed. Anything dated before this (other than equipment) counts as §195 start-up cost.</span>
+        </label>
+        <label className="mt-4 block text-xs text-muted">
+          Start-up equipment budget $
+          <div className="mt-1 flex gap-2">
+            <input inputMode="decimal" value={budget} onChange={(e) => setBudget(e.target.value)} className={cn(inputCls, "w-32")} />
+            <button
+              type="button"
+              className={ghostBtnCls}
+              disabled={busy}
+              onClick={async () => {
+                const n = Math.round(Number(budget) * 100);
+                if (!Number.isFinite(n) || n < 0) return;
+                setBusy(true);
+                try {
+                  await saveSettings({ data: { budgetCents: n } });
+                  setMsg(`Budget set to ${money(n)}.`);
+                  reload();
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              Save
+            </button>
+          </div>
         </label>
         <label className="mt-4 block text-xs text-muted">
           Tax set-aside, % of every dollar collected

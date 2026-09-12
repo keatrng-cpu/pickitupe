@@ -92,6 +92,8 @@ export type TripRow = {
 
 export type OwnerSettings = {
   businessStart: string;
+  /** Start-up equipment budget the owner set aside; Books shows spend against it. */
+  budgetCents: number;
   /** Rebate slips scanned but not yet received — see resolveRebate in receipts.ts. */
   rebates: { receiptId: number; vendor: string; cents: number; rebateNumber: string | null; purchaseDate: string | null; mailBy: string | null; createdAt: string }[];
   homeAddress: string;
@@ -148,6 +150,7 @@ async function loadSettings(sql: Sql): Promise<OwnerSettings> {
   rebates.sort((a, b) => (a.mailBy ?? "9999").localeCompare(b.mailBy ?? "9999"));
   return {
     rebates,
+    budgetCents: num("budget.startCents") ?? 500_000,
     businessStart: start && /^\d{4}-\d{2}-\d{2}$/.test(start) ? start : DEFAULT_BUSINESS_START,
     homeAddress: map.get("home.address") ?? "",
     homeLat: num("home.lat") ?? HOME.lat,
@@ -659,6 +662,7 @@ export const saveSettings = createServerFn({ method: "POST" })
         landfillLon: z.number().min(-180).max(180).nullable().optional(),
         reservePct: z.number().int().min(0).max(60).optional(),
         businessStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        budgetCents: z.number().int().min(0).max(100_000_000).optional(),
         checks: z.record(z.string().max(60), z.boolean()).optional(),
       })
       .parse(input),
@@ -684,6 +688,7 @@ export const saveSettings = createServerFn({ method: "POST" })
     if (data.landfillLon !== undefined) await put("landfill.lon", data.landfillLon == null ? null : String(data.landfillLon));
     if (data.reservePct !== undefined) await put("tax.reservePct", String(data.reservePct));
     if (data.businessStart !== undefined) await put("business.startDate", data.businessStart);
+    if (data.budgetCents !== undefined) await put("budget.startCents", String(data.budgetCents));
     if (data.checks) {
       for (const [k, v] of Object.entries(data.checks)) await put(`check:${k}`, v ? "1" : "0");
     }
