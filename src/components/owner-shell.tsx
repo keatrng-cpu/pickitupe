@@ -6,7 +6,7 @@ import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { cn } from "@/lib/utils";
 
 /**
- * Chrome for every owner page: sign-in gate, the four tabs, and a consistent
+ * Chrome for every owner page: sign-in gate, the five tabs, and a consistent
  * header. Owner-ness is decided on the server (isOwnerEmail) — the page calls
  * its loader, and a "Forbidden" turns into the NotOwner panel instead of a
  * bounce to /status.
@@ -16,6 +16,7 @@ const TABS = [
   { to: "/jobs", label: "Board" },
   { to: "/jobs/customers", label: "Customers" },
   { to: "/jobs/books", label: "Books & taxes" },
+  { to: "/jobs/crew", label: "Crew" },
 ] as const;
 
 export function OwnerShell({

@@ -5,8 +5,14 @@ let ready = false;
 /**
  * Same idea as `ensurePayColumns`: the Netlify build runs vite only, never
  * migrate.mjs, so the owner books tables are created on first use. Every
- * statement is idempotent and mirrors migrations/0007_owner_books.sql and
- * 0008_receipts.sql — change both or neither.
+ * statement is idempotent and mirrors migrations/0007_owner_books.sql,
+ * 0008_receipts.sql, 0009_crew.sql and 0010_rls.sql — change both or neither.
+ *
+ * RLS: Supabase exposes `public` through PostgREST with the anon key. The app
+ * never uses that path — it connects as the `postgres` role that owns every
+ * table, and RLS never applies to the owner — so "RLS on, no policies" closes
+ * the Data API without touching the app. Any table this function creates gets
+ * the same lock.
  */
 export async function ensureOwnerTables(sql: Sql) {
   if (ready) return;
@@ -82,6 +88,39 @@ export async function ensureOwnerTables(sql: Sql) {
     "alter table expenses add column if not exists tax_cents integer",
     "alter table expenses add column if not exists review text",
     "alter table expenses add column if not exists line_items jsonb",
+    // 0009 — crew
+    `create table if not exists crew_members (
+       id serial primary key,
+       email text not null unique,
+       name text not null,
+       phone text,
+       wage_cents integer not null default 1800,
+       active boolean not null default true,
+       created_at timestamptz not null default now()
+     )`,
+    `create table if not exists time_entries (
+       id serial primary key,
+       crew_id integer not null references crew_members (id) on delete cascade,
+       started_at timestamptz not null,
+       ended_at timestamptz,
+       booking_id integer references bookings (id) on delete set null,
+       note text,
+       paid_expense_id integer,
+       created_at timestamptz not null default now()
+     )`,
+    "create index if not exists time_entries_crew_idx on time_entries (crew_id, started_at desc)",
+    // 0010_rls.sql
+    ...[
+      "bookings",
+      "booking_events",
+      "payments",
+      "expenses",
+      "mileage_trips",
+      "owner_settings",
+      "receipts",
+      "crew_members",
+      "time_entries",
+    ].map((t) => `alter table if exists ${t} enable row level security`),
   ];
   for (const text of stmts) {
     await sql.query(text);

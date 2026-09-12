@@ -49,7 +49,7 @@ Pull before you start. Commit only the files you meant to change.
 |---|---|---|
 | **Visual / motion** | `src/components/falling-leaves.tsx`, `haul-on-scroll.tsx`, `door-hanger.tsx`, `src/styles.css`, `src/routes/__root.tsx`, `public/hero-truck.jpg`, `public/haul-*.webp`, `public/haul-junk.mp4`, `public/haul-junk-poster.jpg`, `public/grain.png`, `public/og.jpg` | pricebook, bookings, jobs |
 | **Pricing / quoting** | `src/lib/pricebook.ts`, `PRICEBOOK.md`, `src/components/quote-form.tsx`, `hero-quote-teaser.tsx`, `address-field.tsx`, `src/lib/service-area.ts` | haul animation, leaf overlay |
-| **Owner ops** | `src/routes/jobs.tsx`, `src/routes/jobs_.$id.tsx`, `src/routes/jobs_.books.tsx`, `src/routes/jobs_.customers.tsx`, `src/components/owner-shell.tsx`, `src/lib/books.ts`, `src/lib/tax.ts`, `src/lib/owner-schema.ts`, `src/lib/messages.ts`, `src/lib/bookings.ts`, `migrations/` | marketing copy on the home hero |
+| **Owner ops** | `src/routes/jobs.tsx`, `src/routes/jobs_.$id.tsx`, `src/routes/jobs_.books.tsx`, `src/routes/jobs_.customers.tsx`, `src/routes/jobs_.crew.tsx`, `src/routes/crew.tsx`, `src/components/owner-shell.tsx`, `src/lib/books.ts`, `src/lib/tax.ts`, `src/lib/crew.ts`, `src/lib/crew-math.ts`, `src/lib/owner-schema.ts`, `src/lib/messages.ts`, `src/lib/bookings.ts`, `migrations/` | marketing copy on the home hero |
 | **SEO / copy** | `src/lib/seo.ts` (FAQ on page **must match** JSON-LD), `src/routes/index.tsx` promo lines | don't invent prices — they live in pricebook.ts |
 | **Print** | `print/DOOR-HANGER.md`, `attachments/PickItUpE-DoorHanger.pdf`, `attachments/Ks1nw.jpg`, `door-hanger.tsx` | keep 4.25×11 knob hole, never mailbox |
 | **Deploy** | `DEPLOY.md`, `netlify.toml`, `.env.example` | |
@@ -81,6 +81,19 @@ If a task spans two columns, touch the minimum files and say so in the commit me
   "Book anyway". Gate: `isOwnerEmail` — `pickitupe@gmail.com` plus `OWNER_EMAILS`. Money is
   integer cents. Stripe deposits/balances land in `payments` through the webhook (idempotent on session id).
   Bookings carry a `source` tag from `?s=` (dh = door hanger, gbp, chat).
+- **Crew portal** (`/crew`) — for the 1–2 helpers, and for the owner when he's the one on the truck. A crew
+  member signs in with the email the owner listed under **Crew** (`/jobs/crew`) and sees: clock in/out with
+  the running shift, this week's hours and pay, unpaid total, and the schedule (yesterday forward) as job cards
+  with address → Google Maps directions, Call, and one-tap texts (on my way / running late / here / done) that
+  log themselves on the job. `CREW_BOOKING_SELECT` in `src/lib/crew.ts` is the whole list of booking columns a
+  crew session can see — **no estimate, deposit, payments, source or owner notes**; the crew texts never mention
+  money. The owner's login gets a `$0/hr` crew row automatically (paid by draw, not wages). Owner side: add/edit
+  helpers (name, sign-in email, phone, wage), fix or remove punches, **Record pay** → a `wages` expense on
+  Schedule C line 26 that stamps the shifts paid, and the ND employer checklist (WSI, EIN, W-4/I-9, withholding,
+  new-hire report, Job Service UI, W-2 not 1099).
+- **RLS is on for every table** (`migrations/0010_rls.sql`), no policies. The app connects as the `postgres`
+  owner role, which RLS never applies to; the Supabase Data API (anon key) is a locked door. Keep it that way —
+  a new table gets `enable row level security` in its migration and in `ensureOwnerTables()`.
 - LocalBusiness + FAQ structured data
 - PGLite when no `DATABASE_URL`; Supabase/Neon when set
 
@@ -133,6 +146,8 @@ src/routes/jobs.tsx              owner board (summary strip + follow-up + job ca
 src/routes/jobs_.$id.tsx         one job: status, money, costs, miles, contact log
 src/routes/jobs_.books.tsx       Schedule C, expenses, mileage, income, setup & checklist, CSV export
 src/routes/jobs_.customers.tsx   customers by phone + derived follow-up queue
+src/routes/jobs_.crew.tsx        owner: helpers, wages, punches, record pay, ND employer checklist
+src/routes/crew.tsx              crew portal: clock, hours & pay, today's jobs, directions, texts — no money
 src/routes/api/receipt.$id.ts    owner-only receipt bytes (image/PDF) for the books page
 src/routes/login.tsx
 src/routes/api/auth/$.ts         better-auth catch-all
@@ -154,7 +169,9 @@ src/lib/books.ts                 owner books server fns (summary, job detail, pa
 src/lib/tax.ts                   IRS mileage rates, Schedule C categories, SE tax, trip suggestion, cost phases — pure, tested
 src/lib/receipts.ts              receipt scan (Claude vision/PDF) → booked expense; updateExpense; readReceipt
 src/lib/receipt-client.ts        client-side downscale (1600px JPEG) / PDF cap before upload
-src/lib/owner-schema.ts          ensureOwnerTables() (mirrors 0007) + logEvent()
+src/lib/crew.ts                  crew server fns (CREW_BOOKING_SELECT = what a helper may see), owner crew admin, recordPay
+src/lib/crew-math.ts             hoursBetween / payCents / totals / weekOf — pure, tested (scripts/crew.test.mjs)
+src/lib/owner-schema.ts          ensureOwnerTables() (mirrors 0007–0010) + logEvent()
 src/lib/owner.ts                 isOwnerEmail() gate — pickitupe@gmail.com + OWNER_EMAILS
 src/lib/source.ts                ?s= tag remember/read
 src/lib/pricebook.ts             the only place money numbers live
@@ -170,6 +187,8 @@ migrations/0002_bookings.sql
 migrations/0003_booking_intel.sql  size, estimate, urgency, lat/lon, neighbor
 migrations/0007_owner_books.sql    source, final_cents, owner_notes; booking_events, payments, expenses, mileage_trips, owner_settings
 migrations/0008_receipts.sql       receipts (bytea, sha256) + expenses.receipt_id/phase/tax_cents/review/line_items
+migrations/0009_crew.sql           crew_members (wage_cents, active) + time_entries (paid_expense_id)
+migrations/0010_rls.sql            enable row level security on every public table — no policies, app is the owner role
 
 scripts/migrate.mjs
 vite.config.ts

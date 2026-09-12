@@ -11,6 +11,8 @@ Read the root [`CLAUDE.md`](../../CLAUDE.md) first.
 | `jobs_.$id.tsx` | One job: status pipeline, final bill + payments (cash/check/Venmo/Zelle; Stripe rows arrive via webhook), job costs, mileage with suggested miles, owner notes, contact log. The `_` suffix keeps it a sibling of `/jobs`, not a child. |
 | `jobs_.books.tsx` | Books & taxes: Schedule C by line, expenses, mileage log, income, setup (home/landfill for suggested miles, reserve %) and the deduction checklist. CSV export. |
 | `jobs_.customers.tsx` | Customers by phone + the follow-up queue derived from booking status and `last_contact_at`. |
+| `jobs_.crew.tsx` | Owner: helpers (name, sign-in email, phone, $/h, active), every punch with fix/remove, **Record pay** → `wages` expense + shifts stamped paid, ND employer checklist. |
+| `crew.tsx` | Crew portal — not under `/jobs`, no OwnerShell. Gate is `getCrewHome()` returning null (not on the list) vs a home. Clock in/out, week hours & pay, jobs from yesterday forward with directions / call / logged texts / mark finished. Never renders a dollar amount from the customer side; the texts don't either. The owner sees this page too (auto `$0/h` row). |
 | `login.tsx` | Auth. |
 | `api/auth/$.ts` | better-auth catch-all. |
 
