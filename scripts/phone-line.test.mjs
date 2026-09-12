@@ -38,6 +38,6 @@ test("dev server rejects an unsigned POST and accepts a signed one", async (t) =
   const good = await fetch(base + path, { method: "POST", body, headers: { "content-type": "application/x-www-form-urlencoded", "x-twilio-signature": sig } });
   assert.equal(good.status, 200);
   const xml = await good.text();
-  assert.match(xml, /<Response><Say voice="Polly\.Matthew-Neural">/);
+  assert.match(xml, /<Response><Say voice="Polly\.Matthew-Neural">Hey, you've reached Keaton/);
   assert.match(xml, /<Record [^>]*transcribe="true"/);
 });

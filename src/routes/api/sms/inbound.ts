@@ -29,13 +29,13 @@ export const Route = createFileRoute("/api/sms/inbound")({
         const ownerCell = (process.env.OWNER_CELL || PHONE).trim();
         const { formatPhone } = await import("@/lib/phone");
         const site = m.publicUrl("");
-        await m.sendSms(
+        if (m.smsEnabled()) await m.sendSms(
           ownerCell,
           `Text from ${formatPhone(from)}: ${body || "(photo)"}${media ? ` [+${media} photo${media > 1 ? "s" : ""} — see Twilio]` : ""} · ${lead ? `${site}/jobs/${lead.id}` : ""}`.trim(),
         );
 
         // One acknowledgement per lead per day — repeat replies shouldn't get a robot every time.
-        const first = lead?.created;
+        const first = lead?.created && m.smsEnabled();
         return m.twiml(
           first
             ? `<Message>Got it — Keaton will text or call you back shortly. To lock a day now: ${site}/book?s=call</Message>`

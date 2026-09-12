@@ -27,7 +27,7 @@ export const Route = createFileRoute("/api/voice/after")({
             const { getSql } = await import("@/lib/db");
             await logEvent(await getSql(), leadId, "call", `Voicemail left (${secs}s) — transcript coming`);
           }
-          return m.twiml(m.say(m.AFTER_MESSAGE) + "<Hangup/>");
+          return m.twiml(m.say(m.afterMessage()) + "<Hangup/>");
         }
 
         await m.alertOwner({ channel: "Missed call", phone, bookingId: leadId });

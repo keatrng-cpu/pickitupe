@@ -28,6 +28,37 @@ against Twilio's published example.
 
 ---
 
+## Two stages — because texting needs the EIN
+
+Twilio will not sell a number without a **compliance profile**, and the profile type that
+unlocks **toll-free texting** (Business Profile) needs the LLC's **EIN**. The EIN can't be
+issued until the ND SOS approves the LLC (filed 2026-09-11, "Pending Review", ~5 business days).
+So:
+
+| Stage | When | What works | Env |
+|---|---|---|---|
+| **Voice** | the day the number is bought | forwarded calls → greeting that spells out the website, voicemail + transcript on the board, owner alert by **email** | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` |
+| **Texting** | toll-free verification approved (1–3 business days after the EIN) | + text-back to the caller, owner alerts also by text, replies forwarded to the cell | add `TWILIO_SMS_ENABLED=true`, redeploy |
+
+`smsEnabled()` in `phone-line.server.ts` switches the greeting, the after-message, the owner
+alert wording and every outbound text at once. Don't flip it early — unverified toll-free
+texts are hard-blocked by the carriers (error 30032) and each one still costs a segment.
+
+**Account state (2026-09-12):** Twilio account exists under pickitupe@gmail.com, **upgraded to
+pay-as-you-go**, $20 balance, auto-recharge to $20 under $10, tax profile Pick It Up E LLC.
+No number bought yet, no compliance profile yet — waiting on the EIN so it can be done once,
+as a Business Profile.
+
+### When the SOS approval lands
+1. **EIN** — irs.gov → "Apply for an EIN online" (free, ~10 min, Mon–Fri 7am–10pm ET). Entity:
+   LLC, one member, ND, "started a new business", no employees yet (say 0 — change later
+   when the helper is hired; WSI is separate). Save the CP 575 PDF into the Legal folder,
+   not the repo.
+2. Twilio → Trust Hub → **Business Profile**: legal name exactly as on the SOS filing, EIN,
+   the 2114 S 20th St address, authorized rep Keaton Ellingson / Owner, website
+   pickitupe.com, industry "Home services". Approval is usually same-day.
+3. Then the steps below.
+
 ## Set-up (about 20 minutes, Keaton does the account parts)
 
 ### 1. Twilio account + toll-free number
@@ -62,6 +93,7 @@ Phone Numbers → your number → **Voice & Fax**:
 | `TWILIO_AUTH_TOKEN` | same page — **secret** |
 | `TWILIO_FROM` | the toll-free number in E.164, e.g. `+18005550100` |
 | `OWNER_CELL` | `7012133969` (optional — this is the default) |
+| `TWILIO_SMS_ENABLED` | leave **unset** until the toll-free verification email says approved; then `true` |
 
 Copy each straight from the Twilio console into Netlify. Redeploy ("Trigger deploy") so the
 functions pick them up. With any of the three Twilio keys missing the webhooks answer 503 and

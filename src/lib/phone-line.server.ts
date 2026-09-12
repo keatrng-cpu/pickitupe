@@ -41,6 +41,19 @@ export function twilioConfigured() {
   return Boolean(process.env.TWILIO_ACCOUNT_SID?.trim() && process.env.TWILIO_AUTH_TOKEN?.trim() && process.env.TWILIO_FROM?.trim());
 }
 
+/**
+ * Outbound texts from a toll-free number are blocked by the carriers until
+ * Twilio's toll-free verification is approved (error 30032) — and that
+ * verification needs the LLC's EIN. Voice works from day one. So the line
+ * runs in two stages: TWILIO_SMS_ENABLED unset → voice-only (greeting sends
+ * callers to the site, no text-back, owner alerts by email only); set to
+ * "true" once the verification email arrives → texts to the caller and the
+ * owner's cell turn on. Nothing else changes.
+ */
+export function smsEnabled() {
+  return twilioConfigured() && /^(1|true|yes)$/i.test(process.env.TWILIO_SMS_ENABLED?.trim() ?? "");
+}
+
 /** The URL Twilio actually requested, rebuilt from our public origin — the signature covers it. */
 export function publicUrl(path: string, search = "") {
   const base = (process.env.BETTER_AUTH_URL || process.env.VITE_SITE_URL || "https://pickitupe.com").trim().replace(/\/$/, "");
@@ -98,13 +111,28 @@ export function say(text: string) {
   return `<Say voice="${VOICE}">${escXml(text)}</Say>`;
 }
 
-/** The greeting the caller hears when Keaton can't pick up. */
+/** The greeting the caller hears when Keaton can't pick up — the text-back version. */
 export const GREETING =
   "Hey, you've reached Keaton at Pick It Up E — leaves, junk and gutters in Grand Forks. " +
   "I'm on a job right now, so I just texted you a link to grab a day on the calendar; it takes about two minutes. " +
   "Or leave your address and what you need after the tone and I'll call you back within the hour.";
 
+/** Same greeting while texting is still off — points at the site by name instead. */
+export const GREETING_NO_SMS =
+  "Hey, you've reached Keaton at Pick It Up E — leaves, junk and gutters in Grand Forks. " +
+  "I'm on a job right now. The fastest way to grab a day is the website: pick it up e dot com — that's P-I-C-K, I-T, U-P, the letter E, dot com. " +
+  "Or leave your address and what you need after the tone and I'll call you back within the hour.";
+
+export function greeting() {
+  return smsEnabled() ? GREETING : GREETING_NO_SMS;
+}
+
 export const AFTER_MESSAGE = "Got it — thanks. Check your texts for the booking link, and I'll call you back shortly. Talk soon.";
+export const AFTER_MESSAGE_NO_SMS = "Got it — thanks. I'll call you back shortly, and the website's open anytime. Talk soon.";
+
+export function afterMessage() {
+  return smsEnabled() ? AFTER_MESSAGE : AFTER_MESSAGE_NO_SMS;
+}
 
 /** What the caller receives by text, from the Twilio number. */
 export function textBack(site: string) {
@@ -164,14 +192,18 @@ export async function alertOwner(input: { channel: string; phone: string; transc
   const when = new Date().toLocaleString("en-US", { timeZone: "America/Chicago", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   const site = publicUrl("");
   const jobsUrl = input.bookingId ? `${site}/jobs/${input.bookingId}` : `${site}/jobs`;
-  const doc = leadEmail({ ...input, when, jobsUrl });
+  const doc = leadEmail({ ...input, when, jobsUrl, textedBack: smsEnabled() });
   const ownerCell = (process.env.OWNER_CELL || PHONE).trim();
   const smsBody =
     `${input.channel} ${input.phone}` +
-    (input.transcript ? ` — "${input.transcript.slice(0, 220)}${input.transcript.length > 220 ? "…" : ""}"` : " — no message, they got the booking text") +
+    (input.transcript
+      ? ` — "${input.transcript.slice(0, 220)}${input.transcript.length > 220 ? "…" : ""}"`
+      : smsEnabled()
+        ? " — no message, they got the booking text"
+        : " — no message left") +
     ` · ${jobsUrl}`;
   const [sms, mail] = await Promise.all([
-    sendSms(ownerCell, smsBody),
+    smsEnabled() ? sendSms(ownerCell, smsBody) : Promise.resolve(false),
     sendEmail(process.env.OWNER_NOTIFY_EMAIL?.trim() || "pickitupe@gmail.com", doc.subject, doc.text, doc.html),
   ]);
   return { sms, mail };

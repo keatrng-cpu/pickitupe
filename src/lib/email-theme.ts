@@ -245,15 +245,17 @@ export type LeadEmailInput = {
   recordingUrl?: string | null;
   bookingId?: number | null;
   jobsUrl: string;
+  /** False while toll-free texting is unverified — the copy stops claiming a text went out. */
+  textedBack?: boolean;
 };
 
 /** Owner alert for a call that went to the machine. Plain shell, one button. */
 export function leadEmail(l: LeadEmailInput): EmailDoc {
   const body = `
     <p style="margin:18px 0 0">${esc(l.channel)} from <b>${esc(l.phone)}</b> at ${esc(l.when)}.</p>
-    ${l.transcript ? `<p style="margin:14px 0 0;padding:14px 16px;background:#fff8ea;border-left:4px solid ${C.gold};border-radius:8px;font-size:15px;white-space:pre-wrap">${esc(l.transcript)}</p>` : `<p style="margin:14px 0 0;color:${C.muted}">No message left. They got the text with the booking link.</p>`}
+    ${l.transcript ? `<p style="margin:14px 0 0;padding:14px 16px;background:#fff8ea;border-left:4px solid ${C.gold};border-radius:8px;font-size:15px;white-space:pre-wrap">${esc(l.transcript)}</p>` : `<p style="margin:14px 0 0;color:${C.muted}">No message left.${l.textedBack === false ? " They heard the website in the greeting." : " They got the text with the booking link."}</p>`}
     ${l.recordingUrl ? `<p style="margin:14px 0 0;font-size:14px"><a href="${esc(l.recordingUrl)}" style="color:${C.sioux}">Play the voicemail</a></p>` : ""}
-    <p style="margin:14px 0 0;font-size:15px">Call back within the hour — the text told them you would.</p>`;
+    <p style="margin:14px 0 0;font-size:15px">Call back within the hour — the ${l.textedBack === false ? "greeting" : "text"} told them you would.</p>`;
   return {
     subject: `${l.channel}: ${l.phone}${l.transcript ? ` — "${l.transcript.slice(0, 60)}${l.transcript.length > 60 ? "…" : ""}"` : ""}`,
     text: `${l.channel} from ${l.phone} at ${l.when}.\n${l.transcript ?? "No message left."}\n${l.recordingUrl ?? ""}\n${l.jobsUrl}`.trim(),

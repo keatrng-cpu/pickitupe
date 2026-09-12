@@ -21,7 +21,7 @@ export const Route = createFileRoute("/api/voice/missed")({
         const via = p.ForwardedFrom ? ` (forwarded from ${p.ForwardedFrom})` : "";
         const lead = await m.findOrCreateCallLead(from, `Missed call${via} · ${p.CallSid ?? ""}`.trim());
 
-        if (lead) {
+        if (lead && m.smsEnabled()) {
           const sent = await m.sendSms(lead.phone, m.textBack(m.publicUrl("")));
           const { logEvent } = await import("@/lib/owner-schema");
           const { getSql } = await import("@/lib/db");
@@ -30,11 +30,11 @@ export const Route = createFileRoute("/api/voice/missed")({
 
         const q = lead ? `?lead=${lead.id}` : "";
         return m.twiml(
-          m.say(m.GREETING) +
+          m.say(m.greeting()) +
             `<Record maxLength="120" timeout="4" playBeep="true" trim="trim-silence"` +
             ` action="${m.publicUrl("/api/voice/after", q)}" method="POST"` +
             ` transcribe="true" transcribeCallback="${m.publicUrl("/api/voice/voicemail", q)}"/>` +
-            m.say("I didn't catch a message — no problem, the text has the link. Bye for now."),
+            m.say(m.smsEnabled() ? "I didn't catch a message — no problem, the text has the link. Bye for now." : "I didn't catch a message — no problem, the website's open anytime. Bye for now."),
         );
       },
     },
