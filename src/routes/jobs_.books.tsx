@@ -12,7 +12,7 @@ import {
   type YearBooks,
 } from "@/lib/books";
 import { suggestAddresses } from "@/lib/service-area";
-import { updateExpense } from "@/lib/receipts";
+import { resolveRebate, updateExpense } from "@/lib/receipts";
 import { ReceiptDrop } from "@/components/receipt-drop";
 import {
   DEDUCTION_CHECKLIST,
@@ -148,6 +148,7 @@ function Summary({ data, reload }: { data: YearBooks; reload: () => void }) {
           tone={a.netCents >= 0 ? "ok" : "warn"}
         />
       </div>
+      {data.settings.rebates.length ? <RebatesOwed data={data} reload={reload} /> : null}
       <p className="mt-3 text-xs text-muted">
         This year: start-up {money(t.phases.startup)} · equipment {money(t.phases.equipment)} · operating {money(t.phases.operating)}.
         {" "}{a.receipts} receipt{a.receipts === 1 ? "" : "s"} on file{a.needsReview ? ` · ${a.needsReview} flagged "check" in Expenses` : ""}.
@@ -222,6 +223,69 @@ function Summary({ data, reload }: { data: YearBooks; reload: () => void }) {
   );
 }
 
+function RebatesOwed({ data, reload }: { data: YearBooks; reload: () => void }) {
+  const [busy, setBusy] = useState<number | null>(null);
+  const total = data.settings.rebates.reduce((s, r) => s + r.cents, 0);
+  return (
+    <div className="mt-4 rounded-2xl border border-gold/40 bg-bg-deep/40 p-4">
+      <p className="text-xs tracking-[0.25em] text-gold">REBATES OWED TO YOU · {money(total)}</p>
+      <ul className="mt-2 divide-y divide-border text-sm">
+        {data.settings.rebates.map((r) => (
+          <li key={r.receiptId} className="flex flex-wrap items-center justify-between gap-2 py-2">
+            <span>
+              <b>{r.vendor}</b> {money(r.cents)}
+              {r.rebateNumber ? ` · #${r.rebateNumber}` : ""}
+              {r.purchaseDate ? ` · bought ${fmtDate(r.purchaseDate)}` : ""}
+              {r.mailBy ? <span className="text-muted"> · mail by {fmtDate(r.mailBy)}</span> : null}
+              {" · "}
+              <a href={`/api/receipt/${r.receiptId}`} target="_blank" rel="noreferrer noopener" className="text-gold hover:underline">
+                slip
+              </a>
+            </span>
+            <span className="flex gap-2">
+              <button
+                type="button"
+                className={cn(ghostBtnCls, "h-9")}
+                disabled={busy === r.receiptId}
+                onClick={async () => {
+                  setBusy(r.receiptId);
+                  try {
+                    await resolveRebate({ data: { receiptId: r.receiptId, action: "received" } });
+                    reload();
+                  } finally {
+                    setBusy(null);
+                  }
+                }}
+              >
+                Received — book it
+              </button>
+              <button
+                type="button"
+                className="text-xs text-muted hover:text-gold"
+                disabled={busy === r.receiptId}
+                onClick={async () => {
+                  setBusy(r.receiptId);
+                  try {
+                    await resolveRebate({ data: { receiptId: r.receiptId, action: "dismiss" } });
+                    reload();
+                  } finally {
+                    setBusy(null);
+                  }
+                }}
+              >
+                dismiss
+              </button>
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-xs text-muted">
+        Menards pays in merchandise credit. "Received" books it as a credit against Equipment (fix the category on the row if the purchase was something else) — a vendor rebate lowers what the gear cost, it isn't income.
+      </p>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 
 function JobPicker({ jobs, value, onChange }: { jobs: YearBooks["jobs"]; value: string; onChange: (v: string) => void }) {
@@ -253,7 +317,7 @@ function Expenses({ data, reload }: { data: YearBooks; reload: () => void }) {
   async function submit(e: FormEvent) {
     e.preventDefault();
     const n = Math.round(Number(amount) * 100);
-    if (!Number.isFinite(n) || n <= 0) return;
+    if (!Number.isFinite(n) || n === 0) return;
     setBusy(true);
     try {
       await addExpense({
@@ -279,7 +343,7 @@ function Expenses({ data, reload }: { data: YearBooks; reload: () => void }) {
           <input type="date" value={spentOn} onChange={(e) => setSpentOn(e.target.value)} className={cn(inputCls, "mt-1")} />
         </label>
         <label className="text-xs text-muted">
-          Amount $
+          Amount $ (negative = refund or rebate received)
           <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className={cn(inputCls, "mt-1")} placeholder="0.00" />
         </label>
         <label className="text-xs text-muted">

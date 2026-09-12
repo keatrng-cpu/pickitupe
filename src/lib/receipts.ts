@@ -48,7 +48,19 @@ export type ScanResult =
     }
   | { status: "duplicate"; receiptId: number | null; expenseId: number | null; extracted: Extracted | null; message: string }
   | { status: "not-a-receipt"; receiptId: number; extracted: Extracted | null; message: string }
+  | { status: "rebate"; receiptId: number; extracted: Extracted; rebate: PendingRebate; message: string }
   | { status: "error"; message: string };
+
+/** A rebate slip the owner still has to mail in / is waiting on. Stored in owner_settings as `rebate:<receiptId>`. */
+export type PendingRebate = {
+  receiptId: number;
+  vendor: string;
+  cents: number;
+  rebateNumber: string | null;
+  purchaseDate: string | null;
+  mailBy: string | null;
+  createdAt: string;
+};
 
 export type Extracted = {
   isReceipt: boolean;
@@ -62,6 +74,9 @@ export type Extracted = {
   items: { description: string; qty: number | null; amountCents: number | null; serial: string | null }[];
   confidence: "high" | "medium" | "low";
   summary: string;
+  rebateCents: number | null;
+  rebateNumber: string | null;
+  mailBy: string | null;
 };
 
 const extractedSchema = z.object({
@@ -86,6 +101,9 @@ const extractedSchema = z.object({
     .default([]),
   confidence: z.enum(["high", "medium", "low"]).default("medium"),
   summary: z.string().max(240).default(""),
+  rebate_cents: z.number().int().min(0).max(100_000_000).nullable().default(null),
+  rebate_number: z.string().max(40).nullable().default(null),
+  mail_by: z.string().max(20).nullable().default(null),
 });
 
 function systemPrompt(businessStart: string) {
@@ -94,8 +112,8 @@ function systemPrompt(businessStart: string) {
 
 Return ONLY a JSON object, no prose, no code fence, with exactly these keys:
 {
-  "is_receipt": boolean,            // false for anything that is not proof of a business purchase (a menu, a photo of a yard, a marketing flyer)
-  "document_type": "receipt" | "invoice" | "statement" | "order-confirmation" | "other",
+  "is_receipt": boolean,            // true only for proof of a completed business purchase. false for rebate slips, menus, flyers, photos of a yard
+  "document_type": "receipt" | "invoice" | "statement" | "order-confirmation" | "rebate" | "other",
   "vendor": string,                 // the seller, e.g. "Acme Tools", "Menards", "Grand Forks Landfill"
   "date": "YYYY-MM-DD" | null,      // the purchase/transaction date printed on it; null if none
   "total_cents": integer,           // the amount actually paid, in cents (grand total incl. tax, after discounts)
@@ -104,13 +122,17 @@ Return ONLY a JSON object, no prose, no code fence, with exactly these keys:
   "paid_with": "card" | "cash" | "check" | "unknown",
   "items": [{"description": string, "qty": number|null, "amount_cents": integer|null, "serial": string|null}],
   "confidence": "high" | "medium" | "low",
-  "summary": string                 // one line a bookkeeper would write, e.g. "Backpack blower, Hackzall kit, 3 batteries, 2 blades"
+  "summary": string,                // one line a bookkeeper would write, e.g. "Backpack blower, Hackzall kit, 3 batteries, 2 blades"
+  "rebate_cents": integer | null,   // ONLY for document_type "rebate": the rebate amount owed back, in cents
+  "rebate_number": string | null,   // ONLY for rebates: the offer / rebate number printed on it (e.g. "5003")
+  "mail_by": "YYYY-MM-DD" | null    // ONLY for rebates: the deadline to submit, if stated (e.g. "one year from purchase date" → purchase date + 1 year)
 }
 
 Category keys:
 ${cats}
 
 Rules:
+- A Menards "Rebate Receipt" / 11% rebate slip, a mail-in rebate form, or a rebate confirmation is document_type "rebate" with is_receipt false: fill vendor, date (the purchase date printed on it), rebate_cents, rebate_number, mail_by, and set total_cents to 0. It is NOT the purchase receipt.
 - Durable tools and machines (blowers, saws, batteries, chargers, vacuums, trailers, ladders) are "equipment", even when several are on one receipt.
 - Consumables (bags, tarps, straps, gloves, blades, fuel cans, oil) are "supplies". A receipt that is mostly equipment with a few consumables is "equipment".
 - Landfill / transfer-station / tipping fees are "dump-fees".
@@ -177,6 +199,9 @@ async function callModel(mime: string, base64: string, businessStart: string, hi
       items: obj.items.map((i) => ({ description: i.description, qty: i.qty, amountCents: i.amount_cents, serial: i.serial })),
       confidence: obj.confidence,
       summary: obj.summary.trim(),
+      rebateCents: obj.rebate_cents,
+      rebateNumber: obj.rebate_number?.trim() || null,
+      mailBy: obj.mail_by && /^\d{4}-\d{2}-\d{2}$/.test(obj.mail_by) ? obj.mail_by : null,
     };
   } catch (err) {
     console.error("[receipts] could not parse model output:", err, raw.slice(0, 200));
@@ -211,16 +236,23 @@ export const scanReceipt = createServerFn({ method: "POST" })
       "select id, expense_id from receipts where sha256 = $1",
       [sha],
     );
-    if (dupBytes[0]) {
+    if (dupBytes[0]?.expense_id) {
       return {
         status: "duplicate",
         receiptId: dupBytes[0].id,
         expenseId: dupBytes[0].expense_id,
         extracted: null,
-        message: dupBytes[0].expense_id
-          ? `This exact photo is already booked as expense #${dupBytes[0].expense_id}.`
-          : "This exact photo was already uploaded.",
+        message: `This exact photo is already booked as expense #${dupBytes[0].expense_id}.`,
       };
+    }
+    // Same bytes, but nothing was booked from them last time (unreadable, or a
+    // rebate slip before rebates were understood): read it again and reuse the row.
+    const orphan = dupBytes[0] ?? null;
+    if (orphan) {
+      const pending = await sql.query<{ key: string }>("select key from owner_settings where key = $1", [`rebate:${orphan.id}`]);
+      if (pending[0]) {
+        return { status: "duplicate", receiptId: orphan.id, expenseId: null, extracted: null, message: "That rebate slip is already tracked under \"Rebates owed\" on the Books page." };
+      }
     }
 
     const start = await businessStart(sql);
@@ -228,18 +260,53 @@ export const scanReceipt = createServerFn({ method: "POST" })
 
     // Store the bytes first, whatever the model said — a receipt that failed to
     // parse is still a receipt the owner wants kept.
-    const [receipt] = await sql.query<{ id: number }>(
-      `insert into receipts (mime, bytes, byte_size, sha256, extracted) values ($1, $2, $3, $4, $5) returning id`,
-      [file.mime, file.buf, file.buf.byteLength, sha, JSON.stringify({ model: RECEIPT_MODEL, raw, parsed })],
-    );
+    const extractedJson = JSON.stringify({ model: RECEIPT_MODEL, raw, parsed });
+    let receipt: { id: number };
+    if (orphan) {
+      await sql.query("update receipts set extracted = $2 where id = $1", [orphan.id, extractedJson]);
+      receipt = { id: orphan.id };
+    } else {
+      const inserted = await sql.query<{ id: number }>(
+        `insert into receipts (mime, bytes, byte_size, sha256, extracted) values ($1, $2, $3, $4, $5) returning id`,
+        [file.mime, file.buf, file.buf.byteLength, sha, extractedJson],
+      );
+      receipt = inserted[0];
+    }
+
+    if (parsed && parsed.documentType === "rebate" && (parsed.rebateCents ?? 0) > 0) {
+      const mailBy = parsed.mailBy ?? (parsed.date ? addOneYear(parsed.date) : null);
+      const rebate: PendingRebate = {
+        receiptId: receipt.id,
+        vendor: parsed.vendor || "Rebate",
+        cents: parsed.rebateCents ?? 0,
+        rebateNumber: parsed.rebateNumber,
+        purchaseDate: parsed.date,
+        mailBy,
+        createdAt: new Date().toISOString(),
+      };
+      await sql.query(
+        `insert into owner_settings (key, value, updated_at) values ($1, $2, now())
+         on conflict (key) do update set value = excluded.value, updated_at = now()`,
+        [`rebate:${receipt.id}`, JSON.stringify(rebate)],
+      );
+      const implied = Math.round(rebate.cents / 0.11);
+      return {
+        status: "rebate",
+        receiptId: receipt.id,
+        extracted: parsed,
+        rebate,
+        message: `${rebate.vendor} rebate slip — $${(rebate.cents / 100).toFixed(2)} owed back to you${rebate.rebateNumber ? ` (rebate #${rebate.rebateNumber})` : ""}${rebate.purchaseDate ? ` on the ${rebate.purchaseDate} purchase` : ""}${/menards/i.test(rebate.vendor) ? `, which puts that purchase near $${(implied / 100).toFixed(2)} before tax` : ""}. Tracked under "Rebates owed" on the Books page${mailBy ? ` — mail it by ${mailBy}` : ""}. The purchase itself needs the long register receipt.`,
+      };
+    }
 
     if (!parsed || !parsed.isReceipt || parsed.totalCents <= 0) {
+      const kind = parsed?.documentType && parsed.documentType !== "other" ? parsed.documentType.replaceAll("-", " ") : "document";
       return {
         status: "not-a-receipt",
         receiptId: receipt.id,
         extracted: parsed,
         message: parsed && !parsed.isReceipt
-          ? `That reads as a ${parsed.documentType || "document"}, not a purchase. Kept the file; add the expense by hand if it belongs.`
+          ? `That's ${/^[aeiou]/i.test(kind) ? "an" : "a"} ${kind}, not a purchase receipt. Kept the file; add the expense by hand if it belongs.`
           : "Couldn't read a total off it. Kept the file; add the amount by hand.",
       };
     }
@@ -369,6 +436,61 @@ export const updateExpense = createServerFn({ method: "POST" })
     if (data.note !== undefined) put("note", data.note);
     await sql.query(`update expenses set ${sets.join(", ")} where id = $1`, vals);
     return { ok: true as const, phase };
+  });
+
+function addOneYear(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${y + 1}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+/**
+ * Rebate arrived (or the owner gave up on it). "received" books the credit as a
+ * negative expense in the category of the original purchase — a vendor rebate
+ * is a purchase-price adjustment, not income — and the receipt of the check
+ * can be snapped and attached later like any other document.
+ */
+export const resolveRebate = createServerFn({ method: "POST" })
+  .middleware([sessionEmail])
+  .validator((input: unknown) =>
+    z
+      .object({
+        receiptId: z.number().int().positive(),
+        action: z.enum(["received", "dismiss"]),
+        category: z.enum(EXPENSE_CATEGORIES.map((c) => c.key) as [string, ...string[]]).optional(),
+        receivedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        amountCents: z.number().int().min(1).max(100_000_000).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const sql = await ownerSql(context.email);
+    const rows = await sql.query<{ value: string }>("select value from owner_settings where key = $1", [`rebate:${data.receiptId}`]);
+    if (!rows[0]) return { ok: true as const, expenseId: null };
+    const rebate = JSON.parse(rows[0].value) as PendingRebate;
+    let expenseId: number | null = null;
+    if (data.action === "received") {
+      const cents = data.amountCents ?? rebate.cents;
+      const category = data.category ?? "equipment";
+      const on = data.receivedOn ?? new Date().toISOString().slice(0, 10);
+      const start = await businessStart(sql);
+      const [row] = await sql.query<{ id: number }>(
+        `insert into expenses (spent_on, vendor, category, amount_cents, paid_with, note, receipt_id, phase, review)
+         values ($1,$2,$3,$4,null,$5,$6,$7,'reviewed') returning id`,
+        [
+          on,
+          rebate.vendor,
+          category,
+          -Math.abs(cents),
+          `Rebate received${rebate.rebateNumber ? ` #${rebate.rebateNumber}` : ""}${rebate.purchaseDate ? ` on ${rebate.purchaseDate} purchase` : ""} — reduces that cost`,
+          rebate.receiptId,
+          phaseFor(category, rebate.purchaseDate ?? on, start),
+        ],
+      );
+      expenseId = row.id;
+      await sql.query("update receipts set expense_id = $2 where id = $1 and expense_id is null", [rebate.receiptId, row.id]);
+    }
+    await sql.query("delete from owner_settings where key = $1", [`rebate:${data.receiptId}`]);
+    return { ok: true as const, expenseId };
   });
 
 /** Bytes for /api/receipt/$id — server-only helper. */

@@ -105,6 +105,22 @@ function ResultCard({ result, onBooked, bookingId }: { result: ScanResult; onBoo
 
   if (result.status === "error") return <p className="text-gold">{result.message}</p>;
   if (result.status === "not-a-receipt") return <p className="text-muted">{result.message}</p>;
+  if (result.status === "rebate") {
+    return (
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-medium">
+            Rebate owed to you: {result.rebate.vendor} · {money(result.rebate.cents)}
+            <span className="ml-2 rounded-full border border-gold px-2 py-0.5 text-[11px] text-gold">tracked</span>
+          </p>
+          <p className="text-muted">{result.message}</p>
+        </div>
+        <a href={`/api/receipt/${result.receiptId}`} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-1 text-xs text-gold hover:underline">
+          <FileText className="size-3.5" /> view slip
+        </a>
+      </div>
+    );
+  }
   if (result.status === "duplicate") {
     return (
       <div>

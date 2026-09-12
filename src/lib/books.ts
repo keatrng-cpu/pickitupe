@@ -90,6 +90,8 @@ export type TripRow = {
 
 export type OwnerSettings = {
   businessStart: string;
+  /** Rebate slips scanned but not yet received — see resolveRebate in receipts.ts. */
+  rebates: { receiptId: number; vendor: string; cents: number; rebateNumber: string | null; purchaseDate: string | null; mailBy: string | null; createdAt: string }[];
   homeAddress: string;
   homeLat: number;
   homeLon: number;
@@ -132,7 +134,18 @@ async function loadSettings(sql: Sql): Promise<OwnerSettings> {
   const checks: Record<string, boolean> = {};
   for (const [k, v] of map) if (k.startsWith("check:")) checks[k.slice(6)] = v === "1";
   const start = map.get("business.startDate");
+  const rebates: OwnerSettings["rebates"] = [];
+  for (const [k, v] of map) {
+    if (!k.startsWith("rebate:")) continue;
+    try {
+      rebates.push(JSON.parse(v));
+    } catch {
+      // a malformed row is ignored, not fatal
+    }
+  }
+  rebates.sort((a, b) => (a.mailBy ?? "9999").localeCompare(b.mailBy ?? "9999"));
   return {
+    rebates,
     businessStart: start && /^\d{4}-\d{2}-\d{2}$/.test(start) ? start : DEFAULT_BUSINESS_START,
     homeAddress: map.get("home.address") ?? "",
     homeLat: num("home.lat") ?? HOME.lat,
@@ -428,7 +441,8 @@ export const addExpense = createServerFn({ method: "POST" })
         spentOn: DATE,
         vendor: z.string().trim().max(120).optional(),
         category: CATEGORY,
-        amountCents: z.number().int().min(1).max(10_000_000),
+        // negative = a refund or rebate received against that category; never zero
+        amountCents: z.number().int().min(-10_000_000).max(10_000_000).refine((n) => n !== 0),
         paidWith: z.enum(["card", "checking", "personal", "cash"]).optional(),
         bookingId: z.number().int().positive().nullable().optional(),
         note: z.string().trim().max(400).optional(),
