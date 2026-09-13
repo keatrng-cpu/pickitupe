@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pick It Up E — Business Plan, Fall 2026 → Spring 2027</title>
+<style>
+  @page { size: Letter; }
+  :root {
+    --green: #064e2a; --deep: #04351c; --sioux: #009a44; --gold: #8a7a4f; --gold-light: #d4c4a0;
+    --paper: #f3ead6; --print: #3c1e14; --mahogany: #4a2418; --muted: #6b5a4e; --rule: #e2d9c4;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font: 9.7pt/1.42 "Segoe UI", Arial, Helvetica, sans-serif; color: #1d1d1b; }
+  h1, h2, h3, h4 { font-family: Georgia, "Times New Roman", serif; color: var(--green); margin: 0; }
+  h1 { font-size: 26pt; line-height: 1.1; }
+  h2 { font-size: 16pt; margin: 0 0 5pt; padding-bottom: 4pt; border-bottom: 2.5pt solid var(--gold-light); page-break-after: avoid; }
+  h3 { font-size: 12pt; margin: 10pt 0 3pt; color: var(--deep); page-break-after: avoid; }
+  h4 { font-size: 10.8pt; margin: 9pt 0 3pt; color: var(--mahogany); page-break-after: avoid; }
+  p { margin: 0 0 6pt; }
+  ul, ol { margin: 0 0 6pt 0; padding-left: 16pt; }
+  li { margin: 0 0 2.5pt; }
+  li > ul, li > ol { margin-top: 2pt; }
+  a { color: var(--green); text-decoration: none; }
+  b { color: #111; }
+  section { page-break-before: always; }
+  section.cont { page-break-before: auto; }
+  .kicker { font-size: 8pt; letter-spacing: 0.26em; text-transform: uppercase; color: var(--sioux); font-weight: 600; margin-bottom: 4pt; }
+  table { width: 100%; border-collapse: collapse; margin: 5pt 0 8pt; font-size: 8.4pt; page-break-inside: auto; }
+  thead { display: table-header-group; }
+  tr { page-break-inside: avoid; }
+  th { text-align: left; background: var(--green); color: #f6efdf; padding: 4pt 5pt; font-weight: 600; font-size: 8.4pt; }
+  td { padding: 3.6pt 5pt; border-bottom: 0.6pt solid var(--rule); vertical-align: top; }
+  tr:nth-child(even) td { background: #faf6ec; }
+  td.num, th.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .box { border: 1pt solid var(--gold-light); border-left: 5pt solid var(--gold-light); background: #fbf7ee; padding: 6pt 9pt; margin: 7pt 0; border-radius: 3pt; }
+  .box.do { border-color: var(--sioux); background: #eef7f0; }
+  .box.stop { border-color: #a8412a; background: #fbeeea; }
+  .box.money { border-color: var(--mahogany); background: #f6efe6; }
+  .box .t { font-family: Georgia, serif; font-weight: 700; color: var(--deep); margin-bottom: 3pt; }
+  .n0 { color: var(--muted); font-size: 8.6pt; }
+  .small { font-size: 8.8pt; color: var(--muted); }
+  .two { column-count: 2; column-gap: 18pt; }
+  .stat { display: inline-block; width: 31%; margin: 0 1% 8pt 0; vertical-align: top; border-top: 3pt solid var(--gold-light); padding-top: 4pt; }
+  .stat .v { font-family: Georgia, serif; font-size: 18pt; color: var(--green); }
+  .stat .l { font-size: 8.4pt; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); }
+  .cover { page-break-before: auto; height: 9.2in; display: flex; flex-direction: column; justify-content: space-between; }
+  .cover .band { background: var(--green); color: #ede3d0; padding: 26pt 28pt; border-radius: 8pt; }
+  .cover .band h1 { color: #ede3d0; font-size: 30pt; }
+  .cover .band .sub { color: var(--gold-light); font-size: 12pt; margin-top: 8pt; font-family: Georgia, serif; }
+  .cover .meta { font-size: 9.5pt; color: var(--muted); }
+  .cover .quote { font-family: Georgia, serif; font-size: 15pt; color: var(--mahogany); border-left: 4pt solid var(--gold-light); padding-left: 12pt; margin: 22pt 0; }
+  .toc li { margin-bottom: 3pt; }
+  .chk li { list-style: none; position: relative; padding-left: 16pt; }
+  .chk li:before { content: "☐"; position: absolute; left: 0; top: -1pt; color: var(--gold); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10pt; }
+  .tag { display: inline-block; font-size: 7.6pt; padding: 1pt 5pt; border: 0.7pt solid var(--gold-light); border-radius: 8pt; color: var(--mahogany); margin-left: 3pt; vertical-align: middle; }
+  hr { border: 0; border-top: 0.7pt solid var(--rule); margin: 8pt 0; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ COVER -->
+<div class="cover">
+  <div>
+    <div class="band">
+      <div class="kicker" style="color:#d4c4a0">Pick It Up E LLC · Grand Forks, ND · East Grand Forks, MN</div>
+      <h1>The Business Plan</h1>
+      <div class="sub">Fall 2026 → Spring 2027 · rank first, fill the truck, keep the cash</div>
+    </div>
+    <div class="quote">Price before you call. Book in 60 seconds.<br>Leaves gone before the city vacuum.</div>
+    <p>This is the working document for one truck, one owner and up to two helpers. It says what to do this week, what to do every Monday, what a job is worth, how many jobs make what profit, and what not to do. Every external number carries its source in Appendix B; every internal number comes from the pricebook or the books, never from feel. Numbers marked <span class="n0">n=0</span> are estimates that the first season's data will replace — the crew clock, the <code>?s=</code> source tags and the Google review count are the three that matter most.</p>
+    <div>
+      <div class="stat"><div class="v"><!--MODEL:breakEven--> jobs</div><div class="l">a month covers the nut</div></div>
+      <div class="stat"><div class="v">20 reviews</div><div class="l">by Nov 12 wins the leaf pack</div></div>
+      <div class="stat"><div class="v">Oct 6 – Nov 8</div><div class="l">the leaf season, by the weather</div></div>
+    </div>
+  </div>
+  <div class="meta">
+    Prepared 13 September 2026 from live research (competitors, local search, Census, city code, MN/ND tax, industry economics) verified against primary sources, plus the repository's pricebook and books. Owner copy — contains cost and compliance detail; the crew portal shows none of it.<br>
+    <b>Contents</b> — 1 The plan on one page · 2 This week · 3 Market &amp; competitors · 4 Positioning &amp; offer · 5 Ranking playbook · 6 Customer engine · 7 Operations · 8 Money: jobs → profit · 9 Compliance &amp; risk · 10 Scorecard · 11 Roadmap &amp; triggers · 12 What not to do · 13 The 13-week calendar · A Model assumptions · B Sources
+  </div>
+</div>
+
+<!-- ============================================================ 1 ONE PAGE -->
+<section>
+  <div class="kicker">1</div>
+  <h2>The plan on one page</h2>
+  <p><b>The bet.</b> In Greater Grand Forks nobody local ranks a real leaf-cleanup page, nobody publishes a leaf or gutter price, no junk hauler offers a live estimate or online booking, and East Grand Forks has no real local result for junk or leaves at all. The site already automates estimate → booking → $50 deposit → confirmation → owner board → crew portal → mileage → receipts. So the next 60 days go to the two things that move a Google local pack — a completely built Google Business Profile (≈25–32% of pack weight) and steady review velocity (≈20%) — plus five unique service pages, while the truck works Saturdays and two evenings a week around the W-2 job.</p>
+  <p><b>The position.</b> Three services, one truck, flat prices shown before the call, booked in a minute with a $50 deposit that comes off the bill. Leaves priced by the lot; junk by the truck bed; single-story gutters from the ground with no ladder on the siding. The Fargo franchises drive 75 miles; we are on Belmont Road.</p>
+  <p><b>Ranking verdict for day 60 (Nov 12).</b> #1 organic and top-3 pack for <i>leaf cleanup / leaf removal Grand Forks</i> (the pack is mowing companies with 54–89 reviews and no leaf page); #1 organic for every <i>East Grand Forks</i> term; #1–2 organic for <i>yard debris removal Grand Forks</i>; #2–3 in the junk pack behind Haul Away Junk &amp; Demo (≈110 reviews, not beatable on reviews in 60 days); pack entry only for gutters (incumbents at 121 and 76). Brand term "Pick It Up E" owns page 1 by Sept 27.</p>
+  <div class="box money"><div class="t">The money, in one line</div>
+    A job keeps about <b><!--MODEL:blended--></b> (solo, blended fall mix). The fixed nut the business must clear is <b><!--MODEL:fixed--> a month</b>, so <b><!--MODEL:breakEven--> jobs a month</b> covers it and everything past that is profit before tax. Four jobs a Saturday for nine Saturdays (36 jobs) clears about <b>$3,900 after tax</b>; six a week (54 jobs) about <b>$6,600</b>. The full ladder is in §8.
+  </div>
+  <div class="box stop"><div class="t">Five things block hauling legally, and they happen this week (§2, §9)</div>
+    <ol>
+      <li><b>Bind the general-liability policy</b> (NEXT quote ≈$85/mo) — the hauler permit, landlord COIs and Local Services Ads all need it.</li>
+      <li><b>File the Grand Forks private-hauler permit</b> (City Code §13-0406.1, $75, council approval, bond + proof of liability). "Rubbish" in that code includes lawn clippings and discarded furniture — leaf hauls and junk hauls both need it. Until it issues: sell rake-to-the-curb leaf jobs (no hauling on city streets) and haul only outside city limits.</li>
+      <li><b>Get a written yes/no from GF Finance</b> (701-746-2664) on whether hanging a door hanger without knocking is "door-to-door sales" under Ordinance 4707 — before the hangers go out.</li>
+      <li><b>Call Progressive and disclose business use</b> — a personal auto policy typically excludes hauling for pay; a claim during a paid haul is deniable today.</li>
+      <li><b>EIN the day the LLC shows active</b> (~Sept 18), then the Minnesota Tax ID before any East Grand Forks job — Minnesota taxes all three services (8.375% sales tax on leaf and gutter work, 9.75% solid-waste tax on junk hauls); North Dakota taxes none of them.</li>
+    </ol>
+  </div>
+  <p><b>Weekly rhythm.</b> Monday, 60 minutes at the desk (reviews, GBP post, staggered review asks, block-deal texts, scorecard). Thursday, 45 minutes (Facebook groups on their promo day, two property-manager calls, Saturday routing by street). Saturday on the truck, clustered by street, 20–30 hangers on every block worked. Ads only Oct 1–Nov 15, only on leaf terms, $15 a day, with a kill rule.</p>
+</section>
+
+<!-- ============================================================ 2 THIS WEEK -->
+<section>
+  <div class="kicker">2</div>
+  <h2>This week — Sept 14–20, in dependency order</h2>
+  <p class="small">What blocks what: GL insurance → hauler permit → Local Services Ads. LLC active → EIN → Minnesota Tax ID, WSI, Twilio toll-free verification, bank account. Nothing below needs a second person.</p>
+  <div class="grid2">
+    <div>
+      <h4>Monday — legal and money (2 h)</h4>
+      <ul class="chk">
+        <li>Bind NEXT general liability, $1M/$2M. Download the certificate of insurance.</li>
+        <li>Call GF Finance 701-746-2620 / GFlicensing@grandforksgov.com: request the <b>Private Collector of Rubbish, Construction Refuse and White Goods</b> permit application; ask the bond amount and the next City Council agenda date. Write both on the §9 table.</li>
+        <li>Email slundmark@grandforksgov.com (Finance, 701-746-2664): "Is leaving a printed door hanger on a doorknob, without knocking or speaking, 'door-to-door sales' under Ordinance 4707?" Keep the reply in <code>print/DOOR-HANGER.md</code>.</li>
+        <li>Call Public Works 701-738-8740: does a commercial pickup dumping loose leaves at 724 N 47th St pay anything? (It is the one unverified per-job cost.) Submit the Landfill Waste Profile Form.</li>
+        <li>Call Progressive: disclose business use, get the commercial-auto (or business-use) quote. Add hired &amp; non-owned auto if a helper will ever drive.</li>
+      </ul>
+      <h4>Tuesday — the ranking foundation (2 h)</h4>
+      <ul class="chk">
+        <li>Google Business Profile, complete (§5 Day 0–7 list): 4 categories, 6 priced services, hours Mon–Sat 7–8, 20 photos, 8 Q&amp;A, first post, messaging on, website link <code>pickitupe.com/?s=gbp</code>.</li>
+        <li>Copy the GBP "Get more reviews" link and fix <code>REVIEW_URL</code> — today every review ask lands on a Maps <i>search</i> page, not the write-a-review box. Highest-leverage 20 minutes in this plan.</li>
+        <li>Citations with identical name / phone / city / URL: Bing Places (import from GBP), Apple Business Connect, Yelp, Nextdoor business page, Facebook page, BBB free profile.</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Wednesday — the site (2 h)</h4>
+      <ul class="chk">
+        <li>Home H1 with the service and the city; "East Grand Forks" and the neighborhoods in body text; unique titles on <code>/book</code> and <code>/call</code>; canonical on every route; footer NAP block matching GBP character-for-character; JSON-LD with geo, hours, service area, sameAs.</li>
+        <li>Request indexing in Search Console for <code>/</code>, <code>/book</code>, <code>/call</code>, <code>/plan</code>, <code>/landlords</code>, <code>/about</code> (only the home page is indexed today).</li>
+        <li>Decide the promo: hangers now go out after Sept 20, so extend <code>PROMO_DEADLINE</code> to Oct 10 or the printed "lock by Sept 20" reads as expired the day it's hung.</li>
+      </ul>
+      <h4>Thursday — people (45 min)</h4>
+      <ul class="chk">
+        <li>Join the five Facebook groups (§6); read each group's promo-day rule.</li>
+        <li>Two property-manager calls from the §6 list; ask who handles December turnovers.</li>
+        <li>EIN at irs.gov the moment the SOS shows the LLC active (10 minutes, free). Then Twilio Business Profile → toll-free number → verification (PHONE-LINE.md).</li>
+      </ul>
+      <h4>Friday / Saturday — the street</h4>
+      <ul class="chk">
+        <li>Hangers arrive Sept 17. Hang only after Finance answers; 9am–8pm; knob only, never the mailbox (18 U.S.C. §1725); skip every house with a no-soliciting or no-trespassing sign.</li>
+        <li>First jobs: rake-to-curb leaf work and jobs outside city limits until the permit issues; take deposits for October dates inside the city.</li>
+        <li>Photos of the truck and every job for GBP (no faces without permission).</li>
+      </ul>
+    </div>
+  </div>
+  <div class="box do"><div class="t">The load-bearing assumption nobody has written down</div>
+    Every capacity number in this plan assumes the truck runs <b>Saturdays plus two weekday evenings</b> around the W-2 job — about 18–20 truck hours a week, 6–7 jobs solo, 8–10 with a helper on leaf days. If PTO can cover the two city-vacuum weeks (tentatively Oct 19–30), the base case rises from ~36 to ~55 jobs. Decide the PTO by Oct 1 and write it on the calendar in §13.
+  </div>
+</section>
+
+<!-- ============================================================ 3 MARKET -->
+<section>
+  <div class="kicker">3</div>
+  <h2>Market &amp; competitors</h2>
+  <h3>Who holds each Google result today</h3>
+  <p class="small">Review counts are from Sept 13 search snippets and third-party profiles; Google Maps itself could not be read from this session — log the real 3-pack every Friday from a phone in Grand Forks (§10).</p>
+  <table>
+    <thead><tr><th>Search</th><th>Who ranks</th><th>What they have</th><th>What they lack</th><th class="num">Reviews</th></tr></thead>
+    <tbody>
+      <tr><td>junk removal Grand Forks</td><td>Haul Away Junk &amp; Demo (2023, BBB A+)</td><td>Six service pages, organic #1–3, Angi 5.0</td><td>No prices, no online booking, no yard/leaf service</td><td class="num">≈110 Google</td></tr>
+      <tr><td>junk removal Grand Forks</td><td>Junk Bros (phone-only), Forks Clearview (2025)</td><td>Junk Bros also lists yard work and gutter clearing</td><td>No website, no prices, phone booking</td><td class="num">unknown</td></tr>
+      <tr><td>junk removal Grand Forks</td><td>Get'ErDone Moving</td><td>The only published local rate: junk $125/hour; Thumbtack 4.7 (93)</td><td>Sells time, not a flat quote</td><td class="num">93 Thumbtack</td></tr>
+      <tr><td>junk (organic)</td><td>LoadUp, Grunber, HitJunk, 1-800-GOT-JUNK</td><td>National doorway pages; LoadUp publishes pickup from $85, yard debris from $115</td><td>No local crew; 1-800-GOT-JUNK and College Hunks dispatch from Fargo, 75 miles</td><td class="num">national</td></tr>
+      <tr><td>leaf removal / fall cleanup Grand Forks</td><td>Meticulous Mowing, PRO Land | Snow, Lost Limb Logging, Lawn King, Reco, Custom Works</td><td>Mowing and tree companies; fall cleanup is a sideline</td><td>No leaf page, no per-lot price, no online booking; "estimate within a week"</td><td class="num">54–89 Google (top 4)</td></tr>
+      <tr><td>leaf (organic)</td><td>City of Grand Forks, Angi, lead-gen doorways</td><td>The free city vacuum page</td><td>No local specialist page ranks — the most winnable term</td><td class="num">—</td></tr>
+      <tr><td>leaves + junk + gutters together</td><td>Rachel's Property Solutions</td><td>Online booking, "from $30"</td><td>Pet-waste business first; no estimate widget, no job prices</td><td class="num">unknown</td></tr>
+      <tr><td>gutter cleaning Grand Forks</td><td>First Class Exterior Cleaning, Absolute Glass (Jobber booking, Google Guaranteed)</td><td>Window-cleaning firms</td><td>No published price; nobody sells "single-story, from the ground"</td><td class="num">121 / 76</td></tr>
+      <tr><td>anything + East Grand Forks</td><td>nobody local</td><td>855/833 numbers and doorway pages</td><td>Open lane</td><td class="num">—</td></tr>
+    </tbody>
+  </table>
+  <p><b>The open lane:</b> nobody in the market combines leaves + junk + gutters with a published price, a live estimate, online booking and a deposit. That is the position; the pack and the five pages are how the market finds it.</p>
+
+  <h3>Demand you are selling into</h3>
+  <div class="stat"><div class="v">11,169</div><div class="l">owner-occupied detached houses (GF + EGF)</div></div>
+  <div class="stat"><div class="v">4,431</div><div class="l">owner householders 65+ — the first segment</div></div>
+  <div class="stat"><div class="v">1,195</div><div class="l">renter-occupied houses — the landlord segment</div></div>
+  <p>29,616 occupied households across both cities (ACS 2024 5-year). Estimated paid leaf cleanups per fall ≈1,400–2,100 <span class="n0">(n=0 — inferred from a 36% any-pro yard-service hire rate)</span>; paid junk hauls ≈1,500 a year; single-story gutter jobs ≈750–1,100 a year. Fifty leaf jobs is 2–4% of the market. The door hangers aim at the ~3,400 owner-occupied single-family 65+ households: the one segment where the hire rate is high enough to make a 500-card drop pay, and the same people who cannot lift a couch or climb for gutters.</p>
+
+  <h3>The clock</h3>
+  <table>
+    <thead><tr><th>Date</th><th>What happens</th><th>What it means for the calendar</th></tr></thead>
+    <tbody>
+      <tr><td>Sept 17–20</td><td>Hangers arrive; promo deadline (extend to Oct 10)</td><td>Pre-book with deposits; sell "before the city vacuum"</td></tr>
+      <tr><td>~Sept 28 / Oct 6</td><td>First 32°F / first 28°F (NWS normals)</td><td>Leaves drop; leaf season opens</td></tr>
+      <tr><td>Oct 5–9</td><td>East Grand Forks Fall Cleanup — free curbside bulky pickup</td><td>Sell EGF junk as "what the city won't take"; junk demand pulls to the week before and two weeks after</td></tr>
+      <tr><td>Week of Oct 19 (tentative)</td><td>Grand Forks street leaf-vacuum starts (Oct 17 / 23 / 21 / 20 in 2022–25), routes run to mid-Nov, loose leaves within 3 ft of the curb, no bags</td><td>The demand engine, not a competitor: the paid job is raked to the curb before the street's pass. Schedule by route week</td></tr>
+      <tr><td>Oct 26 / Nov 8</td><td>Median first measurable snow / median first 1-inch snow</td><td>Plan leaf work to end Nov 8; Nov 9–20 overflow only, weather-permitting</td></tr>
+      <tr><td>Nov 16–30</td><td>47% of days already have 1"+ snow cover</td><td>Junk and gutters only; winter escrow must be funded</td></tr>
+      <tr><td>Mid-Dec / late May</td><td>UND semester turnovers</td><td>Landlord packs</td></tr>
+      <tr><td>Apr 16 – May 15</td><td>Spring window (last 32°F ≈ May 14); GF Spring Cleanup ~May 11–15, EGF ~May 18–22</td><td>Two-visit plan customers first; junk pulls into the two weeks before each cleanup week</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================================================ 4 POSITIONING -->
+<section>
+  <div class="kicker">4</div>
+  <h2>Positioning &amp; offer</h2>
+  <p><b>One line, everywhere</b> (hero, GBP description, every page intro, the phone greeting): <i>Price before you call. Book in 60 seconds. Leaves gone before the city vacuum.</i></p>
+  <table>
+    <thead><tr><th>Service</th><th>Pricebook (src/lib/pricebook.ts — the only place prices live)</th><th>How to sell it</th></tr></thead>
+    <tbody>
+      <tr><td><b>Fall leaf &amp; yard cleanup</b></td><td>$32–46 per 1,000 sq ft on city lots → 5,000 sf $160–230 · 7,500 sf $240–345 · 12,000 sf corner $335–490 · half acre $530–780 · acre $840–1,260</td><td>"Raked, tarped and hauled — or piled at the curb the week before your street's vacuum pass." The city takes loose leaves only, no bags, within 3 ft of the curb.</td></tr>
+      <tr><td><b>Junk, furniture, appliances</b></td><td>Bags or one piece $59–95 · a few pieces $85–130 · half bed $125–195 · full bed $175–265 · two trips $245–365 · cleanout add-on +$50–100. Refuses paint, chemicals, oil, propane, concrete, dirt, roofing, asbestos</td><td>"Flat price by the truck bed, not by the hour." Quote under Get'ErDone's $125/hour and beside LoadUp's $85 + $15 per item.</td></tr>
+      <tr><td><b>Single-story gutters</b></td><td>$135–165 standard · $175–215 wraparound; as a leaf add-on $80–110 / $110–145</td><td>"From the ground with a 120V vacuum — no ladders on your siding. Two-story? We'll tell you straight and hand you off." The honesty the window firms can't copy.</td></tr>
+      <tr><td><b>Two-visit plan</b> (spring re-book)</td><td>Small $225 → $180/yr · standard $350 → $280 · large $575 → $460 (20% off the pair, cap $150, Stripe prepay, no deposit, never stacks)</td><td>The spring vehicle in every done text after Nov 1 — <code>/plan</code>, not an invented "$50 holds April".</td></tr>
+      <tr><td><b>Landlord packs</b></td><td>Multi-stop turnovers; deposit $75 at 2 stops, $100 at 3+, combo up to $150; net-15 invoicing</td><td>Property managers and the 1,195 rented houses; December and late May.</td></tr>
+    </tbody>
+  </table>
+  <h4>Deals already in the pricebook — they are the referral program, don't invent another</h4>
+  <ul>
+    <li><b>Promo:</b> book by Sept 20 (extend to Oct 10) for 20% off up to $75. Locks the rate, not the date. Change only <code>PROMO_DEADLINE</code> / <code>PROMO_DEADLINE_LABEL</code>.</li>
+    <li><b>Block deal:</b> two houses on one street the same day $25 off each, three or more $40 off each. Never stacks with the promo — the customer gets the bigger one. This is the neighbor engine: every booked address gets 20–30 hangers on its block.</li>
+    <li><b>$50 deposit</b> on every booking, credited to the invoice — and the cash-timing weapon: a September pre-book puts $50 in the account six weeks before the leaves fall.</li>
+  </ul>
+  <div class="box"><div class="t">The one pricing decision to make now</div>
+    During Grand Forks route weeks (about Oct 19 – Nov 13) quote the <b>low end</b> of the leaf range for rake-to-the-curb jobs and the <b>high end</b> for full tarp-and-haul. Both are inside the published range, so no price is invented — and it makes the curb-pile job, the one with no dump run and the best cash per hour (§8), the default inside city limits. Also: the single-item junk job ($59–95) barely covers its own dump run and drive — take it only chained to another stop on the same street, and chain two half-beds onto one landfill run ($23 minimum either way).
+  </div>
+  <h4>How to say it, by surface</h4>
+  <ul>
+    <li><b>Against the Fargo franchises:</b> "1-800-GOT-JUNK drives 75 miles from Fargo. We're on Belmont Road."</li>
+    <li><b>Against the free city vacuum:</b> "City pickup starts the third week of October and won't take bags. We rake to the curb before your street's week — or haul it all, any week you pick."</li>
+    <li><b>Against hourly junk:</b> "Flat price by the truck bed. No clock running."</li>
+    <li><b>In East Grand Forks:</b> don't fight the city's $12 furniture / $25 appliance pickups on price — sell cleanouts, same-day, no-lift, and what the city won't take. Show the Minnesota tax line on the estimate rather than eating it.</li>
+  </ul>
+</section>
+
+<!-- ============================================================ 5 RANKING -->
+<section>
+  <div class="kicker">5</div>
+  <h2>Ranking playbook — the local pack and organic, 30 / 60 / 90</h2>
+  <p><b>How the pack is scored in 2026:</b> GBP signals ≈25–32%, reviews ≈20%, behavior (clicks, calls, directions) ≈18%, links 15%, on-page 12%, citations 7%. Top individual factors: primary category, proximity to the searcher, rating, review count with text, recency, sustained review velocity, open at time of search. Two hard constraints: a home-based service business must hide its address (proximity still computes from it), and reviews may not be incentivized, gated, or solicited by staff quota.</p>
+  <table>
+    <thead><tr><th>Term</th><th>Now</th><th>Day-60 target (Nov 12)</th><th>Lever</th></tr></thead>
+    <tbody>
+      <tr><td>leaf cleanup / leaf removal grand forks</td><td>Pack = mowing companies (54–89 reviews, no leaf page); organic = city page, Angi, doorways</td><td><b>Pack top 3, organic #1</b></td><td>/leaf-cleanup-grand-forks; GBP service "Fall leaf cleanup from $160"; reviews that mention leaves (never dictated)</td></tr>
+      <tr><td>junk removal grand forks</td><td>Haul Away ≈110 reviews</td><td>Pack #2–3, organic top 3 among locals</td><td>Primary category Junk removal service; /junk-removal-grand-forks; LSA unit above the pack once GL is bound</td></tr>
+      <tr><td>yard debris / yard waste removal grand forks</td><td>LoadUp doorway</td><td>Organic #1–2</td><td>Section on the junk page + GBP service "Yard debris haul"</td></tr>
+      <tr><td>gutter cleaning grand forks</td><td>121 / 76 reviews</td><td>Pack entry, organic top 3</td><td>/gutter-cleaning-grand-forks; don't chase the gutter pack this year — sell gutters as the add-on</td></tr>
+      <tr><td>junk / leaves east grand forks</td><td>No real locals</td><td><b>Organic #1</b>; pack depends on proximity</td><td>/east-grand-forks; EGF in service area; EGF street names and the Oct 5–9 cleanup week in copy</td></tr>
+      <tr><td>"pick it up e"</td><td>No third-party footprint</td><td>Page 1 owned by Sept 27</td><td>GBP + six citations</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Day 0–7 (Sept 13–20): GBP complete, review link fixed, footprint created</h3>
+  <ol>
+    <li>Primary category <b>Junk removal service</b> (year-round commercial intent; there is no leaf category). Secondaries: Lawn care service, Gutter cleaning service, Debris removal service. Four, no more.</li>
+    <li>Address hidden; service area Grand Forks, East Grand Forks, Thompson, Manvel, Emerado, GFAFB.</li>
+    <li>Hours Mon–Sat 7:00–20:00 through Nov 15 ("open at time of search"); special hours for Thanksgiving.</li>
+    <li>Services with pricebook prices: Fall leaf cleanup from $160 · Junk haul from $59 · Full-bed haul from $175 · Single-story gutter cleaning from $135 · Leaves + gutters add-on from $80 · Cleanout add-on +$50.</li>
+    <li>Description (≤750 characters) opening with the one-liner, naming both cities, the city vacuum, the $50 deposit and the refuse list. Website <code>pickitupe.com/?s=gbp</code>, appointment link <code>pickitupe.com/book?s=gbp</code> — the source tag separates GBP bookings on the board.</li>
+    <li>20 photos now (truck, logo tile, work photos, gutter vacuum in use, a landfill scale ticket, tarp loads), then 2–3 a week from jobs. One post every Monday; the first is the promo.</li>
+    <li>Seed 8 Q&amp;A from the site FAQ: bags or loose, what we won't haul, two-story gutters, the deposit, do you do EGF, the block deal, city vacuum dates, same-day.</li>
+    <li>Messaging on; reply within the hour.</li>
+    <li>Read Reviews → Get more reviews → copy the <code>g.page/r/…/review</code> link into <code>REVIEW_URL</code>. Every done text, review text and email button reads that one constant.</li>
+  </ol>
+  <p><b>On-page fixes (30 min):</b> home H1 "Leaf cleanup &amp; junk hauling in Grand Forks. We haul it. You don't."; East Grand Forks and the neighborhoods (Lincoln Park, Belmont Rd, Reeves Dr, Clover Dr, University Park) in body text; unique titles and descriptions for <code>/book</code> and <code>/call</code>; canonical on every route; footer NAP block identical to GBP; JSON-LD with geo, hours, service area as City objects, sameAs and the truck image. No aggregateRating — self-serving review markup is ineligible.</p>
+  <p><b>Citations, one afternoon, identical NAP:</b> Bing Places (import from GBP, sync on), Apple Business Connect (service-area, no address), Yelp free page, Nextdoor business page (the hanger zones are Nextdoor neighborhoods — 47 in Grand Forks), Facebook page, BBB free profile (Haul Away is the only accredited GF junk business). Add each URL to sameAs. Skip paid Angi / HomeAdvisor / Thumbtack.</p>
+
+  <h3>Day 8–30 (Sept 21 – Oct 13): five pages, first reviews, LSA application</h3>
+  <table>
+    <thead><tr><th>URL</th><th>Title</th><th>What makes it not a doorway page</th></tr></thead>
+    <tbody>
+      <tr><td>/leaf-cleanup-grand-forks</td><td>Leaf Cleanup &amp; Removal in Grand Forks, ND — Done Before the City Vacuum | Pick It Up E</td><td>Per-1,000 sf price table, rake-to-curb vs haul, curb rules, route weeks ("2026 tentatively the week of Oct 19"), neighborhoods, block deal</td></tr>
+      <tr><td>/junk-removal-grand-forks</td><td>Junk Removal &amp; Hauling in Grand Forks, ND — Priced by the Truck Bed | Pick It Up E</td><td>Bed-size table, refuse list, where it goes (landfill $23 minimum, yard-waste site, Minnkota scrap — the disposal story LoadUp can't tell), yard-debris section, same-day</td></tr>
+      <tr><td>/gutter-cleaning-grand-forks</td><td>Single-Story Gutter Cleaning in Grand Forks, ND — From the Ground, No Ladders | Pick It Up E</td><td>$135–215, add-on $80–145, two-story handoff, why before freeze-up (ice dams), what the 120V vacuum does</td></tr>
+      <tr><td>/east-grand-forks</td><td>Leaf Cleanup, Junk Removal &amp; Gutters in East Grand Forks, MN | Pick It Up E</td><td>Fall Cleanup Oct 5–9 and what it does NOT take, the city's $12/$25 pickups vs our cleanouts, the MN tax line explained, EGF streets</td></tr>
+      <tr><td>/reviews</td><td>Pick It Up E Reviews — Grand Forks Customers</td><td>Real Google reviews quoted as text (no rating schema); ship once five exist</td></tr>
+    </tbody>
+  </table>
+  <p class="small">Each 400–700 unique words, pricebook numbers, its own FAQ + Service JSON-LD, three real photos with alt text, canonical, sitemap entry, footer link; request indexing the day it ships. Do not clone pages for Thompson / Manvel / Emerado — city-swap pages are doorway spam and still penalized.</p>
+  <div class="box do"><div class="t">The review engine — the 20% — and its rules</div>
+    The ask is neutral and identical for every completed job, sent by text the morning after from the site (never a helper's phone), one follow-up at 48 hours, then stop. Never tied to the promo or block deal, never gated, never "mention Keaton", no helper or family reviews, never posted from your phone or hotspot (shared-device clustering trips Google's filter). After a block Saturday, stagger the asks over two or three mornings so the velocity looks organic. Reply to every review within 24 hours naming the service and the neighborhood. <b>Targets: 8 by Oct 13 · 20 by Nov 12 · 28 by Dec 12</b>, 3–6 a week and never more than five in one day. That needs about 40% of jobs to review <span class="n0">(n=0)</span> — if it reads under 30% on Oct 13, add the 48-hour follow-up and a QR card on the paper invoice.
+  </div>
+  <p><b>Local Services Ads:</b> the day GL binds and the EIN exists, apply for zip 58201 in Rubbish removal, Lawn care and Window cleaning (covers gutters). Screening takes 3–4 weeks, so a Sept 25 application puts the Google Guaranteed unit above the 3-pack for junk terms by late October. Weekly budget $60, pay per lead. North Dakota availability is unverified — get a documented yes or no.</p>
+
+  <h3>Day 31–60 (Oct 14 – Nov 12): behavior and links; the copy flips</h3>
+  <ul>
+    <li>The hangers' QR (<code>?s=dh</code>), the Facebook posts and a priced GBP description drive branded searches and pack clicks (behavioral, ≈18%).</li>
+    <li>Links a solo owner can actually get: a "before the city vacuum" fall-prep item pitched to the Grand Forks Herald and KNOX community desks; a landlord note to the Greater Grand Forks Apartment Association linking <code>/landlords</code>; the Chamber member listing; UND off-campus housing for December turnover hauls; the Senior Center's Silver Express newsletter if the ad is under ~$50.</li>
+    <li>Around Oct 20 the copy flips from "before the city vacuum" to "the vacuum missed it / gutters now that the leaves are down."</li>
+    <li>Every Friday, run the seven searches from a phone in Grand Forks and log the 3-pack in the scorecard.</li>
+  </ul>
+  <h3>Day 61–90 (Nov 13 – Dec 12): hold velocity, bank the data</h3>
+  <p>Review floor three a month from junk work; spring-plan copy in done texts; write the season's cost per lead by <code>?s=</code> source into <code>PRICEBOOK.md</code>; GBP posts continue weekly (junk, cleanouts, "before the snow").</p>
+</section>
+
+<!-- ============================================================ 6 CUSTOMER ENGINE -->
+<section>
+  <div class="kicker">6</div>
+  <h2>Customer engine — channels, cadence, scripts</h2>
+  <table>
+    <thead><tr><th>Channel</th><th>Verdict</th><th>Cost</th><th>Leads / week at steady state <span class="n0">(n=0)</span></th></tr></thead>
+    <tbody>
+      <tr><td>Google Business Profile + reviews</td><td><b>Build</b> — the only channel that ranks and books</td><td>$0</td><td>2 until 10 reviews; 6–8 after</td></tr>
+      <tr><td>Door hangers (500 in hand; second 500 for Oct 2–3)</td><td><b>Keep</b></td><td>$0.10–0.40 per house; 1–3% response over 1–3 weeks</td><td>5–15 responses per 500 → ~4/week for 3 weeks; break-even is one leaf job</td></tr>
+      <tr><td>Facebook groups (not Marketplace — service listings get pulled)</td><td><b>Build</b></td><td>$0</td><td>3–5; 78% of homeowners pick the first responder — answer threads within the hour</td></tr>
+      <tr><td>Nextdoor page + Faves; $10/day boost in the 4 hanger zones Oct 1–21</td><td>Build</td><td>≈$210</td><td>2–3</td></tr>
+      <tr><td>Google Ads, leaf / yard-waste terms only, Oct 1–Nov 15</td><td>Run small</td><td>$15/day; CPC ≈$7.27, ≈20% click-to-lead, ≈$36/lead</td><td>≈3</td></tr>
+      <tr><td>Local Services Ads</td><td>Apply when GL binds</td><td>$60/week, per lead</td><td>2–3 once live</td></tr>
+      <tr><td>Block deal · repeat · two-visit plan</td><td><b>Build</b></td><td>$0</td><td>2–4 from week 4</td></tr>
+      <tr><td>Property managers, realtors, apartment association</td><td>Build</td><td>Calls</td><td>1–2 from Oct 15; lumpy but high-ticket</td></tr>
+      <tr><td>Thumbtack ($8–20/lead shared with 4–5 pros) · Angi ($300/yr + $15–55/lead) · Yelp Ads ($150/mo min) · Herald print</td><td><b>Skip</b></td><td>—</td><td>—</td></tr>
+    </tbody>
+  </table>
+  <p>Total 20–30 leads a week at peak → 8–12 jobs at a ~45% close, which is the capacity ceiling anyway. Paid spend at full run ≈ $265 a week (Ads $105 + Nextdoor $70 + LSA $60 + hangers ~$30 amortized) against a $234-a-week nut. <b>Kill rule for any paid channel:</b> 14-day cost per lead over $60, close rate under 33%, or any source tag with zero bookings after $150 spent → off.</p>
+
+  <h3>The weekly cadence</h3>
+  <ul>
+    <li><b>Monday, 60 minutes at the desk:</b> reply to every review; GBP and Nextdoor photo post; staggered review asks (3–5 per morning); block-deal texts to this week's booked customers; work the follow-up queue on <code>/jobs/customers</code>; fill the scorecard (§10); check ad cost per lead; move 25% of the week's collected to the tax account.</li>
+    <li><b>Thursday, 45 minutes:</b> Facebook posts on each group's permitted day; answer every "who does gutters / who hauls a couch" thread within the hour; two property-manager calls; cluster Saturday's route by street; confirm-the-day-before texts.</li>
+    <li><b>Saturday on the truck:</b> jobs clustered by street; 20–30 hangers on the block around each job; before/after photos; mileage by leg on the job page; say only "you'll get a text tomorrow" — no review pressure on the premises.</li>
+  </ul>
+
+  <h3>The customer's nine touches — what's built, what to add</h3>
+  <table>
+    <thead><tr><th>#</th><th>Touch</th><th>When</th><th>Built / to add</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Door hanger</td><td>Fridays, 9am–8pm, knob only</td><td>Built — QR carries <code>?s=dh</code></td></tr>
+      <tr><td>2</td><td>Estimate + booking</td><td>60 seconds</td><td>Built — hero widget → /book → $50 Stripe deposit</td></tr>
+      <tr><td>3</td><td>Confirmation</td><td>The moment the deposit clears</td><td>Built — themed email + text with the ticket, the three "what happens next" steps, add-to-calendar</td></tr>
+      <tr><td>4</td><td>Confirm the day before</td><td>6–8 pm</td><td>Built — one-tap "confirm the date" text</td></tr>
+      <tr><td>5</td><td>Morning-of window</td><td>7:30 am job day</td><td><b>To add</b> — the confirmation email promises it: "Morning, {first} — you're on today between 9 and 11. Nothing to prep. Silver crew cab."</td></tr>
+      <tr><td>6</td><td>On site</td><td>Inside the window</td><td>Built — crew "we're here" text; the 12-point card (§7)</td></tr>
+      <tr><td>7</td><td>Done</td><td>Before the truck leaves the curb</td><td>Built — done text with invoice less deposit + review link; done email</td></tr>
+      <tr><td>8</td><td>Review nudge</td><td><b>Next morning 9 am</b> (not two days), one nudge, then stop</td><td><b>To change</b> — the follow-up queue fires at two days today</td></tr>
+      <tr><td>9a</td><td>Neighbor / block offer</td><td>Monday after the job</td><td>Built — "neighbor" text template</td></tr>
+      <tr><td>9b</td><td>Spring re-book</td><td>In done texts after Nov 1</td><td><b>To add</b> — "Same yard next spring: the two-visit plan is $280 for a standard lot, spring visit first. pickitupe.com/plan"</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Scripts (plain text, under 320 characters where texted)</h3>
+  <ul>
+    <li><b>Review ask, next morning:</b> "Morning [First] — thanks for having us out yesterday. If we did right by you, a Google review helps the next neighbor find us. 30 seconds: [link] — Pick It Up E"</li>
+    <li><b>48-hour follow-up, once:</b> "[First], one nudge and then we'll leave you be — the review link again: [link]. Thanks either way."</li>
+    <li><b>Block deal, Monday after booking:</b> "Hi [First] — we're on [Street] on [Saturday]. If a neighbor books the same day you both get $25 off ($40 each at three houses). Send them pickitupe.com. — Pick It Up E"</li>
+    <li><b>Gutter add-on, the day before a leaf job (after Oct 20):</b> "While we're there tomorrow: single-story gutters from the ground, $80–110 on top of the leaves. Reply YES and it's on the ticket."</li>
+    <li><b>Promo close, Sept 19 / Oct 9:</b> "Last day to lock 20% off (up to $75) on fall leaves, junk or gutters — price shows before you book: pickitupe.com. Rate locks now, date is yours to pick. — Pick It Up E"</li>
+    <li><b>Property-manager call:</b> "I run a one-truck haul-out and yard crew in town. For turnovers I do haul-out, gutters and yard in one visit, flat price per stop, net-15 invoice, and I'm on Belmont Road so same-day is real. Who handles your December turnovers?" — Goldmark 701-780-9901 · Hampton 701-775-5544 · IMM 701-746-9551 · Elite 701-746-7368 · Dakota Commercial 701-757-4603 · Oxford Realty 701-772-2522.</li>
+    <li><b>Facebook group post:</b> "Leaves, junk, single-story gutters — Grand Forks and EGF. Price shows on the site before you call (a 5,000 sq ft lot runs $160–230), book in a minute, $50 deposit comes off the bill. pickitupe.com/?s=fb"</li>
+  </ul>
+  <p class="small"><b>Groups to join:</b> Greater Grand Forks Buy &amp; Sell (58K) · Grand Forks Buy&amp;Sell (53K) · Grand Forks Raves Reviews and RANTS (24K) · Grand Forks Rants, Raves, &amp; Reviews (17K — self-promo only on its designated day) · the public "without dirty deletes" group (6K) · Grand Forks ND Buy Sell Trade (9K). One plain post per group per week, photo of the truck bed, price anchor from the pricebook. The owner's personal profile shares the page post — that is the East Grand Forks reach too.</p>
+</section>
+
+<!-- ============================================================ 7 OPERATIONS -->
+<section>
+  <div class="kicker">7</div>
+  <h2>Operations — the truck-day, drop sites, crew rules, the phone</h2>
+  <h3>Saturday shape, leaf season</h3>
+  <ol>
+    <li><b>6:45 load:</b> blower, rakes, two tarps, 20 bags, 20–30 hangers, gutter vacuum only if a YES came back.</li>
+    <li><b>7:15–10:00 junk first:</b> two half-bed jobs in one zone → one landfill run, on the scale by 10:30 (Saturday closes at 11:00).</li>
+    <li><b>10:45–16:30 leaf block:</b> three or four houses on one street. In a route week, rake to the curb — no haul, no dump run. Outside route weeks or in EGF, tarp-and-haul: about one yard-waste run per 1.5 loads <span class="n0">(a 7,500 sf lot is 1–2 heaped beds of loose leaves — n=0, measure it on job one)</span>.</li>
+    <li>Log each leg on the job page as you go (home → job → drop → next job); photos before and after; final number before anything moves.</li>
+    <li>Home by 17:00. Say "text tomorrow", nothing else.</li>
+  </ol>
+  <p><b>Weekday evenings (Tue/Thu 17:00–19:00):</b> one junk pickup or one gutter job; the load stays in the bed and goes to the landfill next day before 4 or first thing Saturday. No weekday leaf hauls — no daylight after mid-October and no yard-waste hours confirmed.</p>
+  <div class="box"><div class="t">Route-density rules</div>
+    <ol>
+      <li>A lone booking in a new zone waits for a second before it gets a Saturday — unless it is a full-bed junk or a leaf + gutter bundle.</li>
+      <li>Every booked address triggers 20–30 hangers on that block the same Saturday with the block deal.</li>
+      <li>Target 1.5 jobs per dump run; the board's same-day clusters show it. Two half-beds on one landfill run save $23 and about 14 miles.</li>
+      <li>Helper only on days with two or more leaf/bundle jobs; junk and gutters run solo (a helper raises the owner's take on a leaf lot and lowers it on junk and gutters — §8).</li>
+    </ol>
+  </div>
+  <h3>Drop sites (already placed in the app — Books › Setup › Where loads go)</h3>
+  <table>
+    <thead><tr><th>Debris</th><th>Site</th><th>From the hanger zones</th><th>Cost</th><th>Hours</th></tr></thead>
+    <tbody>
+      <tr><td>Junk, furniture, household waste</td><td>Grand Forks Landfill, 2701 N 69th St</td><td>6–8 mi, 14–17 min</td><td>$23 minimum (covers ~770 lb at $59.54/ton); inert $30.42/ton; tires $10–125. A heaped 2.5 cu yd bed of household junk is ~400 lb — <b>every load pays the minimum, so the lever is loads per run</b></td><td>Mon–Fri 8–4, Sat 8–11, Sun closed</td></tr>
+      <tr><td>Leaves, yard waste</td><td>Public Works yard-waste site, 724 N 47th St (commercial haulers must use this, the landfill, or DeMers &amp; 5th Ave S)</td><td>4–6 mi, 10–13 min</td><td>No fee published — modeled $12 a load; <b>call 701-738-8740 to confirm</b></td><td>Not posted — ask</td></tr>
+      <tr><td>Scrap, appliances</td><td>Minnkota Recycling, 2004 DeMers Ave (701-746-9600)</td><td>2–3 mi</td><td>May pay for metal; appliance/freon fee unpublished. Separate metal in the bed — it skips the landfill fee</td><td>Ask</td></tr>
+      <tr><td>EGF leaves (commercial)</td><td>EGF Public Works, 1001 2nd St NE</td><td>4 mi</td><td>$100/yr + $10 a visit — or haul EGF leaves to the GF yard-waste site</td><td>Mon–Fri 7–3:30 only</td></tr>
+    </tbody>
+  </table>
+  <p class="small">Never present a commercial load as a resident's free household drop-off. Keep every scale ticket — snap it into Books, it lands as a dump fee on the job.</p>
+
+  <div class="grid2">
+    <div>
+      <h3>The 12-point card in the truck</h3>
+      <ol>
+        <li>Arrive inside the texted window; if 15+ late, send "running late" from the crew portal first.</li>
+        <li>Park on the street or driveway — never the lawn (ruts are the #1 fall complaint).</li>
+        <li>Knock once; no answer → "we're here" text; start on leaves/gutters; junk inside needs someone 18+.</li>
+        <li>60-second walk with the customer (or a photo text): confirm scope, point out anything on the refuse list, check for two-story gutters — hand off, don't climb.</li>
+        <li><b>Say the final number before anything moves.</b> "Estimate was $240–345; it's a standard lot, so $285 less your $50 — $235."</li>
+        <li>Before photo, wide, no faces.</li>
+        <li>Leaves: rake, tarp, load, blow beds and walk, sweep the drive, close the gate. Gutters: vacuum, flush downspouts, bag the muck. Junk: load, strap, sweep the spot.</li>
+        <li>After photo from the same spot.</li>
+        <li>Collect the balance on the spot (card link, cash, check, Venmo — recorded on the job page).</li>
+        <li>One line: "You'll get a text from us tomorrow morning — that's it." No review pressure on the premises.</li>
+        <li>Tap "done" in the crew portal; the owner marks it done → the done email goes.</li>
+        <li>Log mileage by leg before the next stop.</li>
+      </ol>
+    </div>
+    <div>
+      <h3>Crew rules</h3>
+      <ul>
+        <li>Helpers see no money — the crew portal hides estimates, deposits, payments and notes by design.</li>
+        <li>Clock in and out in the portal; every hour of the job including the drive is paid.</li>
+        <li>Texts go through the one-tap buttons so they log on the job.</li>
+        <li>No helper drives their own car on a job until hired-and-non-owned auto is on the policy.</li>
+        <li>Helpers never solicit reviews. No family reviews.</li>
+        <li>Nobody works a shift before WSI coverage is active and the payroll steps in §9 are done — the uninsured penalty is $10,000 plus $100 a day.</li>
+      </ul>
+      <h3>The phone</h3>
+      <p>701-213-3969 is the site number and the one on the hangers; 218-779-2553 stays reserved. When the EIN lands, the missed-call line goes live in two stages (PHONE-LINE.md): first voice — the greeting spells out the website, records a message, opens a lead on the board and emails you the transcript; then, once toll-free verification clears, the caller gets the booking link by text and you get the alert on your cell. Reply to every lead within the hour.</p>
+      <h3>Weather rule</h3>
+      <p>Book leaf jobs "weather-permitting". Plan the leaf season to end Nov 8; hold Nov 9–20 as overflow; after Nov 15 the calendar is junk and gutters.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 8 MONEY -->
+<section>
+  <div class="kicker">8</div>
+  <h2>Money — what a job is worth, and how many jobs make what profit</h2>
+  <p>Every number here is computed by <code>scripts/plan-model.mjs</code> from the pricebook, the city's 2026 rate sheet and the monthly obligations in Books. Change an input there, never a number on this page. Hours are <span class="n0">n=0</span> until the crew clock has ten real jobs.</p>
+  <h3>The nut — what the business must clear every month, working or not</h3>
+  <!--MODEL:fixedRows-->
+  <p class="small">The truck, warranty and auto insurance are personal obligations the business has to earn; the standard mileage rate is the whole vehicle deduction. Commercial auto is not in this list yet — add the Progressive quote the day it lands (a $100–150 delta moves break-even from <!--MODEL:breakEven--> to about 6 jobs).</p>
+
+  <h3>What each job keeps (solo)</h3>
+  <!--MODEL:perService-->
+  <p class="small">* Ticket = midpoint of the pricebook range, after the promo on 30% of jobs and the block credit on 15%. "Keeps" = ticket minus dump, truck miles at the IRS rate, card fees and consumables — before the nut and before tax. Read the last column: the single-item junk job is the one that doesn't pay unless it's chained; the leaf + gutter bundle is the best hour you can sell.</p>
+  <p><b>Blended fall mix (solo):</b> <!--MODEL:blended-->. <b>With a helper on every job:</b> <!--MODEL:blendedHelper-->. Break-even: <b><!--MODEL:breakEven--> jobs a month solo, <!--MODEL:breakEvenHelper--> with a helper</b>.</p>
+  <!--MODEL:mix-->
+
+  <h3>Jobs → profit, per month (solo)</h3>
+  <!--MODEL:ladder-->
+  <h3>Jobs → profit, per month, with a helper on every job</h3>
+  <!--MODEL:ladderHelper-->
+  <p class="small">A helper costs you about $1,000 a month at 40 jobs and gives back your Saturdays: the after-tax profit is lower but your hours drop by a third. Put the helper on leaf days only and you keep most of both.</p>
+
+  <h3>The fall season (9 weeks, solo)</h3>
+  <!--MODEL:fall-->
+  <h3>The fall season with a helper</h3>
+  <!--MODEL:fallHelper-->
+
+  <div class="box money"><div class="t">The winter escrow — the number the fall has to produce</div>
+    The nut runs all winter with no revenue. December through March is four months × <!--MODEL:fixed--> ≈ <b>$4,050</b>, plus a $1,000 repair reserve, plus November's nut and the ≈$1,340 marketing run. Call it <b>$7,400 after tax</b> banked by Nov 15 — that is <b>about 60 jobs</b> in the solo ladder above, or 6–7 a week for nine weeks. From Oct 1, every kept dollar above the current month's nut goes to the escrow until it holds that number; the two-visit plan prepayments in November and December are the cushion on top.
+  </div>
+
+  <h3>Truck-day models <span class="n0">(n=0 hours; cash kept after direct cost and a 25% set-aside)</span></h3>
+  <table>
+    <thead><tr><th>Day</th><th>Jobs</th><th class="num">Collected</th><th class="num">Direct cost</th><th class="num">Set-aside</th><th class="num">Cash kept</th><th class="num">Owner hours</th></tr></thead>
+    <tbody>
+      <tr><td>Leaf block, curb-pile, solo (route week)</td><td>3 × 7,500 sf @ $245 block price</td><td class="num">$735</td><td class="num">$34</td><td class="num">$184</td><td class="num"><b>$517</b></td><td class="num">8.0</td></tr>
+      <tr><td>Leaf block with a helper</td><td>4 × $245</td><td class="num">$980</td><td class="num">$43 + $144 helper</td><td class="num">$245</td><td class="num"><b>$548</b></td><td class="num">7.5</td></tr>
+      <tr><td>Haul day (pre-Oct 19 / EGF)</td><td>2 leaf @ $285 + 1 half bed</td><td class="num">$730</td><td class="num">$88</td><td class="num">$183</td><td class="num"><b>$459</b></td><td class="num">8.3</td></tr>
+      <tr><td>Junk + gutter day (November)</td><td>2 half + 1 full + 1 gutter, 2 landfill runs</td><td class="num">$690</td><td class="num">$99</td><td class="num">$173</td><td class="num"><b>$418</b></td><td class="num">6.0</td></tr>
+    </tbody>
+  </table>
+  <p>A full Saturday keeps $420–550. Two Saturdays cover the month; the third and fourth are profit and escrow. A $40-off block of three beats a full-price lone job per owner-hour because the drive and dump legs are shared — and the curb-pile in a route week is the best hour there is.</p>
+
+  <h3>Cash rules — every Monday on Books</h3>
+  <ol>
+    <li>25% of every dollar collected moves to the tax account. Minnesota sales and solid-waste tax collected on EGF jobs goes to a second account — it was never yours.</li>
+    <li>Deposits stay in operating and count toward the nut the week they land; a September pre-book funds September.</li>
+    <li>Reserve first: the first $1,000 kept after the September nut is the repair/permit reserve.</li>
+    <li>Winter escrow from Oct 1 (above). The nut is paid on the 1st from operating; keep a two-month floor before touching the remaining $3,138 of the equipment budget.</li>
+    <li>No equipment purchase before ten clocked jobs, and only when a roadmap trigger (§11) fires.</li>
+    <li>Paid marketing capped at $265 a week, only Oct 1–Nov 15, each channel with its kill rule.</li>
+    <li>Stripe pays out weekly; cash, check and Venmo are logged the same day so "collected" on the board stays true. Scale tickets through the receipt scanner the same day.</li>
+  </ol>
+  <p class="small"><b>Tax note.</b> The 25%-of-collected set-aside is a rule, not the liability. The model taxes profit at 30% (self-employment tax plus your federal and ND rates on top of the $55k W-2, net of the half-SE and QBI deductions); with the $1,862 of equipment deductible in year one and the 2026 mileage, the actual bill on a $6,000 season is nearer $1,500–2,000 — the CPA files the position and the surplus releases at filing. The 2026 loss or profit lands on the same 1040 as the W-2.</p>
+</section>
+
+<!-- ============================================================ 9 COMPLIANCE -->
+<section>
+  <div class="kicker">9</div>
+  <h2>Compliance &amp; risk — dated, with cost</h2>
+  <table>
+    <thead><tr><th>When</th><th>Item</th><th>Why (source in Appendix B)</th><th>Cost</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Sept 14–16</td><td><b>Bind general liability</b> $1M/$2M (NEXT)</td><td>The hauler permit, LSA screening and landlord COIs all need the certificate</td><td>≈$85/mo</td><td>Not bound</td></tr>
+      <tr><td>Sept 14–16</td><td><b>Private-hauler permit</b>, City of Grand Forks</td><td>City Code §13-0406.1: hauling "rubbish, construction refuse and/or white goods" for others on city streets needs a council-approved permit; "rubbish" is defined to include lawn clippings, tree trimmings and discarded furniture; application needs a performance bond and proof of liability; penalty up to $500 an offense. §13-0406(4): putrescible garbage may not be hauled privately at all.</td><td>$75 (2026) + bond (unpublished; small permit bonds typically $100–300/yr)</td><td>Ask the council date Monday. <b>Until it issues: rake-to-curb inside the city, haul only outside city limits, take deposits for later dates</b></td></tr>
+      <tr><td>Before hanging</td><td>Written ruling on literature drops</td><td>Ordinance 4707 (Ch. XXI Art. 12): door-to-door sales need a $500 license + $5,000 bond + 7–14-day background check; no express exemption for leaving printed literature; up to $500 a day. If "yes": pivot to handoffs, Nextdoor, GBP; check EGF's ordinance. If "no": 9am–8pm, knob only, skip posted houses (§21-1210(K)).</td><td>$0</td><td>Email sent Monday</td></tr>
+      <tr><td>Always</td><td>Knob only, never the mailbox</td><td>18 U.S.C. §1725 — up to $5,000 per offense</td><td>$0</td><td>Rule in print/DOOR-HANGER.md</td></tr>
+      <tr><td>~Sept 18</td><td>EIN at irs.gov</td><td>Gates WSI, Job Service ND, ND withholding, MN Tax ID, Twilio verification, the bank account</td><td>$0, 10 min</td><td>Waiting on SOS</td></tr>
+      <tr><td>Before the next paid haul</td><td>Commercial auto (or business-use endorsement) on the Sierra; hired &amp; non-owned if a helper drives</td><td>A personal auto policy typically excludes hauling for pay — a claim during a paid haul is deniable</td><td>Unknown until quoted</td><td>Largest uninsured exposure today</td></tr>
+      <tr><td>Before the first EGF job</td><td><b>Minnesota Tax ID</b> (e-Services) with East Grand Forks and Polk County local taxes</td><td>MN taxes fall cleanup / raking, gutter cleaning and junk removal: 8.375% combined sales tax on leaf and gutter work (6.875 + 1.0 EGF + 0.5 Polk); junk hauls fall under the 9.75% residential Solid Waste Management Tax on the same return; separately stated scrap to a recycler is exempt; no dollar threshold. North Dakota taxes none of these services.</td><td>$0, 30 min</td><td>Code: tax line keyed off the geocoded state; until registered, <b>don't accept EGF bookings</b></td></tr>
+      <tr><td>Before a helper's first shift</td><td>(1) WSI coverage active before day one, $250 minimum premium; (2) Job Service ND within 20 days of first hire — liability at $1,500 wages in a quarter (≈83 h at $18) or 20 weeks; 1.00% on the first $46,600; (3) ND withholding account, Form 306; (4) W-4 + I-9 day one, new-hire report within 20 days; (5) 941/940 via EFTPS or a payroll service</td><td>Uninsured penalty $10,000 + $100/day; W-2, never 1099 — you schedule, supervise and hand them tools</td><td>$250 WSI + payroll</td><td>Crew tab checklist exists; add the $1,500/quarter trigger</td></tr>
+      <tr><td>Now</td><td>Vehicle policy: record the Sierra's door-jamb GVWR; <b>no trailer on any Minnesota job</b></td><td>GF→EGF is interstate; truck + trailer with combined GVWR ≥10,001 lb is a federal CMV (USDOT number, driver file). Truck alone stays under. ND intrastate is exempt to 26,000 lb combined.</td><td>$0</td><td>Trailer fine on ND-only jobs</td></tr>
+      <tr><td>Ongoing</td><td>Texting: transactional only, "Reply STOP to opt out", honor opt-outs within 10 business days</td><td>TCPA consent rules; no promo blasts to call-back numbers without written consent</td><td>$0</td><td>Built into the phone line</td></tr>
+      <tr><td>Ongoing</td><td>Reviews: no incentives, no gating, no staff quotas, no dictated content, no family/helper reviews</td><td>Google Maps contribution policy (staff quotas explicit since Apr 2026)</td><td>$0</td><td>Compliant — keep it</td></tr>
+      <tr><td>Once</td><td>Landfill Waste Profile Form; keep scale tickets</td><td>§13-0406.1(6): the permit grants no dumping right until landfill rules and fees are met</td><td>$0</td><td>—</td></tr>
+      <tr><td>Verified not needed</td><td>ND contractor license · GF building-trade licenses · ND sales tax permit for GF jobs</td><td>Not construction (NDCC 43-07, $4,000/job threshold never reached); ND does not tax these services</td><td>$0</td><td>—</td></tr>
+    </tbody>
+  </table>
+  <h4>Open risks not yet priced</h4>
+  <ul>
+    <li>Bond amount and council timing for the hauler permit — if the cycle runs past Oct 1, paid hauling inside the city is illegal during peak; the mitigation is rake-to-curb jobs and out-of-city hauls.</li>
+    <li>The yard-waste drop fee for commercial loads (modeled $12, could be $0 or $23), Minnkota's appliance charge, the WSI class rate, the commercial-auto premium — each moves a job by $10–25.</li>
+    <li>Review conversion is n=0; the junk pack incumbent's ≈110 reviews cannot be passed in 60 days regardless.</li>
+    <li>Capacity, not demand, is the ceiling — without PTO in the vacuum weeks or a helper on leaf days the base case slips toward 35 jobs.</li>
+    <li>Weather ends the season on its own schedule; a late vacuum start compresses the window.</li>
+    <li>LSA availability in North Dakota is unverified; without it the junk lane stays #2–3.</li>
+    <li>The 2026 city leaf-vacuum routes are not posted; copy that promises a route week before the map exists risks being wrong on the page meant to rank.</li>
+  </ul>
+</section>
+
+<!-- ============================================================ 10 SCORECARD -->
+<section>
+  <div class="kicker">10</div>
+  <h2>Scorecard — twelve numbers, every Monday</h2>
+  <p>One row per week. Until the app has a scorecard page, keep it as a sheet named <i>Scorecard</i> in the Pick It Up E – Ops folder, and put a repeating Monday 8:00 reminder on the phone. Everything reads off the board, Books, Search Console or GBP Performance — nothing needs a new tool.</p>
+  <table>
+    <thead><tr><th>#</th><th>Metric</th><th>Read it from</th><th>Target</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Google reviews, cumulative</td><td>GBP</td><td>8 by Oct 13 · 20 by Nov 12 · 28 by Dec 12</td></tr>
+      <tr><td>2</td><td>Reviews this week (velocity)</td><td>GBP</td><td>3–6/week Oct–Nov; ≥3/month after; never more than 5 in a day</td></tr>
+      <tr><td>3</td><td>Review conversion (reviews ÷ completed jobs, trailing 3 weeks)</td><td>GBP ÷ board</td><td>≥40% — if under 30% on Oct 13, add the 48-h follow-up and the invoice QR</td></tr>
+      <tr><td>4</td><td>Pages indexed</td><td>Search Console</td><td>6 by Sept 20 · 11 by Sept 30</td></tr>
+      <tr><td>5</td><td>Pack position on the 7 tracked searches (phone, in Grand Forks, Fridays)</td><td>Manual log</td><td>Leaf top 3 by Nov 12 · junk #2–3 · EGF terms #1 organic</td></tr>
+      <tr><td>6</td><td>Search Console impressions and clicks for leaf / junk / gutter + Grand Forks</td><td>Search Console</td><td>Up week over week; ≥10 clicks/week by Nov 1</td></tr>
+      <tr><td>7</td><td>GBP actions (calls + directions + website clicks)</td><td>GBP Performance</td><td>≥15/week by Oct 20</td></tr>
+      <tr><td>8</td><td>GBP photos cumulative / posts this week</td><td>GBP</td><td>≥40 photos by Oct 13 · 1 post every Monday</td></tr>
+      <tr><td>9</td><td>Leads by source (dh / gbp / fb / ads / call / plan)</td><td>Board — bookings.source</td><td>20–30/week at peak; hangers 1–3% of 500</td></tr>
+      <tr><td>10</td><td>Jobs completed · jobs per dump run · same-street share · owner hours</td><td>Board + crew clock</td><td>6–7 solo / 8–10 with helper · ≥1.5 per run · ≥50% same street · real hours replace the n=0 estimates</td></tr>
+      <tr><td>11</td><td>Cash: collected this week · cash kept this Saturday · 25% moved · MN tax held · escrow balance</td><td>Books</td><td>≥$450 kept per full Saturday · set-aside moved every Monday · nut covered by the 1st · escrow $7,400 by Nov 15</td></tr>
+      <tr><td>12</td><td>Paid cost per lead and close rate (Ads, Nextdoor, LSA) · reply time on every lead</td><td>Ad dashboards ÷ bookings · board</td><td>Scale under $45 CPL and ≥40% close; pause over $60 or under 33% · 100% of leads answered under 4 hours</td></tr>
+    </tbody>
+  </table>
+  <p class="small">"Rank first" means, numerically: pack position 1–3 and organic position 1 on the leaf and East Grand Forks terms, logged weekly, by Nov 12. Search Console's position export is the free tracker for organic; the Friday phone check is the only honest tracker for the pack.</p>
+</section>
+
+<!-- ============================================================ 11 ROADMAP -->
+<section>
+  <div class="kicker">11</div>
+  <h2>Roadmap through spring 2027, with decision triggers</h2>
+  <ul>
+    <li><b>Sept 13 → Oct 13 — rank foundation, promo close.</b> GBP complete, review link fixed, six citations, five pages shipped, LSA applied, hauler permit filed, GL bound, EIN, MN Tax ID, first 500 hangers (after the Finance ruling), second 500 hung Oct 2–3 with the "before the city vacuum" headline. Goal: 15 booked jobs, 8 reviews, 4 property-manager conversations, LSA verified or a documented "not available".</li>
+    <li><b>Oct 14 → Nov 12 — peak.</b> Route weeks from the city's 2026 map; gutter add-on text on every leaf job after Oct 20; block days at 3+ houses per street; landlord-pack pilot with two managers; "before the snow" junk push in the first week of November. Goal: 8–12 jobs a week, 20 reviews, 2 property-manager accounts, 5 two-visit plans sold.</li>
+    <li><b>Nov 13 → Dec 12 — close-out.</b> Ads and Nextdoor off Nov 15; done texts switch to the two-visit plan; apartment-association December meeting; realtor-association affiliate join if dues are under ~$300; UND semester-end turnover hauls; cost per lead by channel into PRICEBOOK.md. Goal: 20 plans sold, 28 reviews, 3 recurring landlord accounts, one documented winner and one loser among paid channels.</li>
+    <li><b>Dec 13 → Mar 31 — winter, junk only.</b> Review floor 3/month; monthly GBP post; property-manager turnover hauls; the season's clock data rewrites the hours in §8; commercial auto and WSI in place before the first spring helper; watch for the 2027 Spring Cleanup dates.</li>
+    <li><b>Apr 1 → May 31 — spring.</b> The yard window is Apr 16 – May 15; plan customers first; junk demand pulls into the two weeks before each city cleanup week; re-run the review engine; Ads on "spring cleanup grand forks" only if fall CPL was under $45.</li>
+  </ul>
+  <table>
+    <thead><tr><th>Decision</th><th>Do it when</th><th>Don't when</th></tr></thead>
+    <tbody>
+      <tr><td><b>Second helper</b></td><td>The crew clock shows owner site hours over 20/week for three weeks AND the board shows a leaf backlog over 5 days AND there are 2+ leaf/bundle jobs per truck-day</td><td>Fall net is under $5k, or WSI / Job Service registrations aren't active</td></tr>
+      <tr><td><b>Trailer or dump trailer</b></td><td>4+ two-trip junk jobs a month for two months, or full-bed jobs exceed 40% of junk volume, AND the two-month nut floor survives the purchase</td><td>Any work crosses the river — a trailer makes GF→EGF a federal CMV. ND-only use is fine</td></tr>
+      <tr><td><b>Mowing</b></td><td>20+ two-visit plans sold AND 15+ fall customers ask unprompted AND 10 subscribers on one route inside the hanger zones (GF mowing prices at $45–49 a visit — it only pays as a dense route)</td><td>It would put you against Meticulous (61), PRO Land (89) and Lawn King (54) on their turf for a $45 ticket</td></tr>
+      <tr><td><b>Extend the promo to Oct 10</b></td><td>Now — the hangers go out after the printed date</td><td>The calendar already shows 8+ jobs a week</td></tr>
+      <tr><td><b>Scale Ads to $20/day</b></td><td>14-day CPL under $45 and close rate ≥40%</td><td>After Nov 1</td></tr>
+      <tr><td><b>Google Ads on "junk removal"</b></td><td>The calendar has holes in a week (CPC ≈$12, CPL ≈$58)</td><td>While leaf demand fills the truck</td></tr>
+      <tr><td><b>BBB accreditation</b></td><td>20+ reviews and a landlord account asks for it</td><td>Before the LLC is active</td></tr>
+      <tr><td><b>Take the shed</b> (Menards 10×12 kit, ≈$2,277 after rebate)</td><td>First $2,500 collected, or April before the mowing decision — and only if the 10-ft space clears eaves and the city setback</td><td>Out of the $5,000 equipment budget — it's a separate capital decision</td></tr>
+      <tr><td><b>Drop a paid channel</b></td><td>14-day CPL over $60, close under 33%, or $150 spent with zero bookings</td><td>—</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================================================ 12 WHAT NOT TO DO -->
+<section>
+  <div class="kicker">12</div>
+  <h2>What not to do — the cash-killers</h2>
+  <ol>
+    <li><b>Do not add a service.</b> No mowing, no snow, no two-story gutters, no demo. Each one is a new tool, a new permit question and a lower-margin hour. §11 has the only triggers that reopen this.</li>
+    <li><b>Do not take a lone job in a new zone on a Saturday</b> unless it is a full-bed junk or a bundle. Wait for the second booking or hang 30 hangers on that block first.</li>
+    <li><b>Do not haul a single half-bed to the landfill alone</b> when a second is bookable within 48 hours — that is $23 and about 14 miles thrown away per run.</li>
+    <li><b>Do not touch mailboxes, hang on posted houses, or knock</b> — the ordinance exposure is $500 a day and the federal one is $5,000 an offense.</li>
+    <li><b>Do not run paid hauls inside Grand Forks before the §13-0406.1 permit issues.</b> Take deposits, schedule for after.</li>
+    <li><b>Do not pay for shared leads</b> (Thumbtack, Angi) or for print. Do not turn on Google Ads for junk terms while leaves fill the truck.</li>
+    <li><b>Do not stack deals, invent a referral bonus, or discount for reviews.</b> The block deal is the referral program and Google bans review incentives.</li>
+    <li><b>Do not buy equipment before ten clocked jobs.</b> The $3,138 left in the budget is the winter cushion until a trigger fires.</li>
+    <li><b>Do not hire before the EIN, WSI and Job Service ND are done.</b> Do not put a helper on junk or gutter days — they lose money there.</li>
+    <li><b>Do not take an East Grand Forks job before the Minnesota Tax ID exists</b>, and never a curbside-only pickup in Minnesota.</li>
+    <li><b>Do not tow a trailer across the river for pay.</b></li>
+    <li><b>Do not book leaf work after Nov 8 as anything but "weather permitting".</b></li>
+    <li><b>Do not re-add a booking form to the home page, re-mount the falling leaves, or put the black-field truck photo back</b> — settled decisions.</li>
+    <li><b>Do not spend the tax set-aside or the winter escrow on marketing.</b> Ever.</li>
+  </ol>
+</section>
+
+<!-- ============================================================ 13 CALENDAR -->
+<section>
+  <div class="kicker">13</div>
+  <h2>The 13-week calendar</h2>
+  <table>
+    <thead><tr><th>Week</th><th>Actions</th><th class="num">Owner hours (desk + truck)</th><th>Leads / jobs <span class="n0">(n=0)</span></th></tr></thead>
+    <tbody>
+      <tr><td>1 · Sept 14–20</td><td>Bind GL; hauler permit + door-hanger ruling; fix REVIEW_URL; GBP complete; six citations; on-page fixes; hangers arrive Sept 17; promo extended to Oct 10; EIN when the SOS shows active</td><td class="num">14 + 10</td><td>5–8 / 2–3 (rake-to-curb and out-of-city until the permit issues)</td></tr>
+      <tr><td>2 · Sept 21–27</td><td>Ship /leaf-cleanup-grand-forks and /junk-removal-grand-forks, request indexing; hang the first 500 (if cleared); order a second 500; apply for LSA; MN Tax ID; Progressive quote; two PM calls; join the Facebook groups</td><td class="num">10 + 12</td><td>6–8 / 3–4</td></tr>
+      <tr><td>3 · Sept 28–Oct 4</td><td>Ship /gutter-cleaning-grand-forks and /east-grand-forks; first review asks, staggered; Google Ads live Oct 1 at $15/day on leaf terms; Nextdoor boost in the four zones; hang the second 500 Oct 2–3 ("before the city vacuum"); first freeze ~Sept 28; PTO decision by Oct 1</td><td class="num">8 + 14</td><td>8–10 / 4–5</td></tr>
+      <tr><td>4 · Oct 5–11</td><td>EGF Fall Cleanup week — sell "what the city won't take"; Herald / KNOX fall-prep pitch; ship /reviews once five exist; hard freeze ~Oct 6 drops the leaves; promo closes Oct 10</td><td class="num">6 + 16</td><td>12–15 / 5–6</td></tr>
+      <tr><td>5 · Oct 12–18</td><td>Day-30 check: 8 reviews, 11 pages indexed, LSA status; gutter add-on text on every leaf job; landlord-pack pilot with two managers</td><td class="num">6 + 18</td><td>15–20 / 6–8</td></tr>
+      <tr><td>6 · Oct 19–25</td><td>City vacuum pass 1 (tentative) — schedule by route week; block days at 3+ houses; PTO if backlog over 5 days; helper on leaf days</td><td class="num">5 + 20</td><td>20–25 / 8–10</td></tr>
+      <tr><td>7 · Oct 26–Nov 1</td><td>Peak continues; copy flips to "the vacuum missed it / gutters now"; junk push in the groups, "before the snow"</td><td class="num">5 + 20</td><td>20–25 / 8–10</td></tr>
+      <tr><td>8 · Nov 2–8</td><td>Last planned leaf week (median first 1" snow Nov 8); two-visit plan copy into done texts; apartment-association email for a December slot</td><td class="num">5 + 20</td><td>15–20 / 8–10</td></tr>
+      <tr><td>9 · Nov 9–15</td><td>Overflow leaves weather-permitting, gutters, junk; Ads and Nextdoor off Nov 15; day-60 review Nov 12: 20 reviews, pack positions logged; escrow check</td><td class="num">6 + 14</td><td>10–12 / 5–6</td></tr>
+      <tr><td>10 · Nov 16–22</td><td>Junk only; plan texts to every fall customer; write CPL by channel</td><td class="num">6 + 8</td><td>5–7 / 2–3</td></tr>
+      <tr><td>11 · Nov 23–29</td><td>Thanksgiving week; PM turnover calls for December; reply to reviews</td><td class="num">3 + 6</td><td>3–5 / 2</td></tr>
+      <tr><td>12 · Nov 30–Dec 6</td><td>Apartment-association December meeting; realtor-association decision; landlord packs invoiced net-15</td><td class="num">5 + 8</td><td>4–6 / 2–3</td></tr>
+      <tr><td>13 · Dec 7–13</td><td>UND semester-end turnover hauls; day-90 close: 28 reviews, 20 plans sold, season CPL into PRICEBOOK.md, clock data replaces the hours in §8</td><td class="num">6 + 10</td><td>5–7 / 3–4</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================================================ APPENDIX A -->
+<section>
+  <div class="kicker">Appendix A</div>
+  <h2>Model assumptions (scripts/plan-model.mjs)</h2>
+  <!--MODEL:assumptions-->
+  <p class="small">Site hours per job (solo / with helper): small lot 2.0 / 1.25 · standard lot 2.75 / 1.6 · large lot 4.0 / 2.3 · one piece 0.6 / 0.4 · half bed 1.1 / 0.7 · full bed 1.75 / 1.0 · gutters 1.1 / 0.8 · bundle 3.5 / 2.1, plus 0.6–1.0 h of drive and dump per job. All n=0 — triangulated from industry sources, not measured on a Grand Forks lot; wet or matted leaves can double them. The crew clock replaces every one of these after ten jobs.</p>
+  <h3>Five site changes this plan depends on</h3>
+  <ol>
+    <li><code>REVIEW_URL</code> → the GBP write-a-review link (20 min, highest leverage).</li>
+    <li>A morning-of text template and a two-visit-plan (spring) template; the review nudge in the follow-up queue moved to next morning.</li>
+    <li>A Minnesota tax line on the estimate, booking page and Stripe balance, keyed off the geocoded state — and no EGF bookings until the MN Tax ID exists.</li>
+    <li>The five service pages and the on-page fixes in §5; <code>?s=</code> tags on every outbound link (gbp, fb, ads, call, plan) so the scorecard reads cost per lead from the board.</li>
+    <li>Promo deadline extended to Oct 10; the Sierra's GVWR and the $1,500-per-quarter payroll trigger recorded in Books and the Crew checklist.</li>
+  </ol>
+</section>
+
+<!-- ============================================================ APPENDIX B -->
+<section>
+  <div class="kicker">Appendix B</div>
+  <h2>Sources</h2>
+  <p class="small two">
+    <b>City &amp; state.</b> Grand Forks City Code §13-0403/§13-0406/§13-0406.1 (private haulers, definitions of rubbish and white goods): library.municode.com/nd/grand_forks · 2026 City fee schedule (Private Collector of Rubbish $75; Door to Door Sales $500/$75 + $5,000 bond): grandforksgov.com/home/showpublisheddocument/58071 · Ordinance 4707 (Ch. XXI Art. 12 solicitation): grandforksgov.com/home/showpublisheddocument/28868 · Transient-merchant licensing: grandforksgov.com/…/doing-business-in-grand-forks/transient-merchant · Landfill information and hours: grandforksgov.com/…/landfill-information · 2026 sanitation rates ($23 min, $59.54/ton MSW, $30.42/ton inert, tires, special waste): grandforksgov.com/…/sanitation-rates · Yard-waste drop-off sites (commercial requirement): grandforksgov.com/…/yard-waste-drop-off-sites · Leaf collection program (2022–25 start dates, curb rules): grandforksgov.com/…/leaf-collection · Residential project guide (120 sq ft shed exemption): grandforksgov.com/…/building-safety/residential-projects · East Grand Forks 2026 sanitation calendar (Fall Cleanup Oct 5–9, $12/$25 pickups) and yard-waste site form: eastgrandforks.gov · NDCC 43-07 contractor licensing: ndlegis.gov/cencode/t43c07.pdf · ND sales tax exemptions guideline (services): tax.nd.gov · ND withholding: tax.nd.gov/business/income-tax-withholding · ND new-hire reporting: hhs.nd.gov/childsupport · WSI coverage requirements and premium ($250 minimum): workforcesafety.com · Job Service ND employer's guide ($1,500/quarter, 20 weeks): jobsnd.com · 2026 ND UI rates (1.00%, $46,600 base): Bloomberg Tax · NDHP USDOT FAQ: statepatrol.nd.gov/NDHPFAQ · FMCSA §390.5 truck + trailer guidance: fmcsa.dot.gov · 49 CFR 387.9: law.cornell.edu.<br><br>
+    <b>Minnesota tax.</b> Landscape Maintenance Services guide (raking, fall cleanup taxable): revenue.state.mn.us/guide/landscape-maintenance-services · Building Cleaning and Maintenance (gutter cleaning taxable): revenue.state.mn.us/guide/sales-building-cleaning-and-maintenance · Junk Removal guide: revenue.state.mn.us/guide/junk-removal · Solid Waste Management Tax (9.75% residential): revenue.state.mn.us/solid-waste-management-tax-information · East Grand Forks 1.0% local tax notice (July 2025): revenue.state.mn.us/sites/default/files/2025-04/east-grand-forks-general-notice.pdf · Combined 8.375%: avalara.com (verify on the MN DOR rate calculator before shipping the tax line).<br><br>
+    <b>Federal.</b> 18 U.S.C. §1725 (mailboxes): uscode.house.gov · FCC TCPA prior-express-consent rule (2023): federalregister.gov · Google Maps contribution policy (reviews): support.google.com/contributionpolicy/answer/7400114 · GBP guidelines (hidden address for home-based): support.google.com/business/answer/3038177 · Google "improve your local ranking": support.google.com/business/answer/7091 · LSA eligible categories: support.google.com/localservices/answer/12174778.<br><br>
+    <b>Market &amp; demand.</b> Census Reporter API, ACS 2024 5-year, geo_ids 16000US3832060 (Grand Forks) and 16000US2717612 (East Grand Forks), tables B25003, B25032, B25007, B11007, B19013 · NWS Grand Forks frost/freeze normals: weather.gov/fgf/frostfreeze · ACIS station data 1991–2020 (snow): data.rcc-acis.org · NWF 2025 "Leave the Leaves" survey (36% use a landscape company): nwf.org · Jobber 2026 Home Service Trends report: getjobber.com · Whitespark 2026 Local Search Ranking Factors: whitespark.ca · Door-hanger response rates: doorhangerswork.com · Google Ads landscaping/junk CPC and CPL: 99calls.com · Thumbtack and Angi lead costs 2026: auto-respond.com, leadtruffle.co · LSA cost: skillmammoth.com · Nextdoor advertising: thevalleymarketinggroup.com · Facebook Marketplace services policy: closo.co.<br><br>
+    <b>Competitors.</b> haulawayjunkdemo.com and its BBB profile · Junk Bros on Nextdoor · Forks Clearview on Yelp · geterdonemoving.com/services ($125/hr) · Thumbtack junk removal Grand Forks · Two Men and a Truck Grand Forks · 1-800-GOT-JUNK Grand Forks page (served by Fargo) · goloadup.com/junk-removal/nd/grand-forks · hitjunk.com · spicercontainerandsalvage.com · junk-king.com/locations · Angi leaf removal Grand Forks · lawnkingnd.com · icleanupgf.com (Rachel's) · Absolute Glass BBB profile · kingsleafremoval.com EGF doorway page · Minnkota Recycling (Yelp) · apartments.com property-management directory for Grand Forks.<br><br>
+    <b>Economics.</b> src/lib/pricebook.ts and PRICEBOOK.md (all prices) · Books "monthly obligations" (truck $550, warranty $220, auto $75, web $48) · NEXT GL quote (~$85/mo) and Insureon debris-removal GL median · Stripe US pricing (2.9% + 30¢) · Menards Steelcoat 42-gal bags ($0.58 each) · IRS 2026 mileage (76¢ H2) · junk weight per cubic yard: snapjunkremoval.com · leaf pricing and hours: yourgreenpal.com, lawnguru.co · gutter timing: nationalsoftwash.com · OSRM routing (router.project-osrm.org) for drop-site distances.
+  </p>
+</section>
+
+</body>
+</html>

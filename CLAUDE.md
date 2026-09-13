@@ -126,6 +126,10 @@ README.md                        human overview
 DEPLOY.md                        Netlify + env
 PRICEBOOK.md                     why the numbers are what they are
 PHONE-LINE.md                    missed-call line: Twilio set-up, carrier forwarding codes, costs, phase-2 AI receptionist
+print/business-plan.html         THE BUSINESS PLAN (fall 2026 → spring 2027); numbers come from scripts/plan-model.mjs via <!--MODEL:x--> markers
+print/business-plan.pdf          rendered plan — node scripts/make-plan-pdf.mjs (also copied to the OneDrive Ops folder)
+scripts/plan-model.mjs           jobs → profit model: tickets, mix, variable cost, nut, tax; the only place plan numbers are computed
+scripts/make-plan-pdf.mjs        fills the markers and prints Letter PDF with Playwright
 .env.example                     DATABASE_URL, auth, Stripe, Resend, ANTHROPIC_API_KEY
 netlify.toml                     build = vite only, no migrate on CI
 package.json                     scripts, no second package manager
