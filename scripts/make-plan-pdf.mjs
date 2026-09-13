@@ -16,8 +16,9 @@ const usd = (n) => (n < 0 ? "−$" : "$") + Math.abs(Math.round(n)).toLocaleStri
 const pct = (n) => `${Math.round(n * 100)}%`;
 
 function table(head, rows, opts = {}) {
-  const th = head.map((h, i) => `<th${i && !opts.leftAll ? ' class="num"' : ""}>${h}</th>`).join("");
-  const tr = rows.map((r) => `<tr>${r.map((c, i) => `<td${i && !opts.leftAll ? ' class="num"' : ""}>${c}</td>`).join("")}</tr>`).join("");
+  const isNum = (i) => i > 0 && !opts.leftAll && !(opts.left || []).includes(i);
+  const th = head.map((h, i) => `<th${isNum(i) ? ' class="num"' : ""}>${h}</th>`).join("");
+  const tr = rows.map((r) => `<tr>${r.map((c, i) => `<td${isNum(i) ? ' class="num"' : ""}>${c}</td>`).join("")}</tr>`).join("");
   return `<table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table>`;
 }
 
@@ -49,6 +50,26 @@ const MODEL = {
     t.fallHelper.map((s) => [s.jobsPerWeek, s.jobs, usd(s.revenue), usd(s.pretax), `<b>${usd(s.net)}</b>`, s.hours, usd(s.netPerHour)]),
   ),
   mix: table(["Job type", "Share of fall jobs"], Object.entries(MIX).map(([k, w]) => [TICKETS[k].label, pct(w)])),
+  ramps: table(
+    ["Case", "Jobs by week (from Mon Sept 14)", "Jobs", "Revenue", "Pre-tax", "After tax", "Your hours", "Helper hours", "After-tax $/h"],
+    Object.values(t.ramps).map((r) => [r.label, r.rows.map((x) => x.jobs).join(" · "), r.jobs, usd(r.revenue), usd(r.pretax), `<b>${usd(r.net)}</b>`, r.ownerHours, r.helperHours, usd(r.netPerHour)]),
+    { left: [1] },
+  ),
+  rampWeeks: table(
+    ["Week", "Target", "Realistic (leave from Oct 5)", "W-2 kept", "What binds that week"],
+    [
+      ["Sept 14", 18, 2, 2, "No hauler permit → in-city work is gutters only; leaves not down; no written hanger ruling; W-2 hours"],
+      ["Sept 21", 18, 4, 4, "Owner hours (21 available vs 32 needed); 2,500 hangers land ~Sept 22 and go out only with the ruling"],
+      ["Sept 28", 18, 6, 5, "Still no in-city hauls; canopy holds; helper's first shift Sept 28 at the earliest (WSI)"],
+      ["Oct 5", 18, 11, 7, "Booking lag — this week's jobs come from W2–W3 leads; permit effective Oct 6 if on the Oct 5 agenda; first 28°F drops the leaves"],
+      ["Oct 12", 18, 15, 8, "First arithmetically possible 18-week; Saturday tips only 2 loads; 25th-percentile first snow is this week"],
+      ["Oct 19", 18, 17, 8, "Route weeks → rake-to-curb at the bottom of the band (4–5 houses/day, ticket −20%); median first snow next week"],
+      ["Oct 26", 18, 14, 7, "Median first measurable snow; DST ends Nov 1 (sunset 5:09); a dusting = 2 leaf jobs max that day"],
+      ["Nov 2", 18, 10, 5, "Sunset 5:09 + landfill 4:00 → no solo unchained 3-job day; median 1-inch snow Nov 8"],
+      ["Nov 9", 9, 5, 3, "Snow; gutters stop when debris freezes; junk only"],
+    ],
+    { left: [4] },
+  ),
   assumptions: `<ul>
     <li>Tickets are the midpoints of the pricebook ranges, less ${pct(ASSUMPTIONS.promoShare)} of jobs at the ${pct(ASSUMPTIONS.promoPct)}-off promo (cap $${ASSUMPTIONS.promoCap}) and ${pct(ASSUMPTIONS.blockShare)} of jobs with the $${ASSUMPTIONS.blockCredit} block credit.</li>
     <li>Truck cost = ${ASSUMPTIONS.milesPerJob} miles a job × the IRS ${Math.round(ASSUMPTIONS.vehicleCostPerMile * 100)}¢ rate — that rate is what a pickup mile really costs (fuel, tires, wear, depreciation), and it's also the deduction.</li>

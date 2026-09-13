@@ -111,6 +111,33 @@ export function season(jobsPerWeek, weeks, withHelper = false) {
   return { jobsPerWeek, weeks, jobs, revenue: r2(revenue), fixed: r2(fixed), pretax: r2(pretax), net: r2(net), hours: r2(jobs * b.hours), netPerHour: r2(net / (jobs * b.hours)) };
 }
 
+/**
+ * A week-by-week ramp: jobs per week, helper from a given week (0-based),
+ * fixed nut pro-rated per week. Returns per-week rows and the season total.
+ */
+export function ramp(weeklyJobs, helperFromWeek = 99, label = "") {
+  const weekNut = (ASSUMPTIONS.fixedMonthly.reduce((s, f) => s + f.cents, 0) / 100) * 12 / 52;
+  let rev = 0, varc = 0, hours = 0, helperHours = 0;
+  const rows = weeklyJobs.map((jobs, i) => {
+    const helper = i >= helperFromWeek;
+    const b = blended(helper);
+    rev += jobs * b.ticket; varc += jobs * b.variable; hours += jobs * b.hours;
+    if (helper) helperHours += jobs * b.hours;
+    return { week: i + 1, jobs, helper, revenue: r2(jobs * b.ticket), kept: r2(jobs * b.contribution), ownerHours: r2(jobs * b.hours) };
+  });
+  const fixed = weekNut * weeklyJobs.length;
+  const pretax = rev - varc - fixed;
+  const net = pretax - Math.max(0, pretax) * ASSUMPTIONS.taxRateOnNet;
+  return { label, rows, jobs: weeklyJobs.reduce((a, b) => a + b, 0), revenue: r2(rev), variable: r2(varc), fixed: r2(fixed), pretax: r2(pretax), net: r2(net), ownerHours: r2(hours), helperHours: r2(helperHours), netPerHour: hours ? r2(net / hours) : 0 };
+}
+
+/** The owner's stated target vs the two honest cases from the feasibility review (weeks from Mon Sept 14). */
+export const RAMPS = {
+  target: { label: "Target as stated: 3 a day, 6 days, from week 1", jobs: [18, 18, 18, 18, 18, 18, 18, 18, 9], helperFrom: 2 },
+  leave: { label: "Realistic — owner full-time from Oct 5, helper from Sept 28", jobs: [2, 4, 6, 11, 15, 17, 14, 10, 5], helperFrom: 2 },
+  w2: { label: "Realistic — W-2 job kept (Saturdays, Sundays, two evenings)", jobs: [2, 4, 5, 7, 8, 8, 7, 5, 3], helperFrom: 99 },
+};
+
 export function tables() {
   const fixed = ASSUMPTIONS.fixedMonthly.reduce((s, f) => s + f.cents, 0) / 100;
   const perService = Object.keys(TICKETS).map((k) => perJob(k, false));
@@ -120,10 +147,11 @@ export function tables() {
   const ladderHelper = [4, 6, 8, 10, 15, 20, 30, 40].map((j) => monthly(j, true));
   const fall = [2, 4, 6, 8, 10].map((w) => season(w, ASSUMPTIONS.fallWeeks, false));
   const fallHelper = [6, 8, 10, 14].map((w) => season(w, ASSUMPTIONS.fallWeeks, true));
-  return { fixed, perService, perServiceHelper, solo, helper, breakEven: breakEvenJobs(false), breakEvenHelper: breakEvenJobs(true), ladder, ladderHelper, fall, fallHelper };
+  const ramps = Object.fromEntries(Object.entries(RAMPS).map(([k, r]) => [k, ramp(r.jobs, r.helperFrom, r.label)]));
+  return { fixed, perService, perServiceHelper, solo, helper, breakEven: breakEvenJobs(false), breakEvenHelper: breakEvenJobs(true), ladder, ladderHelper, fall, fallHelper, ramps };
 }
 
-if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, "/")}` || process.argv[1]?.endsWith("plan-model.mjs")) {
+if (process.argv[1]?.endsWith("plan-model.mjs")) {
   const t = tables();
   if (process.argv.includes("--json")) {
     console.log(JSON.stringify(t, null, 2));
