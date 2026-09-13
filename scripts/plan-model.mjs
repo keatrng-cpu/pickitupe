@@ -138,6 +138,96 @@ export const RAMPS = {
   w2: { label: "Realistic — W-2 job kept (Saturdays, Sundays, two evenings)", jobs: [2, 4, 5, 7, 8, 8, 7, 5, 3], helperFrom: 99 },
 };
 
+/** Truck loan: $26k at 10% APR, $550/mo — what extra principal buys. Standard monthly amortization. */
+export const LOAN = { principal: 26000, apr: 0.10, payment: 550, extras: [0, 100, 200, 400] };
+export function loan(extra = 0, l = LOAN) {
+  const r = l.apr / 12;
+  let bal = l.principal, months = 0, interest = 0;
+  while (bal > 0.005 && months < 1000) {
+    const i = bal * r;
+    const pay = Math.min(l.payment + extra, bal + i);
+    interest += i; bal = bal + i - pay; months += 1;
+  }
+  return { extra, months, interest: r2(interest) };
+}
+export function loanTable(l = LOAN) {
+  const base = loan(0, l);
+  return l.extras.map((x) => { const o = loan(x, l); return { ...o, saved: r2(base.interest - o.interest), cut: base.months - o.months }; });
+}
+
+/** 2026 federal + ND figures (IRS Rev. Proc. 2025-32; ND 2025 schedule — 2026 thresholds unpublished, indexed up). Single filer. */
+export const TAX_2026 = {
+  stdDeduction: 16100,
+  brackets: [[12400, 0.10], [50400, 0.12], [105700, 0.22], [201775, 0.24], [Infinity, 0.32]],
+  seRate: 0.153, seBase: 0.9235, qbi: 0.20,
+  ndZeroTo: 48475, ndRate: 0.0195,
+};
+function bracketTax(taxable) {
+  let tax = 0, lo = 0;
+  for (const [hi, rate] of TAX_2026.brackets) { if (taxable <= lo) break; tax += (Math.min(taxable, hi) - lo) * rate; lo = hi; }
+  return tax;
+}
+/** How the streams stack on one 1040: W-2 + Schedule C net (all businesses netted) + short-term trading gains + net rent. */
+export function stack({ w2 = 55000, c = 0, gains = 0, rent = 0 }) {
+  const se = Math.max(0, c) * TAX_2026.seBase * TAX_2026.seRate;
+  const half = se / 2;
+  const agi = w2 + c + gains + rent - half;
+  const qbi = Math.max(0, c - half) * TAX_2026.qbi; // rent has no QBI without the 250-hour safe harbor; gains never do
+  const taxable = Math.max(0, agi - TAX_2026.stdDeduction - qbi);
+  const fed = bracketTax(taxable);
+  const nd = Math.max(0, taxable - TAX_2026.ndZeroTo) * TAX_2026.ndRate;
+  return { se: r2(se), agi: r2(agi), qbi: r2(qbi), taxable: r2(taxable), fed: r2(fed), nd: r2(nd), total: r2(se + fed + nd) };
+}
+export const STACK_CASES = [
+  { label: "W-2 only — the baseline", w2: 55000, c: 0, gains: 0, rent: 0 },
+  { label: "+ Pick It Up E $7,500 net (W-2 kept, ≈50 jobs)", w2: 55000, c: 7500, gains: 0, rent: 0 },
+  { label: "+ Pick It Up E $12,000 net (leave from Oct 5, ≈84 jobs)", w2: 55000, c: 12000, gains: 0, rent: 0 },
+  { label: "+ LuxeForge −$2,000, trading +$10,000 realized", w2: 55000, c: 10000, gains: 10000, rent: 0 },
+  { label: "+ trading at the $1,000/wk target for six months (+$26,000)", w2: 55000, c: 10000, gains: 26000, rent: 0 },
+  { label: "+ a full year at target (+$52,000) and a rental netting $3,000", w2: 55000, c: 10000, gains: 52000, rent: 3000 },
+];
+export function stackTable() {
+  const base = stack(STACK_CASES[0]);
+  return STACK_CASES.map((k) => {
+    const s = stack(k);
+    const dC = stack({ ...k, c: k.c + 1000 }).total - s.total;      // tax on the next $1,000 of job profit
+    const dG = stack({ ...k, gains: k.gains + 1000 }).total - s.total; // tax on the next $1,000 of trading gain
+    return { ...k, ...s, over: r2(s.total - base.total), side: k.c + k.gains + k.rent, mC: Math.round(dC / 10), mG: Math.round(dG / 10) };
+  });
+}
+
+/** Realistic cash calendar, Sept 2026 → May 2027 (80 fall jobs, 40 spring; collected includes deposits, 10 two-visit plans in Nov, 5 gift cards in Dec, spring deposits in March). All n=0. */
+export const CASH_MONTHS = [
+  { m: "Sep 26", jobs: 8, collected: 3470, variable: 449, oneTime: 988, note: "hangers, permit, GL, WSI, blower" },
+  { m: "Oct 26", jobs: 46, collected: 11126, variable: 2580, oneTime: 0 },
+  { m: "Nov 26", jobs: 26, collected: 7902, variable: 1458, oneTime: 0, note: "10 plans prepaid, $2,800" },
+  { m: "Dec 26", jobs: 4, collected: 1780, variable: 224, oneTime: 0, note: "UND turns + 5 gift cards" },
+  { m: "Jan 27", jobs: 0, collected: 0, variable: 0, oneTime: 0 },
+  { m: "Feb 27", jobs: 0, collected: 0, variable: 0, oneTime: 0 },
+  { m: "Mar 27", jobs: 0, collected: 1000, variable: 0, oneTime: 0, note: "20 spring deposits" },
+  { m: "Apr 27", jobs: 12, collected: 2508, variable: 673, oneTime: 0 },
+  { m: "May 27", jobs: 28, collected: 4852, variable: 1571, oneTime: 0 },
+];
+export const CASH_RULES = { reservePct: 0.25, escrowTarget: 5065, repairTarget: 1000 };
+export function cashCalendar(reservePct = CASH_RULES.reservePct) {
+  const nut = ASSUMPTIONS.fixedMonthly.reduce((s, f) => s + f.cents, 0) / 100;
+  let escrow = 0, repair = 0, taxBal = 0;
+  const rows = CASH_MONTHS.map((mo) => {
+    const tax = mo.collected * reservePct; taxBal += tax;
+    let avail = mo.collected - tax - mo.variable - nut - mo.oneTime;
+    let escrowMove = 0, repairMove = 0, draw = 0;
+    if (avail < 0) { escrowMove = avail; escrow += avail; avail = 0; }
+    else {
+      escrowMove = Math.min(avail, CASH_RULES.escrowTarget - escrow); escrow += escrowMove; avail -= escrowMove;
+      repairMove = Math.min(avail, CASH_RULES.repairTarget - repair); repair += repairMove; avail -= repairMove;
+      draw = avail;
+    }
+    return { ...mo, tax: r2(tax), nut, escrowMove: r2(escrowMove), escrow: r2(escrow), repair: r2(repair), draw: r2(draw), taxBal: r2(taxBal) };
+  });
+  const sum = (k) => r2(rows.reduce((s, x) => s + x[k], 0));
+  return { rows, totals: { jobs: sum("jobs"), collected: sum("collected"), variable: sum("variable"), tax: sum("tax"), nut: sum("nut"), oneTime: sum("oneTime"), draw: sum("draw") }, minEscrow: Math.min(...rows.map((x) => x.escrow)) };
+}
+
 export function tables() {
   const fixed = ASSUMPTIONS.fixedMonthly.reduce((s, f) => s + f.cents, 0) / 100;
   const perService = Object.keys(TICKETS).map((k) => perJob(k, false));
@@ -148,7 +238,7 @@ export function tables() {
   const fall = [2, 4, 6, 8, 10].map((w) => season(w, ASSUMPTIONS.fallWeeks, false));
   const fallHelper = [6, 8, 10, 14].map((w) => season(w, ASSUMPTIONS.fallWeeks, true));
   const ramps = Object.fromEntries(Object.entries(RAMPS).map(([k, r]) => [k, ramp(r.jobs, r.helperFrom, r.label)]));
-  return { fixed, perService, perServiceHelper, solo, helper, breakEven: breakEvenJobs(false), breakEvenHelper: breakEvenJobs(true), ladder, ladderHelper, fall, fallHelper, ramps };
+  return { fixed, perService, perServiceHelper, solo, helper, breakEven: breakEvenJobs(false), breakEvenHelper: breakEvenJobs(true), ladder, ladderHelper, fall, fallHelper, ramps, loan: loanTable(), stack: stackTable(), cash: cashCalendar(), cash18: cashCalendar(0.18) };
 }
 
 if (process.argv[1]?.endsWith("plan-model.mjs")) {

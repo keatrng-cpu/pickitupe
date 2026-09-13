@@ -19,7 +19,7 @@ function table(head, rows, opts = {}) {
   const isNum = (i) => i > 0 && !opts.leftAll && !(opts.left || []).includes(i);
   const th = head.map((h, i) => `<th${isNum(i) ? ' class="num"' : ""}>${h}</th>`).join("");
   const tr = rows.map((r) => `<tr>${r.map((c, i) => `<td${isNum(i) ? ' class="num"' : ""}>${c}</td>`).join("")}</tr>`).join("");
-  return `<table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table>`;
+  return `<table${opts.cls ? ` class="${opts.cls}"` : ""}><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table>`;
 }
 
 const MODEL = {
@@ -70,6 +70,27 @@ const MODEL = {
     ],
     { left: [4] },
   ),
+  loan: table(
+    ["Extra principal a month", "Months to payoff", "Total interest", "Interest saved", "Months cut"],
+    t.loan.map((l) => [l.extra ? `<b>+${usd(l.extra)}</b>` : "$0 — as is", l.months, usd(l.interest), l.saved ? `<b>${usd(l.saved)}</b>` : "—", l.cut || "—"]),
+  ),
+  stack: table(
+    ["Case", "Side income", "Taxable", "SE", "Federal", "ND", "Total", "Cost of the side income", "Next $1k job", "Next $1k trade"],
+    t.stack.map((s) => [s.label, usd(s.side), usd(s.taxable), usd(s.se), usd(s.fed), usd(s.nd), `<b>${usd(s.total)}</b>`, usd(s.over), `<b>${s.mC}%</b>`, `<b>${s.mG}%</b>`]),
+    { cls: "wide1" },
+  ),
+  cash: table(
+    ["Month", "Jobs", "Collected", "Variable", "Tax 25%", "Nut", "One-time", "Escrow ±", "Escrow bal.", "Repair", "Owner draw", "Note"],
+    t.cash.rows.map((r) => [r.m, r.jobs, usd(r.collected), usd(r.variable), usd(r.tax), usd(r.nut), r.oneTime ? usd(r.oneTime) : "—", r.escrowMove ? usd(r.escrowMove) : "—", usd(r.escrow), usd(r.repair), r.draw ? `<b>${usd(r.draw)}</b>` : "—", r.note ?? ""])
+      .concat([["<b>Total</b>", t.cash.totals.jobs, `<b>${usd(t.cash.totals.collected)}</b>`, usd(t.cash.totals.variable), `<b>${usd(t.cash.totals.tax)}</b>`, usd(t.cash.totals.nut), usd(t.cash.totals.oneTime), "", "", "", `<b>${usd(t.cash.totals.draw)}</b>`, ""]]),
+    { left: [11] },
+  ),
+  escrowMin: usd(Math.min(...t.cash.rows.slice(1).map((r) => r.escrow))),
+  escrowMay: usd(t.cash.rows[t.cash.rows.length - 1].escrow),
+  cashDraw: usd(t.cash.rows.slice(0, 4).reduce((a, r) => a + r.draw, 0)),
+  cashDraw18: usd(t.cash18.rows.slice(0, 4).reduce((a, r) => a + r.draw, 0)),
+  cashTax2026: usd(t.cash.rows.slice(0, 4).reduce((a, r) => a + r.tax, 0)),
+  cashTax18: usd(t.cash18.rows.slice(0, 4).reduce((a, r) => a + r.tax, 0)),
   assumptions: `<ul>
     <li>Tickets are the midpoints of the pricebook ranges, less ${pct(ASSUMPTIONS.promoShare)} of jobs at the ${pct(ASSUMPTIONS.promoPct)}-off promo (cap $${ASSUMPTIONS.promoCap}) and ${pct(ASSUMPTIONS.blockShare)} of jobs with the $${ASSUMPTIONS.blockCredit} block credit.</li>
     <li>Truck cost = ${ASSUMPTIONS.milesPerJob} miles a job × the IRS ${Math.round(ASSUMPTIONS.vehicleCostPerMile * 100)}¢ rate — that rate is what a pickup mile really costs (fuel, tires, wear, depreciation), and it's also the deduction.</li>
