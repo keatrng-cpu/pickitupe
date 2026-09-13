@@ -92,6 +92,32 @@ export type TripRow = {
 
 export type FixedCost = { id: string; label: string; cents: number; deductible: "none" | "full" | "interest" };
 
+/**
+ * Where a load gets dumped. Three by default — the landfill (junk, gutter
+ * muck), the compost / yard-waste site (leaves), and a scrap or appliance
+ * yard (metal pays, and appliances aren't landfill anyway) — each geocoded
+ * once in Setup. `services` says which job types default to this drop.
+ */
+export type DropSite = {
+  id: string;
+  label: string;
+  address: string;
+  lat: number | null;
+  lon: number | null;
+  services: string[];
+};
+
+// Grand Forks defaults (city sanitation pages, Sept 2026): the landfill is
+// 2701 N 69th St, Mon–Fri 8–4 / Sat 8–11, $23 minimum then $59.54/ton MSW;
+// the city yard-waste + recycling site is the Public Works yard at 724 N 47th
+// St; Minnkota Recycling on Demers buys metal. Addresses are pre-filled so one
+// tap of Save geocodes each — the owner can swap any of them.
+export const DEFAULT_DROPS: DropSite[] = [
+  { id: "landfill", label: "Landfill", address: "2701 N 69th St, Grand Forks, ND", lat: null, lon: null, services: ["junk-removal", "gutter-cleaning", "other"] },
+  { id: "compost", label: "Compost / yard waste", address: "724 N 47th St, Grand Forks, ND", lat: null, lon: null, services: ["leaf-cleanup"] },
+  { id: "scrap", label: "Scrap / appliance yard", address: "2004 Demers Ave, Grand Forks, ND", lat: null, lon: null, services: ["furniture-appliances"] },
+];
+
 export const DEFAULT_FIXED_COSTS: FixedCost[] = [
   { id: "truck", label: "Truck payment (2020 Sierra Denali)", cents: 55_000, deductible: "interest" },
   { id: "warranty", label: "Extended warranty", cents: 22_000, deductible: "none" },
@@ -116,9 +142,8 @@ export type OwnerSettings = {
   homeAddress: string;
   homeLat: number;
   homeLon: number;
-  landfillAddress: string;
-  landfillLat: number | null;
-  landfillLon: number | null;
+  /** Always the three slots (landfill / compost / scrap); an unplaced one has lat/lon null. */
+  drops: DropSite[];
   reservePct: number;
   checks: Record<string, boolean>;
 };
@@ -175,17 +200,29 @@ async function loadSettings(sql: Sql): Promise<OwnerSettings> {
       // keep defaults
     }
   }
+  // Drop sites: JSON list, seeded from the pre-0009 single landfill keys the
+  // first time so nobody re-types an address they already saved.
+  let drops: DropSite[] = DEFAULT_DROPS.map((d) => ({ ...d, services: [...d.services] }));
+  const dropsRaw = map.get("drops.sites");
+  if (dropsRaw) {
+    try {
+      const parsed = JSON.parse(dropsRaw);
+      if (Array.isArray(parsed) && parsed.length) drops = parsed;
+    } catch {
+      // keep defaults
+    }
+  } else if (map.get("landfill.address")) {
+    drops[0] = { ...drops[0], address: map.get("landfill.address") ?? "", lat: num("landfill.lat"), lon: num("landfill.lon") };
+  }
   return {
     rebates,
     fixedCosts,
+    drops,
     budgetCents: num("budget.startCents") ?? 500_000,
     businessStart: start && /^\d{4}-\d{2}-\d{2}$/.test(start) ? start : DEFAULT_BUSINESS_START,
     homeAddress: map.get("home.address") ?? "",
     homeLat: num("home.lat") ?? HOME.lat,
     homeLon: num("home.lon") ?? HOME.lon,
-    landfillAddress: map.get("landfill.address") ?? "",
-    landfillLat: num("landfill.lat"),
-    landfillLon: num("landfill.lon"),
     reservePct: num("tax.reservePct") ?? DEFAULT_RESERVE_PCT,
     checks,
   };
@@ -346,18 +383,16 @@ export const getBookingDetail = createServerFn({ method: "GET" })
       loadSettings(sql),
     ]);
     const job = booking.lat != null && booking.lon != null ? { lat: booking.lat, lon: booking.lon } : null;
-    const landfill =
-      settings.landfillLat != null && settings.landfillLon != null
-        ? { lat: settings.landfillLat, lon: settings.landfillLon }
-        : null;
-    const hauls = booking.service !== "gutter-cleaning";
+    const drop = settings.drops.find((d) => d.services.includes(booking.service) && d.lat != null && d.lon != null);
     return {
       booking,
       events,
       payments,
       expenses,
       trips,
-      suggestedMiles: suggestedTripMiles({ lat: settings.homeLat, lon: settings.homeLon }, job, hauls ? landfill : null),
+      // Default leg: home → job → the drop for this kind of debris → home. The
+      // page lets the owner change start / drop / end; this is the opener.
+      suggestedMiles: suggestedTripMiles({ lat: settings.homeLat, lon: settings.homeLon }, job, drop ? { lat: drop.lat!, lon: drop.lon! } : null),
       settings,
     };
   });
@@ -703,9 +738,20 @@ export const saveSettings = createServerFn({ method: "POST" })
         homeAddress: z.string().trim().max(200).optional(),
         homeLat: z.number().min(-90).max(90).optional(),
         homeLon: z.number().min(-180).max(180).optional(),
-        landfillAddress: z.string().trim().max(200).optional(),
-        landfillLat: z.number().min(-90).max(90).nullable().optional(),
-        landfillLon: z.number().min(-180).max(180).nullable().optional(),
+        drops: z
+          .array(
+            z.object({
+              id: z.string().min(1).max(40),
+              label: z.string().trim().min(1).max(60),
+              address: z.string().trim().max(200),
+              lat: z.number().min(-90).max(90).nullable(),
+              lon: z.number().min(-180).max(180).nullable(),
+              services: z.array(z.string().max(40)).max(10),
+            }),
+          )
+          .min(1)
+          .max(6)
+          .optional(),
         reservePct: z.number().int().min(0).max(60).optional(),
         businessStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
         budgetCents: z.number().int().min(0).max(100_000_000).optional(),
@@ -740,9 +786,7 @@ export const saveSettings = createServerFn({ method: "POST" })
     if (data.homeAddress !== undefined) await put("home.address", data.homeAddress);
     if (data.homeLat !== undefined) await put("home.lat", String(data.homeLat));
     if (data.homeLon !== undefined) await put("home.lon", String(data.homeLon));
-    if (data.landfillAddress !== undefined) await put("landfill.address", data.landfillAddress);
-    if (data.landfillLat !== undefined) await put("landfill.lat", data.landfillLat == null ? null : String(data.landfillLat));
-    if (data.landfillLon !== undefined) await put("landfill.lon", data.landfillLon == null ? null : String(data.landfillLon));
+    if (data.drops !== undefined) await put("drops.sites", JSON.stringify(data.drops));
     if (data.reservePct !== undefined) await put("tax.reservePct", String(data.reservePct));
     if (data.businessStart !== undefined) await put("business.startDate", data.businessStart);
     if (data.budgetCents !== undefined) await put("budget.startCents", String(data.budgetCents));

@@ -114,20 +114,38 @@ export const ROAD_FACTOR = 1.3;
 export type Point = { lat: number; lon: number };
 
 /**
- * Suggested logged miles for one job: home → job → (landfill →) home, road
- * factor applied, rounded to a tenth. Returns null when the job has no coords.
+ * Miles along a chain of stops — the day's real shape is
+ *   home → job → drop → next job → drop → … → home,
+ * so one job's leg is whatever slice of that the owner is on: start at home or
+ * at the previous drop, work the job, unload at the drop for that kind of
+ * debris (landfill / compost site / scrap yard), then either head home or
+ * straight to the next job (no return leg — the next job logs it). Road
+ * factor applied, rounded to a tenth. Null stops are skipped; fewer than two
+ * real stops → null.
+ */
+export function routeMiles(stops: (Point | null | undefined)[]): number | null {
+  const pts = stops.filter((p): p is Point => Boolean(p));
+  if (pts.length < 2) return null;
+  let d = 0;
+  for (let i = 1; i < pts.length; i++) d += haversineMiles(pts[i - 1].lat, pts[i - 1].lon, pts[i].lat, pts[i].lon);
+  return Math.round(d * ROAD_FACTOR * 10) / 10;
+}
+
+/**
+ * The classic single-job leg: home → job → (landfill →) home. Kept for the
+ * tests and for callers that don't know about drop sites yet.
  */
 export function suggestedTripMiles(home: Point, job: Point | null, landfill: Point | null): number | null {
   if (!job) return null;
-  let d = haversineMiles(home.lat, home.lon, job.lat, job.lon);
-  if (landfill) {
-    d += haversineMiles(job.lat, job.lon, landfill.lat, landfill.lon);
-    d += haversineMiles(landfill.lat, landfill.lon, home.lat, home.lon);
-  } else {
-    d += haversineMiles(job.lat, job.lon, home.lat, home.lon);
-  }
-  return Math.round(d * ROAD_FACTOR * 10) / 10;
+  return routeMiles([home, job, landfill, home]);
 }
+
+/** Where debris from each service goes by default. Owner can override per drop site in Setup. */
+export const DEFAULT_DROP_SERVICES: Record<string, string[]> = {
+  landfill: ["junk-removal", "gutter-cleaning", "other"],
+  compost: ["leaf-cleanup"],
+  scrap: ["furniture-appliances"],
+};
 
 // ---------------------------------------------------------------------------
 // Deduction checklist — the one-time elections and set-ups from the plan.

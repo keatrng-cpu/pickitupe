@@ -66,6 +66,23 @@ test("trip suggestion: home→job→home, or via the landfill when set", () => {
   assert.equal(suggestedTripMiles(home, null, landfill), null);
 });
 
+test("route legs: start at the last drop, unload, roll on to the next job — no return leg", async () => {
+  const { routeMiles, ROAD_FACTOR } = await import("../src/lib/tax.ts");
+  const home = { lat: 47.906, lon: -97.0555 };
+  const job = { lat: 47.9195, lon: -97.0311 };
+  const landfill = { lat: 47.98, lon: -97.13 };
+  const compost = { lat: 47.95, lon: -97.1 };
+  // classic leg equals the old function
+  assert.equal(routeMiles([home, job, landfill, home]), suggestedTripMiles(home, job, landfill));
+  // landfill → job → compost, then straight to the next job: two legs, no home
+  const chained = routeMiles([landfill, job, compost, null]);
+  const expected = (haversineMiles(landfill.lat, landfill.lon, job.lat, job.lon) + haversineMiles(job.lat, job.lon, compost.lat, compost.lon)) * ROAD_FACTOR;
+  assert.ok(Math.abs(chained - expected) < 0.1, `${chained} vs ${expected}`);
+  // null stops are skipped; a single real stop is no trip
+  assert.equal(routeMiles([home, null, null]), null);
+  assert.equal(routeMiles([null, job, null, home]), routeMiles([job, home]));
+});
+
 test("cost phase: equipment is always equipment, pre-open spend is start-up, the rest operating", async () => {
   const { phaseFor, DEFAULT_BUSINESS_START } = await import("../src/lib/tax.ts");
   assert.equal(DEFAULT_BUSINESS_START, "2026-09-11");

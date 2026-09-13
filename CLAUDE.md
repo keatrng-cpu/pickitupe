@@ -69,7 +69,7 @@ If a task spans two columns, touch the minimum files and say so in the commit me
 - **Address autocomplete + service-area verdict** — keyless OpenStreetMap, boxed to Greater Grand Forks
 - **Owner account** (`/jobs`, `/jobs/$id`, `/jobs/books`, `/jobs/customers`) — board with same-day clusters, a
   summary strip (today, open leads, collected YTD, owed, expenses, miles), a per-job page (status, final bill,
-  payments incl. cash/check/Venmo, job costs, mileage with suggested miles, contact log, one-tap texts that log
+  payments incl. cash/check/Venmo, job costs, **mileage by leg** (start at home or the last drop → job → the drop for that debris → home or straight to the next job; three geocoded drop sites in Setup: landfill, compost/yard-waste, scrap), contact log, one-tap texts that log
   themselves, owner-only notes), a customers page with a derived follow-up queue (reply <4h, confirm day before,
   review ask 2 days after), and **Books & taxes** — Schedule C by line, expenses, IRS-rate mileage log
   (72.5¢ H1 / 76¢ H2 2026, stamped per trip), income, SE-tax estimate, 25% tax set-aside, one-time deduction

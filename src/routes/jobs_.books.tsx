@@ -9,6 +9,7 @@ import {
   deleteTrip,
   getYearBooks,
   saveSettings,
+  type DropSite,
   type FixedCost,
   type YearBooks,
 } from "@/lib/books";
@@ -676,10 +677,18 @@ function Income({ data, reload }: { data: YearBooks; reload: () => void }) {
 
 // ---------------------------------------------------------------------------
 
+const DROP_SERVICES = [
+  { key: "leaf-cleanup", label: "Leaves" },
+  { key: "junk-removal", label: "Junk" },
+  { key: "furniture-appliances", label: "Furniture & appliances" },
+  { key: "gutter-cleaning", label: "Gutters" },
+  { key: "other", label: "Other" },
+];
+
 function Setup({ data, reload }: { data: YearBooks; reload: () => void }) {
   const s = data.settings;
   const [home, setHome] = useState(s.homeAddress);
-  const [landfill, setLandfill] = useState(s.landfillAddress);
+  const [drops, setDrops] = useState<DropSite[]>(s.drops);
   const [pct, setPct] = useState(String(s.reservePct));
   const [start, setStart] = useState(s.businessStart);
   const [budget, setBudget] = useState(String(s.budgetCents / 100));
@@ -687,8 +696,8 @@ function Setup({ data, reload }: { data: YearBooks; reload: () => void }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  async function geocodeAndSave(which: "home" | "landfill") {
-    const text = which === "home" ? home : landfill;
+  async function geocodeAndSave(which: "home" | number) {
+    const text = which === "home" ? home : drops[which].address;
     setBusy(true);
     setMsg(null);
     try {
@@ -697,9 +706,14 @@ function Setup({ data, reload }: { data: YearBooks; reload: () => void }) {
       if (which === "home") {
         await saveSettings({ data: { homeAddress: text, ...(hit ? { homeLat: hit.lat, homeLon: hit.lon } : {}) } });
       } else {
-        await saveSettings({
-          data: { landfillAddress: text, landfillLat: hit ? hit.lat : text.trim() ? undefined : null, landfillLon: hit ? hit.lon : text.trim() ? undefined : null },
-        });
+        // Geocode this row, keep the others as they are, save the whole list.
+        const next = drops.map((d, i) =>
+          i === which
+            ? { ...d, address: text, lat: hit ? hit.lat : text.trim() ? d.lat : null, lon: hit ? hit.lon : text.trim() ? d.lon : null }
+            : d,
+        );
+        setDrops(next);
+        await saveSettings({ data: { drops: next } });
       }
       setMsg(hit ? `Saved · ${hit.label}` : text.trim() ? "Saved the text, but couldn't place it on the map — suggested miles will use the old point." : "Cleared.");
       reload();
@@ -710,11 +724,26 @@ function Setup({ data, reload }: { data: YearBooks; reload: () => void }) {
     }
   }
 
+  /** Which job types default to this drop — saved on toggle. */
+  async function toggleService(i: number, service: string) {
+    const next = drops.map((d, j) => {
+      if (j === i) return { ...d, services: d.services.includes(service) ? d.services.filter((x) => x !== service) : [...d.services, service] };
+      // one default per service — flipping it on here flips it off elsewhere
+      return d.services.includes(service) && !drops[i].services.includes(service) ? { ...d, services: d.services.filter((x) => x !== service) } : d;
+    });
+    setDrops(next);
+    await saveSettings({ data: { drops: next } });
+    reload();
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <section className="card-green rounded-3xl p-5">
         <h2 className="font-display text-xl">Places the truck starts and ends</h2>
-        <p className="mt-1 text-xs text-muted">Used to suggest miles on each job: home → job → landfill → home. You always see the number before it's logged.</p>
+        <p className="mt-1 text-xs text-muted">
+          Used to suggest miles on each job. The day's real shape is home → job → drop → next job → drop → home; on each job you pick where that leg
+          starts (home or the last drop), where the load goes, and whether you head home or on to the next one. You always see the number before it's logged.
+        </p>
         <label className="mt-4 block text-xs text-muted">
           Home / shop address
           <div className="mt-1 flex gap-2">
@@ -727,18 +756,47 @@ function Setup({ data, reload }: { data: YearBooks; reload: () => void }) {
             Current point: {s.homeLat.toFixed(4)}, {s.homeLon.toFixed(4)}
           </span>
         </label>
-        <label className="mt-4 block text-xs text-muted">
-          Landfill / transfer station
-          <div className="mt-1 flex gap-2">
-            <input value={landfill} onChange={(e) => setLandfill(e.target.value)} className={inputCls} placeholder="Grand Forks Landfill" />
-            <button type="button" className={ghostBtnCls} disabled={busy} onClick={() => geocodeAndSave("landfill")}>
-              Save
-            </button>
+        <p className="mt-5 text-xs tracking-[0.25em] text-gold">WHERE LOADS GO</p>
+        {drops.map((d, i) => (
+          <div key={d.id} className="mt-3 rounded-2xl border border-border bg-bg-deep/40 p-3">
+            <div className="grid gap-2 sm:grid-cols-[200px_1fr_auto]">
+              <input
+                value={d.label}
+                onChange={(e) => setDrops(drops.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))}
+                onBlur={() => void saveSettings({ data: { drops } })}
+                className={inputCls}
+                aria-label="Drop site name"
+              />
+              <input
+                value={d.address}
+                onChange={(e) => setDrops(drops.map((x, j) => (j === i ? { ...x, address: e.target.value } : x)))}
+                className={inputCls}
+                placeholder={d.id === "landfill" ? "Grand Forks Landfill" : d.id === "compost" ? "Grand Forks compost site" : "Scrap yard / appliance recycler"}
+                aria-label={`${d.label} address`}
+              />
+              <button type="button" className={ghostBtnCls} disabled={busy} onClick={() => geocodeAndSave(i)}>
+                Save
+              </button>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
+              <span className="mr-1">{d.lat != null ? `${d.lat.toFixed(4)}, ${d.lon?.toFixed(4)} · default for:` : "Not placed yet · default for:"}</span>
+              {DROP_SERVICES.map((svc) => (
+                <button
+                  key={svc.key}
+                  type="button"
+                  onClick={() => void toggleService(i, svc.key)}
+                  className={cn(
+                    "rounded-full border px-2 py-0.5",
+                    d.services.includes(svc.key) ? "border-gold bg-gold/15 text-fg" : "border-border hover:border-gold",
+                  )}
+                >
+                  {svc.label}
+                </button>
+              ))}
+            </div>
           </div>
-          <span className="mt-1 block text-[11px]">
-            {s.landfillLat != null ? `Current point: ${s.landfillLat.toFixed(4)}, ${s.landfillLon?.toFixed(4)}` : "Not set — haul jobs suggest home → job → home only."}
-          </span>
-        </label>
+        ))}
+        <p className="mt-2 text-[11px] text-muted">Leaves go to the compost site, junk and gutter muck to the landfill, appliances and metal to scrap — a load that pays instead of costing a tipping fee.</p>
         <label className="mt-4 block text-xs text-muted">
           Opened for business on (splits start-up costs from operating costs)
           <div className="mt-1 flex gap-2">

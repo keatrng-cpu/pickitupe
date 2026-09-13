@@ -1,22 +1,11 @@
-import { useCallback, useState, type FormEvent } from "react";
+import { useCallback, useState, type FormEvent, useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MapPin, MessageSquare, Navigation, Phone } from "lucide-react";
-import {
-  addBookingEvent,
-  addExpense,
-  addPayment,
-  addTrip,
-  deleteExpense,
-  deletePayment,
-  deleteTrip,
-  getBookingDetail,
-  updateBookingDetails,
-  type BookingDetail,
-} from "@/lib/books";
+import { addBookingEvent, addExpense, addPayment, addTrip, deleteExpense, deletePayment, deleteTrip, getBookingDetail, updateBookingDetails, type BookingDetail, type DropSite } from "@/lib/books";
 import { smsLink, TEMPLATES } from "@/lib/messages";
 import { startBalanceInvoice } from "@/lib/pay-actions";
 import { formatAddOns, PROMO_CAP, PROMO_PERCENT } from "@/lib/pricebook";
-import { EXPENSE_CATEGORIES, mileageRateFor } from "@/lib/tax";
+import { EXPENSE_CATEGORIES, mileageRateFor, routeMiles, type Point } from "@/lib/tax";
 import { ReceiptDrop } from "@/components/receipt-drop";
 import { cn } from "@/lib/utils";
 import {
@@ -211,7 +200,17 @@ function JobDetail({ data, reload }: { data: BookingDetail; reload: () => void }
               ))}
             </ul>
           ) : null}
-          <TripQuickAdd key={`${suggestedMiles ?? "x"}-${trips.length}`} bookingId={b.id} suggested={suggestedMiles} address={b.address} hauls={b.service !== "gutter-cleaning"} landfill={data.settings.landfillAddress} reload={reload} />
+          <TripQuickAdd
+            key={`${suggestedMiles ?? "x"}-${trips.length}`}
+            bookingId={b.id}
+            suggested={suggestedMiles}
+            address={b.address}
+            service={b.service}
+            job={b.lat != null && b.lon != null ? { lat: b.lat, lon: b.lon } : null}
+            home={{ lat: data.settings.homeLat, lon: data.settings.homeLon }}
+            drops={data.settings.drops}
+            reload={reload}
+          />
           {trips.length ? (
             <ul className="mt-3 divide-y divide-border text-sm">
               {trips.map((t) => (
@@ -540,28 +539,60 @@ function ExpenseQuickAdd({ bookingId, reload }: { bookingId: number; reload: () 
   );
 }
 
+/**
+ * One job's leg of the day. The route is home → job → drop → next job → drop
+ * → … → home, so the owner picks where this leg starts (home, or the drop he
+ * just left), where this load goes, and whether it ends at home or rolls on to
+ * the next job (no return leg — that job logs its own). Miles recompute from
+ * the coordinates as he taps; he can still type the odometer.
+ */
 function TripQuickAdd({
   bookingId,
   suggested,
   address,
-  hauls,
-  landfill,
+  service,
+  job,
+  home,
+  drops,
   reload,
 }: {
   bookingId: number;
   suggested: number | null;
   address: string;
-  hauls: boolean;
-  landfill: string;
+  service: string;
+  job: Point | null;
+  home: Point;
+  drops: DropSite[];
   reload: () => void;
 }) {
-  const [miles, setMiles] = useState(suggested != null ? String(suggested) : "");
+  const placed = drops.filter((d) => d.lat != null && d.lon != null);
+  const defaultDrop = placed.find((d) => d.services.includes(service))?.id ?? (service === "gutter-cleaning" ? "" : placed[0]?.id ?? "");
+  const [start, setStart] = useState<string>("home"); // "home" | drop id
+  const [dropId, setDropId] = useState<string>(defaultDrop); // "" = no drop
+  const [end, setEnd] = useState<"home" | "next">("home");
   const [drivenOn, setDrivenOn] = useState(todayLocalISO());
   const [busy, setBusy] = useState(false);
-  const route = hauls && landfill ? `home → job → ${landfill} → home` : "home → job → home";
+
+  const pt = (id: string): Point | null => {
+    if (id === "home") return home;
+    const d = placed.find((x) => x.id === id);
+    return d ? { lat: d.lat!, lon: d.lon! } : null;
+  };
+  const name = (id: string) => (id === "home" ? "Home" : placed.find((x) => x.id === id)?.label ?? id);
+  const drop = dropId ? pt(dropId) : null;
+  const computed = job ? routeMiles([pt(start), job, drop, end === "home" ? home : null]) : suggested;
+  const [miles, setMiles] = useState(computed != null ? String(computed) : "");
+  const [touched, setTouched] = useState(false);
+  useEffect(() => {
+    if (!touched) setMiles(computed != null ? String(computed) : "");
+  }, [computed, touched]);
+
+  const route = [name(start), "job", dropId ? name(dropId) : null, end === "home" ? "Home" : "next job"].filter(Boolean).join(" → ");
+  const chip = (on: boolean) => cn("rounded-full border px-2.5 py-1 text-xs", on ? "border-gold bg-gold/15 text-fg" : "border-border text-muted hover:border-gold");
+
   return (
     <form
-      className="mt-4 grid gap-2 border-t border-border pt-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end"
+      className="mt-4 border-t border-border pt-4"
       onSubmit={async (e) => {
         e.preventDefault();
         const n = Number(miles);
@@ -569,7 +600,14 @@ function TripQuickAdd({
         setBusy(true);
         try {
           await addTrip({
-            data: { drivenOn, miles: n, purpose: `Job #${bookingId} · ${route}`, fromLabel: "Home", toLabel: address, bookingId },
+            data: {
+              drivenOn,
+              miles: n,
+              purpose: `Job #${bookingId} · ${route}`,
+              fromLabel: name(start),
+              toLabel: end === "home" ? `${address} → ${dropId ? name(dropId) + " → " : ""}Home` : `${address}${dropId ? ` → ${name(dropId)}` : ""} (on to next job)`,
+              bookingId,
+            },
           });
           reload();
         } finally {
@@ -577,22 +615,60 @@ function TripQuickAdd({
         }
       }}
     >
-      <label className="text-xs text-muted">
-        Miles driven ({route})
-        <input inputMode="decimal" value={miles} onChange={(e) => setMiles(e.target.value)} className={cn(inputCls, "mt-1")} placeholder={suggested != null ? String(suggested) : "set home in Books › Settings"} />
-      </label>
-      <label className="text-xs text-muted">
-        Date · {mileageRateFor(drivenOn)}¢/mi
-        <input type="date" value={drivenOn} onChange={(e) => setDrivenOn(e.target.value)} className={cn(inputCls, "mt-1")} />
-      </label>
-      <button type="submit" className={ghostBtnCls} disabled={busy}>
-        Log trip
-      </button>
-      {suggested != null ? (
-        <p className="text-xs text-muted sm:col-span-3">
-          Suggested {suggested} mi from the job's coordinates (straight-line × 1.3). Edit to the odometer if you have it.
-        </p>
-      ) : null}
+      <div className="grid gap-2 sm:grid-cols-3">
+        <div>
+          <p className="text-[11px] tracking-[0.2em] text-muted uppercase">Start from</p>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            <button type="button" className={chip(start === "home")} onClick={() => setStart("home")}>Home</button>
+            {placed.map((d) => (
+              <button key={d.id} type="button" className={chip(start === d.id)} onClick={() => setStart(d.id)}>{d.label}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="text-[11px] tracking-[0.2em] text-muted uppercase">Load goes to</p>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            <button type="button" className={chip(dropId === "")} onClick={() => setDropId("")}>No drop</button>
+            {placed.map((d) => (
+              <button key={d.id} type="button" className={chip(dropId === d.id)} onClick={() => setDropId(d.id)}>{d.label}</button>
+            ))}
+            {placed.length === 0 ? <span className="text-[11px] text-muted">Set drop sites in Books › Setup</span> : null}
+          </div>
+        </div>
+        <div>
+          <p className="text-[11px] tracking-[0.2em] text-muted uppercase">Then</p>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            <button type="button" className={chip(end === "home")} onClick={() => setEnd("home")}>Home</button>
+            <button type="button" className={chip(end === "next")} onClick={() => setEnd("next")}>Next job</button>
+          </div>
+        </div>
+      </div>
+      <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+        <label className="text-xs text-muted">
+          Miles · {route}
+          <input
+            inputMode="decimal"
+            value={miles}
+            onChange={(e) => {
+              setTouched(true);
+              setMiles(e.target.value);
+            }}
+            className={cn(inputCls, "mt-1")}
+            placeholder={job ? "" : "job has no map point — type the odometer"}
+          />
+        </label>
+        <label className="text-xs text-muted">
+          Date · {mileageRateFor(drivenOn)}¢/mi
+          <input type="date" value={drivenOn} onChange={(e) => setDrivenOn(e.target.value)} className={cn(inputCls, "mt-1")} />
+        </label>
+        <button type="submit" className={ghostBtnCls} disabled={busy}>
+          Log trip
+        </button>
+      </div>
+      <p className="mt-2 text-xs text-muted">
+        {computed != null ? `${computed} mi from the map (straight-line × 1.3)` : "No suggestion"} — edit to the odometer if you have it.
+        {end === "next" ? " No return leg: the next job's trip starts from this drop." : ""}
+      </p>
     </form>
   );
 }
