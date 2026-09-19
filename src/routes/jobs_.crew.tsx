@@ -125,6 +125,8 @@ function Compliance() {
         <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm">
           <li>
             <b>ND Workforce Safety & Insurance (WSI)</b> — mandatory the day you have one employee, even part-time. Landscaping/hauling class, expect roughly $1–3 per $100 of payroll; the account application is at wsi.nd.gov. Fines and personal liability for an injured helper without it.
+            <b>Minnesota rule:</b> WSI's extraterritorial coverage does not reciprocate with Minnesota, so helpers work
+            North Dakota only — East Grand Forks jobs are owner-only until a Minnesota policy exists.
           </li>
           <li>
             <b>Federal EIN</b> for the LLC (free, irs.gov, 10 minutes) — payroll can't run on your SSN.
