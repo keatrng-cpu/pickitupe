@@ -11,9 +11,8 @@ import { BLOCK_TIERS, PROMO_CAP, PROMO_PERCENT } from "@/lib/pricebook";
 
 export const PHONE = "701-213-3969";
 export const TEL = "tel:7012133969";
-/** Public Maps search until a GBP place id is set. */
-export const REVIEW_URL =
-  "https://www.google.com/maps/search/?api=1&query=Pick+It+Up+E+Grand+Forks+ND";
+/** The GBP "Get more reviews" link — opens the write-a-review box directly (copied from the profile 2026-09-18). */
+export const REVIEW_URL = "https://g.page/r/CfPEjbVSA_SoEBM/review";
 
 export type MessageKind =
   | "callback"

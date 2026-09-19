@@ -32,7 +32,7 @@ Path-scoped rules also live in [`.claude/rules/`](.claude/rules/).
 - **`public/haul-crew.mp4` / `haul-crew-poster.jpg` are the previous cut — leaves only, no junk.** Superseded, kept in the repo, not referenced anywhere. If you're tempted to restore them: don't, `haul-junk.mp4` is a strict superset of what they showed.
 - **Do not put `public/hero-truck.jpg` back on the page.** Its art is baked onto a near-black field, so on the Sioux-green background it renders as a dark hole instead of part of the design — the owner asked for it gone. The file is kept as source art and for `og.jpg`; it is not displayed. On-page art needs a transparent cutout (`haul-truck.webp`) **or** its own background close enough to `--color-bg` to blend, which is why `haul-junk-poster.jpg`/`haul-junk.mp4` are fine as an opaque rounded card — check that visually before shipping a new opaque asset, don't assume it from the rule alone.
 - Goal: book fall work before city leaf vacuum (typically mid-Oct to mid-Nov)
-- Pre-season promo: book by **September 20** for **20% off, up to $75**, any job (`PROMO_PERCENT` / `PROMO_CAP` / `PROMO_DEADLINE` in `src/lib/pricebook.ts`). Calendar deadline, not a job-count cap. Locks the **rate**, not the service date (leaves aren't down by Sept 20).
+- Pre-season promo: book by **October 10** (extended 2026-09-19 from the printed Sept 20 — the hangers land after that date) for **20% off, up to $75**, any job (`PROMO_PERCENT` / `PROMO_CAP` / `PROMO_DEADLINE` in `src/lib/pricebook.ts`). Calendar deadline, not a job-count cap. Locks the **rate**, not the service date (leaves aren't down by Sept 20).
 - **$50 deposit** applied to invoice on every booking, promo or not
 - Block deal: two houses on one street the same day **$25 off each**, three or more **$40 off each** (`BLOCK_TIERS` in `pricebook.ts`). **Never stacks with the promo** — customer gets the bigger of the two. $40 is derived as `BLOCK_MIN_JOB_LOW − FLOOR`, don't retune it by feel
 - Refuse: paint, chemicals, oil, propane, concrete, dirt, roofing, asbestos
@@ -244,5 +244,5 @@ Not in git (on purpose): `.env`, `node_modules`, Grok sandbox `AGENTS.md`, VIN p
 - Put GM / GMC logos in the header as if this is a dealer
 - Soften the mailbox warning
 - Add features the owner did not ask for (chat widgets, extra dashboards, fake testimonials)
-- Revert the Sept 20 / 20%-off-up-to-$75 promo back to a "first 25 jobs" cap
+- Revert the Oct 10 (printed Sept 20) / 20%-off-up-to-$75 promo back to a "first 25 jobs" cap
 - Flip the haul truck with `-scale-x-100` — the asset already faces right

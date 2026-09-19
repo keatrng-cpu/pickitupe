@@ -1,27 +1,9 @@
 import { AskBox } from "@/components/ask-box";
+import { FAQ } from "@/lib/seo";
 
-const FAQS = [
-  {
-    q: "Do I bag the leaves?",
-    a: "No. Loose piles are fine — we rake, blow, and haul.",
-  },
-  {
-    q: "What can't you take?",
-    a: "Paint, chemicals, oil, propane, concrete, dirt, roofing, or asbestos.",
-  },
-  {
-    q: "City leaf vacuum?",
-    a: "Usually mid-October to mid-November. Book before it. Leaves loose, within 3 ft of the curb. 701-738-8740.",
-  },
-  {
-    q: "How do I hold a day?",
-    a: "$50 on the card locks it. Landlord stacks run $75–$100. Deposit comes off the invoice.",
-  },
-  {
-    q: "Gutters with the leaves?",
-    a: "Rake first, then we climb. Ranch $80–$110 while we're there — trip already paid. Not a second roll, not another percent off.",
-  },
-];
+// The on-page FAQ and the FAQPage JSON-LD read the same list (src/lib/seo.ts) —
+// CLAUDE.md: FAQ on page must match JSON-LD.
+const FAQS = FAQ;
 
 export function FinePrint() {
   return (

@@ -10,7 +10,7 @@ import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { StickyDock } from "@/components/sticky-dock";
 import { getOfferStatus } from "@/lib/bookings";
 import { firstName, readLastBooking, type SavedBooking } from "@/lib/returning";
-import { faqJsonLd, localBusinessJsonLd, SITE_URL } from "@/lib/seo";
+import { faqJsonLd, localBusinessJsonLd, NEIGHBORHOODS, SITE_URL } from "@/lib/seo";
 
 const TITLE =
   "Leaf Cleanup, Gutters & Junk Removal in Grand Forks, ND | Pick It Up E";
@@ -73,8 +73,8 @@ function Home() {
                   <ArrowRight className="size-4 shrink-0" />
                 </Link>
               ) : null}
-              <p className="kicker">Grand Forks</p>
               <h1 className="mt-3 max-w-xl font-display text-5xl leading-[0.92] tracking-[-0.03em] sm:text-7xl lg:text-8xl">
+                <span className="kicker mb-3 block font-sans tracking-[0.14em]">Leaf cleanup &amp; junk hauling in Grand Forks</span>
                 We haul it.
                 <span className="mt-1 block italic text-gold">You don't.</span>
               </h1>
@@ -107,6 +107,18 @@ function Home() {
         <QuickQuote />
         <HousePacks />
         <RateReel />
+
+        <section className="mx-auto max-w-6xl px-4 py-8" aria-labelledby="where-we-work">
+          <p className="kicker">Where we work</p>
+          <h2 id="where-we-work" className="mt-3 font-display text-3xl leading-none sm:text-4xl">
+            Grand Forks and East Grand Forks, one truck, on your street.
+          </h2>
+          <p className="mt-4 max-w-3xl text-sm leading-6 text-fg/90">
+            The fall route runs the older canopy first — {NEIGHBORHOODS.slice(0, -1).join(", ")} and {NEIGHBORHOODS[NEIGHBORHOODS.length - 1]} — then
+            south of 32nd Avenue and across the river into East Grand Forks. Same street, same day gets the neighbor credit. Thompson, Manvel,
+            Emerado and the base are in the service area; anything farther out, ask and we&apos;ll tell you straight.
+          </p>
+        </section>
 
         <section className="mx-auto max-w-6xl px-4 py-8">
           <Link

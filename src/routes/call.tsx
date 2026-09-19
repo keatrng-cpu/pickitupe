@@ -12,6 +12,7 @@ import { speakShop, talkShop, type ChatTurn, type ShopLead } from "@/lib/dispatc
 import { lockWithDeposit } from "@/lib/pay-actions";
 import { formatPhone, isUsPhone } from "@/lib/phone";
 import { PHONE } from "@/lib/messages";
+import { pageHead } from "@/lib/seo";
 import {
   canonicalService,
   canonicalSize,
@@ -58,6 +59,13 @@ type Search = {
 };
 
 export const Route = createFileRoute("/call")({
+  head: () =>
+    pageHead({
+      path: "/call",
+      title: "Book a Day — Leaf Cleanup, Junk Haul & Gutters, Grand Forks ND | Pick It Up E",
+      description:
+        "Tap a day on the board, tell us what we're hauling, and lock it with a $50 deposit. One truck, Grand Forks and East Grand Forks, priced before you call.",
+    }),
   validateSearch: (search: Record<string, unknown>): Search => {
     const out: Search = {};
     if (typeof search.service === "string") out.service = search.service;

@@ -198,12 +198,27 @@ export function SiteFooter() {
           />
           <div>
             <p className="font-display text-xl">Pick It Up E</p>
-            <p className="mt-1 text-sm text-muted">Grand Forks, ND</p>
+            <p className="mt-1 text-sm text-muted">Grand Forks, ND · Mon–Sat 7am–8pm</p>
+            <a className="mt-1 block text-sm text-fg hover:text-gold" href="tel:7012133969">
+              701-213-3969
+            </a>
           </div>
         </div>
         <nav className="flex flex-wrap content-start items-center gap-x-6 gap-y-2 text-sm" aria-label="Footer">
           <Link to="/call" className="text-fg hover:text-gold">
             Book
+          </Link>
+          <Link to="/leaf-cleanup-grand-forks" className="text-muted hover:text-gold">
+            Leaf cleanup
+          </Link>
+          <Link to="/junk-removal-grand-forks" className="text-muted hover:text-gold">
+            Junk removal
+          </Link>
+          <Link to="/gutter-cleaning-grand-forks" className="text-muted hover:text-gold">
+            Gutters
+          </Link>
+          <Link to="/east-grand-forks" className="text-muted hover:text-gold">
+            East Grand Forks
           </Link>
           <Link to="/landlords" className="text-muted hover:text-gold">
             Landlords

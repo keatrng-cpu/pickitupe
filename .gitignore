@@ -28,3 +28,6 @@ coverage/
 # VIN plate / personal photos — never push
 attachments/Screenshot*
 attachments/*VIN*
+
+# Intermediate render from scripts/make-plan-pdf.mjs
+print/.business-plan.built.html

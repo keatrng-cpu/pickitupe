@@ -2,6 +2,7 @@ import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 import { QuoteForm } from "@/components/quote-form";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { getOfferStatus } from "@/lib/bookings";
+import { pageHead } from "@/lib/seo";
 import {
   addOnsFor,
   canonicalService,
@@ -66,6 +67,13 @@ export function sanitizeBookSearch(search: Record<string, unknown>): BookSearch 
  */
 export const Route = createFileRoute("/book")({
   loader: () => getOfferStatus(),
+  head: () =>
+    pageHead({
+      path: "/book",
+      title: "Book Leaf Cleanup, Junk Removal or Gutters in Grand Forks | Pick It Up E",
+      description:
+        "Pick your service and lot size, see the price range, and hold a day with a $50 card deposit that comes off the invoice. Grand Forks and East Grand Forks.",
+    }),
   component: BookPage,
 });
 

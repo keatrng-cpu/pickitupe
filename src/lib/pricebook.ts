@@ -40,9 +40,14 @@ export const DEPOSIT = 50;
  */
 export const PROMO_PERCENT = 0.2;
 export const PROMO_CAP = 75;
-export const PROMO_DEADLINE_LABEL = "September 20";
-/** 2026-09-20 23:59:59 America/Chicago (CDT, UTC-5 in September). */
-export const PROMO_DEADLINE = new Date("2026-09-21T05:00:00.000Z");
+export const PROMO_DEADLINE_LABEL = "October 10";
+/**
+ * 2026-10-10 23:59:59 America/Chicago (CDT, UTC-5 in October). Extended from
+ * Sept 20 on 2026-09-19: the door hangers print "lock the rate by Sept 20"
+ * and land after that date, so the site honors the printed offer through the
+ * first hard freeze instead of reading as expired the day it is hung.
+ */
+export const PROMO_DEADLINE = new Date("2026-10-11T05:00:00.000Z");
 
 export function isPromoActive(now: Date = new Date()): boolean {
   return now.getTime() < PROMO_DEADLINE.getTime();

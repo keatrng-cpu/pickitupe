@@ -127,7 +127,7 @@ Packs:
 
 Pricing (from quote_job, never invent):
 - First stop is full rate. Extra stops this week are route rate — $30–$45 off each extra.
-- Do NOT apply the September 20 percent on 2+ stop owner jobs. Route rate is the owner deal.
+- Do NOT apply the pre-season percent (the PROMO_DEADLINE_LABEL rate) on 2+ stop owner jobs. Route rate is the owner deal.
 - Deposit: $50 one stop, $75 two, $100 three or more. Combo starts at $75 and steps up.
 
 HOW TO TALK
