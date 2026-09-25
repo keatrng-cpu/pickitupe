@@ -12,11 +12,12 @@ const PHONE = "701-213-3969";
 
 type NavItem =
   | { to: "/"; hash?: "faq"; label: string }
-  | { to: "/about" | "/landlords" | "/plan" | "/call"; label: string };
+  | { to: "/about" | "/landlords" | "/plan" | "/call" | "/reviews"; label: string };
 
 const NAV: NavItem[] = [
   { to: "/landlords", label: "Landlords" },
   { to: "/plan", label: "Plan" },
+  { to: "/reviews", label: "Reviews" },
   { to: "/about", label: "About" },
 ];
 
@@ -25,6 +26,7 @@ const MOBILE_NAV: NavItem[] = [
   { to: "/call", label: "Book" },
   { to: "/landlords", label: "Landlords" },
   { to: "/plan", label: "Plan" },
+  { to: "/reviews", label: "Reviews" },
   { to: "/about", label: "About" },
   { to: "/", hash: "faq", label: "FAQ" },
 ];

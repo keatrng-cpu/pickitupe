@@ -11,7 +11,9 @@ Read the root [`CLAUDE.md`](../../CLAUDE.md) first. This folder is the **visual 
 | `quote-form.tsx` | **Pricing workstream** — don't restyle the math. Tokens only. **Renders on `/book` only** — it is no longer on the home page (it duplicated the hero card). |
 | `address-field.tsx` | **Pricing workstream** |
 | `site-header.tsx` | Logo is `public/logo.png` (cream pickup on a maple, rounded tile). Phone lives in header + footer only. Don't add a third copy. |
-| `ask-box.tsx` | "Have more questions?" under the FAQ. Claude Haiku, but it **never computes a price** — every number it may state is rendered from `pricebook.ts` into its system prompt server-side (`src/lib/chat-actions.ts`). Not a floating bubble, on purpose: a launcher that follows you down the page is the generic-AI-startup tell this site avoids. |
+| `ask-box.tsx` | The AI concierge — under the FAQ and on every job page (`token` prop gives it the job). `claude-opus-5`; it **never computes a price** — every number it may state is rendered from `pricebook.ts` into its system prompt server-side (`src/lib/chat-actions.ts`). Labelled as an AI; anything it flags goes to the owner as a ticket. Not a floating bubble, on purpose: a launcher that follows you down the page is the generic-AI-startup tell this site avoids. |
+| `job-ticket.tsx`, `booked-screen.tsx` | The printed ticket and the post-checkout screen. The screen shows the day from `confirmDeposit`, never from the URL. |
+| `reveal.tsx` | Rise-into-view. Only hides content that starts below the fold, after hydration — never SSR content. |
 | `ui/button.tsx` | Cream / ghost / print variants. |
 
 Assets: `public/logo.png`, `public/favicon.svg`, `public/haul-junk.mp4` + `public/haul-junk-poster.jpg` (the home haul scene — leaves + junk), `public/haul-crew.mp4` + `public/haul-crew-poster.jpg` (superseded, leaves-only cut, unused), `public/haul-truck.webp` (still used on `/login`), `public/haul-chair.webp` (unused, kept), `public/hero-truck.jpg`, `public/grain.png`, `public/og.jpg`. Logo source: `attachments/logo-source.png`. Source sketch: `attachments/image.png`.

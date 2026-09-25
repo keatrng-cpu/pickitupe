@@ -281,3 +281,47 @@ export function leadEmail(l: LeadEmailInput): EmailDoc {
     }),
   };
 }
+
+export type ReminderInput = { id: number; name: string; service: string; day: string; address: string; manageUrl?: string | null };
+
+/** "Tomorrow" — sent by the 5 pm cron the day before the job. */
+export function reminderEmail(r: ReminderInput): EmailDoc {
+  const first = firstName(r.name);
+  const svc = serviceLabel(r.service);
+  const when = formatDayLong(r.day);
+  const isLeaves = r.service === "leaf-cleanup";
+  const isGutters = r.service === "gutter-cleaning";
+  const prep = isLeaves
+    ? "Leave the gate unlocked if the back yard is on the list. You don't need to be home."
+    : isGutters
+      ? "An outside outlet helps; we bring the cord. You don't need to be home."
+      : "Point us at the pile. If it's inside, someone 18+ lets us in.";
+  const body = `
+    <p style="margin:18px 0 0">Hey ${esc(first)} — the truck's coming <b>tomorrow, ${esc(when)}</b>. Keaton texts you a window in the morning.</p>
+    ${ticket([
+      ["Job", `#${r.id}`],
+      ["Day", when],
+      ["Address", r.address],
+      ["Service", svc],
+    ])}
+    <p style="margin:18px 0 0">${esc(prep)}</p>
+    <p style="margin:14px 0 0;font-size:15px;color:${C.muted}">Something changed? ${r.manageUrl ? `<a href="${esc(r.manageUrl)}" style="color:${C.sioux};font-weight:600">Tell Keaton on your job page</a> or text` : "Text"} ${PHONE} tonight so the route can shift.</p>`;
+  return {
+    subject: `Tomorrow: ${svc.toLowerCase()} at ${r.address.split(",")[0]} (job #${r.id})`,
+    text: [
+      `Hey ${first} — the truck's coming tomorrow, ${when}. Keaton texts a window in the morning.`,
+      `Job #${r.id} · ${svc} · ${r.address}`,
+      prep,
+      `Something changed? ${r.manageUrl ? `${r.manageUrl} or text` : "Text"} ${PHONE} tonight.`,
+      "— Pick It Up E",
+    ].join("\n"),
+    html: shell({
+      preheader: `Tomorrow · ${svc} · job #${r.id}`,
+      kicker: "Tomorrow",
+      title: isLeaves ? "Leaves out tomorrow." : isGutters ? "Gutters tomorrow." : "Haul day is tomorrow.",
+      body,
+      cta: r.manageUrl ? { label: "Your job page", url: r.manageUrl } : undefined,
+      aside: `Job #${r.id} · ${esc(when)}`,
+    }),
+  };
+}

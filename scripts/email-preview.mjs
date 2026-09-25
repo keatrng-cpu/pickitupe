@@ -24,7 +24,11 @@ try {
   writeFileSync("artifacts/email-booked.html", booked.html);
   const junk = mod.bookedEmail({ id: 43, name: "Dale", service: "junk-removal", jobSize: "half", address: "702 S 17th St, Grand Forks", day: null, range: { low: 120, high: 160 }, deposit: 50 });
   writeFileSync("artifacts/email-booked-junk.html", junk.html);
-  const done = mod.doneEmail({ id: 42, name: "Marlys Thompson", service: "leaf-cleanup", estimate: "$165" });
+  const moved = mod.bookedEmail({ id: 44, name: "Marlys Thompson", service: "leaf-cleanup", jobSize: "medium", address: "1715 Belmont Rd, Grand Forks", day: "2026-10-17", range: { low: 240, high: 345 }, deposit: 50, manageUrl: "https://pickitupe.com/my/EXAMPLEexampleEXAMPLE12", moved: true });
+  writeFileSync("artifacts/email-booked-moved.html", moved.html);
+  const reminder = mod.reminderEmail({ id: 44, name: "Marlys Thompson", service: "leaf-cleanup", day: "2026-10-17", address: "1715 Belmont Rd, Grand Forks", manageUrl: "https://pickitupe.com/my/EXAMPLEexampleEXAMPLE12" });
+  writeFileSync("artifacts/email-reminder.html", reminder.html);
+  const done = mod.doneEmail({ id: 42, name: "Marlys Thompson", service: "leaf-cleanup", estimate: "$165", manageUrl: "https://pickitupe.com/my/EXAMPLEexampleEXAMPLE12" });
   writeFileSync("artifacts/email-done.html", done.html);
   const lead = mod.leadEmail({
     channel: "Voicemail",

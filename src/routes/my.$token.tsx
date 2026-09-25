@@ -134,6 +134,34 @@ function JobView({ view, token, onChange }: { view: ManageView; token: string; o
         </p>
       ) : null}
 
+      {view.status === "done" ? (
+        <Reveal as="section" className="mt-12">
+          <div className="card-green rounded-2xl p-6 sm:p-8">
+            <p className="kicker">Next time</p>
+            <h2 className="mt-2 font-display text-3xl leading-none">Same yard, next season?</h2>
+            <p className="mt-3 max-w-2xl text-sm text-fg/90">
+              The two-visit plan is a spring and a fall pass, paid once a year. It renews each year until you cancel —
+              one click, no call. Or just book this same job again when you need it.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                to="/plan"
+                className="btn-press inline-flex h-12 items-center rounded-full bg-fg px-6 text-sm font-medium text-ink hover:bg-gold"
+              >
+                See the yearly plan
+              </Link>
+              <Link
+                to="/call"
+                search={{ service: view.service, size: view.size || undefined }}
+                className="btn-press inline-flex h-12 items-center rounded-full border border-border px-6 text-sm hover:border-gold"
+              >
+                Book this job again
+              </Link>
+            </div>
+          </div>
+        </Reveal>
+      ) : null}
+
       {view.canReview || view.review ? (
         <Reveal as="section" className="mt-12" >
           <ReviewSection view={view} token={token} onDone={onChange} />
@@ -142,7 +170,14 @@ function JobView({ view, token, onChange }: { view: ManageView; token: string; o
 
       {view.canMove && view.days.length ? (
         <Reveal as="section" className="mt-12">
-          <MoveDay view={view} token={token} onMoved={async (d) => { setToast(`Moved to ${formatDayLong(d)}. Same deposit, same price.`); await onChange(); }} />
+          <MoveDay
+            view={view}
+            token={token}
+            onMoved={async (d) => {
+              setToast(`Moved to ${formatDayLong(d)}. ${view.depositPaid ? "Same deposit, same price." : "Same price."}`);
+              await onChange();
+            }}
+          />
         </Reveal>
       ) : null}
 

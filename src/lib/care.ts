@@ -171,7 +171,7 @@ export const moveMyDay = createServerFn({ method: "POST" })
     }
     const from = isoDay(row.preferred_date);
     const moved = await sql.query<{ id: number }>(
-      `update bookings set preferred_date = $2 where id = $1 and status = 'scheduled' returning id`,
+      `update bookings set preferred_date = $2, reminded_at = null where id = $1 and status = 'scheduled' returning id`,
       [row.id, data.day],
     );
     if (!moved.length) return { ok: false as const, error: "That job can't be moved from here — ask below." };

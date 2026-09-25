@@ -702,7 +702,39 @@
   }
 }
 
+/* Page-to-page cross-fade (router defaultViewTransition). Short and quiet —
+   a navigation should feel instant, just not jumpy. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: var(--ease-out-soft);
+}
+
+/* Hero entrance: kicker, line one, line two, then the buttons. Once, on load. */
+.hero-enter > * {
+  animation: rise 700ms var(--ease-out-soft) both;
+}
+.hero-enter > :nth-child(2) {
+  animation-delay: 90ms;
+}
+.hero-enter > :nth-child(3) {
+  animation-delay: 200ms;
+}
+.hero-enter > :nth-child(4) {
+  animation-delay: 320ms;
+}
+.hero-enter > :nth-child(5) {
+  animation-delay: 420ms;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+  .hero-enter > * {
+    animation: none !important;
+  }
   .ticket-print,
   .ticket-stamp,
   .roll-away,

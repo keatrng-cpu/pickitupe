@@ -5,6 +5,8 @@ import { FinePrint } from "@/components/fine-print";
 import { HaulVideo } from "@/components/haul-video";
 import { HousePacks } from "@/components/house-packs";
 import { QuickQuote } from "@/components/quick-quote";
+import { Reveal } from "@/components/reveal";
+import { ReviewStrip } from "@/components/review-strip";
 import { RateReel } from "@/components/rate-reel";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { StickyDock } from "@/components/sticky-dock";
@@ -62,7 +64,7 @@ function Home() {
         <section className="hero-frame">
           <HaulVideo />
           <div className="hero-copy">
-            <div className="mx-auto w-full max-w-6xl">
+            <div className="hero-enter mx-auto w-full max-w-6xl">
               {last ? (
                 <Link
                   to="/call"
@@ -105,10 +107,16 @@ function Home() {
         </section>
 
         <QuickQuote />
-        <HousePacks />
-        <RateReel />
+        <Reveal>
+          <HousePacks />
+        </Reveal>
+        <Reveal>
+          <RateReel />
+        </Reveal>
+        <ReviewStrip />
 
-        <section className="mx-auto max-w-6xl px-4 py-8" aria-labelledby="where-we-work">
+        <Reveal as="section" className="mx-auto max-w-6xl px-4 py-8">
+          <div aria-labelledby="where-we-work">
           <p className="kicker">Where we work</p>
           <h2 id="where-we-work" className="mt-3 font-display text-3xl leading-none sm:text-4xl">
             Grand Forks and East Grand Forks, one truck, on your street.
@@ -118,9 +126,10 @@ function Home() {
             south of 32nd Avenue and across the river into East Grand Forks. Same street, same day gets the neighbor credit. Thompson, Manvel,
             Emerado and the base are in the service area; anything farther out, ask and we&apos;ll tell you straight.
           </p>
-        </section>
+          </div>
+        </Reveal>
 
-        <section className="mx-auto max-w-6xl px-4 py-8">
+        <Reveal as="section" className="mx-auto max-w-6xl px-4 py-8">
           <Link
             to="/landlords"
             className="landlord-strip card-green block overflow-hidden rounded-2xl"
@@ -132,17 +141,19 @@ function Home() {
             />
             <div className="relative z-10 flex items-end justify-between gap-4 p-5 sm:p-8">
               <div>
-                <p className="kicker">Landlords</p>
+                <p className="kicker">Landlords · managers · investors</p>
                 <p className="mt-2 max-w-xl font-display text-2xl sm:text-3xl">
-                  Bundle tenant turns or a leaf route. Extra stops this week cost less.
+                  Turn the unit, keep the rent coming. Extra addresses the same week cost less.
                 </p>
               </div>
               <ArrowRight className="size-5 shrink-0 text-gold" />
             </div>
           </Link>
-        </section>
+        </Reveal>
 
-        <FinePrint />
+        <Reveal>
+          <FinePrint />
+        </Reveal>
       </main>
       <SiteFooter />
       <StickyDock />

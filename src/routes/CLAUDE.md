@@ -13,6 +13,11 @@ Read the root [`CLAUDE.md`](../../CLAUDE.md) first.
 | `jobs_.customers.tsx` | Customers by phone + the follow-up queue derived from booking status and `last_contact_at`. |
 | `jobs_.crew.tsx` | Owner: helpers (name, sign-in email, phone, $/h, active), every punch with fix/remove, **Record pay** → `wages` expense + shifts stamped paid, ND employer checklist. |
 | `crew.tsx` | Crew portal — not under `/jobs`, no OwnerShell. Gate is `getCrewHome()` returning null (not on the list) vs a home. Clock in/out, week hours & pay, jobs from yesterday forward with directions / call / logged texts / mark finished. Never renders a dollar amount from the customer side; the texts don't either. The owner sees this page too (auto `$0/h` row). |
+| `my.$token.tsx` | Customer's private job page. noindex. Reached only by the token link — never add a lookup that returns a booking to someone who merely knows a phone number. |
+| `reviews.tsx` | Published reviews + photos. No Review/AggregateRating JSON-LD. |
+| `jobs_.care.tsx` | Owner care board: tickets + review moderation. Hide only for a `HIDE_REASONS` content reason. |
+| `landlords.tsx` | Landlords / managers / investors. `COI_AVAILABLE` stays false until a certificate can be issued. |
+| `status.tsx` | "Send me my links" (to the contact on the booking) + signed-in list. No phone lookup. |
 | `login.tsx` | Auth. |
 | `api/auth/$.ts` | better-auth catch-all. |
 

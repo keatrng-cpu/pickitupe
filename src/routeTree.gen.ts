@@ -31,6 +31,7 @@ import { Route as JobsCrewRouteImport } from './routes/jobs_.crew'
 import { Route as JobsCustomersRouteImport } from './routes/jobs_.customers'
 import { Route as MyTokenRouteImport } from './routes/my.$token'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiCronRemindersRouteImport } from './routes/api/cron/reminders'
 import { Route as ApiCronRenewalNoticesRouteImport } from './routes/api/cron/renewal-notices'
 import { Route as ApiReceiptIdRouteImport } from './routes/api/receipt.$id'
 import { Route as ApiReviewPhotoIdRouteImport } from './routes/api/review-photo.$id'
@@ -151,6 +152,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCronRemindersRoute = ApiCronRemindersRouteImport.update({
+  id: '/api/cron/reminders',
+  path: '/api/cron/reminders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCronRenewalNoticesRoute = ApiCronRenewalNoticesRouteImport.update({
   id: '/api/cron/renewal-notices',
   path: '/api/cron/renewal-notices',
@@ -215,6 +221,7 @@ export interface FileRoutesByFullPath {
   '/jobs/customers': typeof JobsCustomersRoute
   '/my/$token': typeof MyTokenRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/reminders': typeof ApiCronRemindersRoute
   '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
   '/api/receipt/$id': typeof ApiReceiptIdRoute
   '/api/review-photo/$id': typeof ApiReviewPhotoIdRoute
@@ -247,6 +254,7 @@ export interface FileRoutesByTo {
   '/jobs/customers': typeof JobsCustomersRoute
   '/my/$token': typeof MyTokenRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/reminders': typeof ApiCronRemindersRoute
   '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
   '/api/receipt/$id': typeof ApiReceiptIdRoute
   '/api/review-photo/$id': typeof ApiReviewPhotoIdRoute
@@ -280,6 +288,7 @@ export interface FileRoutesById {
   '/jobs_/customers': typeof JobsCustomersRoute
   '/my/$token': typeof MyTokenRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/reminders': typeof ApiCronRemindersRoute
   '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
   '/api/receipt/$id': typeof ApiReceiptIdRoute
   '/api/review-photo/$id': typeof ApiReviewPhotoIdRoute
@@ -314,6 +323,7 @@ export interface FileRouteTypes {
     | '/jobs/customers'
     | '/my/$token'
     | '/api/auth/$'
+    | '/api/cron/reminders'
     | '/api/cron/renewal-notices'
     | '/api/receipt/$id'
     | '/api/review-photo/$id'
@@ -346,6 +356,7 @@ export interface FileRouteTypes {
     | '/jobs/customers'
     | '/my/$token'
     | '/api/auth/$'
+    | '/api/cron/reminders'
     | '/api/cron/renewal-notices'
     | '/api/receipt/$id'
     | '/api/review-photo/$id'
@@ -378,6 +389,7 @@ export interface FileRouteTypes {
     | '/jobs_/customers'
     | '/my/$token'
     | '/api/auth/$'
+    | '/api/cron/reminders'
     | '/api/cron/renewal-notices'
     | '/api/receipt/$id'
     | '/api/review-photo/$id'
@@ -411,6 +423,7 @@ export interface RootRouteChildren {
   JobsCustomersRoute: typeof JobsCustomersRoute
   MyTokenRoute: typeof MyTokenRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiCronRemindersRoute: typeof ApiCronRemindersRoute
   ApiCronRenewalNoticesRoute: typeof ApiCronRenewalNoticesRoute
   ApiReceiptIdRoute: typeof ApiReceiptIdRoute
   ApiReviewPhotoIdRoute: typeof ApiReviewPhotoIdRoute
@@ -577,6 +590,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cron/reminders': {
+      id: '/api/cron/reminders'
+      path: '/api/cron/reminders'
+      fullPath: '/api/cron/reminders'
+      preLoaderRoute: typeof ApiCronRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/cron/renewal-notices': {
       id: '/api/cron/renewal-notices'
       path: '/api/cron/renewal-notices'
@@ -659,6 +679,7 @@ const rootRouteChildren: RootRouteChildren = {
   JobsCustomersRoute: JobsCustomersRoute,
   MyTokenRoute: MyTokenRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiCronRemindersRoute: ApiCronRemindersRoute,
   ApiCronRenewalNoticesRoute: ApiCronRenewalNoticesRoute,
   ApiReceiptIdRoute: ApiReceiptIdRoute,
   ApiReviewPhotoIdRoute: ApiReviewPhotoIdRoute,

@@ -104,6 +104,29 @@ If a task spans two columns, touch the minimum files and say so in the commit me
   (source `call`), and alerts the owner by text + email. Webhooks: `/api/voice/{missed,after,voicemail}`,
   `/api/sms/inbound`, all signature-checked. Set-up, forwarding codes, costs and the AI-receptionist phase 2
   are in `PHONE-LINE.md`. Off until `TWILIO_*` is set.
+- **Customer care loop** (migration 0011–0012, `src/lib/care.ts` + `care.server.ts`): every booking gets a private
+  **manage token** → `/my/$token` (the ONLY way a customer reaches a booking — there is no phone lookup; it leaked
+  names/addresses to anyone who typed a number, so `/status` and the `/call` phone assistant now *send* the links to
+  the contact on the booking and return nothing). The job page: printed ticket, self-serve day moves until the day
+  before (capacity checked in truck slots, optimistic race re-check), change/cancel/complaint → support ticket, the
+  AI concierge with job context, and the photo review form once the job is done. Owner side: **`/jobs/care`**
+  (tickets + review moderation + public replies) and a "Customer's job link" button on `/jobs/$id`.
+  **Checkout return** trades the Stripe session id for the booking as saved (`confirmDeposit`), because the tapped
+  day can fill mid-checkout — `finalizePaidDeposit` is atomic (claim-by-update) so webhook + success page notify
+  once. **Day-before reminder**: `netlify/functions/day-before.mts` → `/api/cron/reminders` (needs `CRON_SECRET`),
+  stamps `reminded_at`, moving the day clears it.
+- **AI concierge** (`chat-actions.ts`, `ask-box.tsx`): `claude-opus-5` via `@anthropic-ai/sdk`, low effort,
+  server-side fallbacks. Answers only from pricebook-rendered FACTS; one tool, `flag_for_owner`, opens a ticket and
+  texts/emails the owner. It can't move, cancel or refund anything. It says it's an AI.
+- **Reviews** (`/reviews`, `review-strip.tsx` on home): verified by construction (only via a done job's link), photos
+  need explicit consent, EXIF/GPS stripped by re-encode, magic bytes checked, served by `/api/review-photo/$id` (404
+  unless published + consented, or owner). **Every rating is published** — hide only for a content reason in
+  `HIDE_REASONS` (FTC 16 CFR 465). ≤3 stars opens an urgent ticket. **No Review/AggregateRating JSON-LD** —
+  self-hosted reviews are ineligible for stars and marking them up is a manual-action risk. Home strip shows the
+  newest three, not the best three, and renders nothing at zero.
+- **Landlords page** speaks to landlords, property managers and investors: audience presets, vacancy math on the
+  visitor's own rent, owner checklist. `COI_AVAILABLE` in `landlords.tsx` stays `false` until a certificate can
+  actually be issued.
 - LocalBusiness + FAQ structured data
 - PGLite when no `DATABASE_URL`; Supabase/Neon when set
 
@@ -168,6 +191,12 @@ src/routes/api/voice/missed.ts   Twilio: call arrived → text the link, greet, 
 src/routes/api/voice/after.ts    Twilio: recording ended → thank / alert owner if no message
 src/routes/api/voice/voicemail.ts Twilio: transcript → lead notes + owner alert
 src/routes/api/sms/inbound.ts    Twilio: caller texted back → log on lead, forward to the cell
+src/routes/my.$token.tsx         customer's private job page (ticket, move day, requests, AI, photo review) — noindex
+src/routes/reviews.tsx           published first-party reviews + photo lightbox (no review JSON-LD)
+src/routes/jobs_.care.tsx        owner: tickets + review moderation/replies
+src/routes/api/review-photo.$id.ts  review photo bytes — 404 unless published+consented or owner
+src/routes/api/cron/reminders.ts day-before reminder run (x-cron-secret)
+netlify/functions/day-before.mts scheduled 22:00 UTC → /api/cron/reminders
 src/routes/login.tsx
 src/routes/api/auth/$.ts         better-auth catch-all
 
@@ -200,6 +229,14 @@ src/lib/email-theme.ts           themed HTML emails (booked / done / lead) — p
 src/lib/customer-notify.server.ts SMS (Twilio) + email (Resend) senders; notifyCustomer sends both
 src/lib/phone-line.server.ts     missed-call line: signature check, TwiML, lead row, owner alert
 src/lib/seo.ts                   LocalBusiness + FAQ (keep in sync with the page)
+src/lib/care.ts                  customer-care server fns: manage view, moves, requests, confirmDeposit, reviews, care board
+src/lib/care.server.ts           tokens, tickets + owner alerts, photo decode, per-IP speed bump, send-my-links
+src/lib/reminders.server.ts      day-before reminder query + send
+src/lib/calendar.ts              Google Calendar link (client-safe)
+src/components/job-ticket.tsx    the printed mahogany job ticket (print + stamp motion)
+src/components/booked-screen.tsx "You're booked" — real day from confirmDeposit, not the URL
+src/components/reveal.tsx        rise-into-view (IntersectionObserver, never hides SSR content)
+src/components/review-strip.tsx  newest 3 published reviews on home; nothing at zero
 src/lib/db.ts                    PGLite / Postgres
 src/lib/auth/*                   leave unless the task is auth
 src/styles.css                   tokens + motion (Sioux green, cream, mahogany, paper)
@@ -211,6 +248,8 @@ migrations/0007_owner_books.sql    source, final_cents, owner_notes; booking_eve
 migrations/0008_receipts.sql       receipts (bytea, sha256) + expenses.receipt_id/phase/tax_cents/review/line_items
 migrations/0009_crew.sql           crew_members (wage_cents, active) + time_entries (paid_expense_id)
 migrations/0010_rls.sql            enable row level security on every public table — no policies, app is the owner role
+migrations/0011_customer_care.sql  bookings.manage_token, support_tickets, reviews, review_photos (+RLS)
+migrations/0012_day_before_reminder.sql  bookings.reminded_at
 
 scripts/migrate.mjs
 scripts/email-preview.mjs        renders the emails to artifacts/ for a look before sending
@@ -229,6 +268,10 @@ Not in git (on purpose): `.env`, `node_modules`, Grok sandbox `AGENTS.md`, VIN p
 - Tokens in `src/styles.css` `@theme` — do not introduce a second palette
 - Sioux green background, cream lettering, mahogany print card
 - Motion: honor `prefers-reduced-motion`. Leaves freeze; haul scene parks mid-load.
+- Motion vocabulary (styles.css, one ease `--ease-out-soft`): PRINT (ticket feeds out), STAMP (HELD/DONE lands),
+  REVEAL (`<Reveal>` sections rise once), ROLL (truck drives off the booked screen), plus a 220 ms router
+  cross-fade (`defaultViewTransition`) and a one-time hero entrance. All off under reduced motion. Don't add
+  scroll-position-driven motion.
 - No emoji-as-icon, no Inter/Roboto, no purple gradients, no generic “AI startup” look
 - Copy: short, local, Grand Forks-specific. Don't restack the phone / 20% / $50 deposit on every block.
 

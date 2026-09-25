@@ -155,6 +155,8 @@ export async function ensureOwnerTables(sql: Sql) {
        created_at timestamptz not null default now()
      )`,
     "create index if not exists review_photos_review_idx on review_photos (review_id)",
+    // 0012 — day-before reminder stamp
+    "alter table bookings add column if not exists reminded_at timestamptz",
     // 0010_rls.sql (+ the 0011 tables)
     ...[
       "bookings",

@@ -79,6 +79,10 @@ Set these in **Site configuration → Environment variables**, then redeploy.
 | `BETTER_AUTH_URL` | The live site URL — `https://pickitupe.com` |
 | `VITE_SITE_URL` | Same URL — feeds canonical, OG, and JSON-LD tags |
 | `RESEND_API_KEY`, `RENEWAL_FROM_EMAIL`, `RENEWAL_REPLY_TO` | Customer confirmations + owner alerts go out through Resend. Reply-To is the owner's real inbox — the emails say "reply to this" |
+| `OWNER_EMAILS` (+ optional `OWNER_NOTIFY_EMAIL`) | **Required.** The only addresses that can open `/jobs`, and (first one, unless `OWNER_NOTIFY_EMAIL` is set) where booking, ticket and review alerts go. There is no hard-coded owner anymore — unset means nobody is owner |
+| `OWNER_CELL` | Owner's cell for text alerts (tickets, unhappy reviews, missed calls) once texting is live. Defaults to the site number |
+| `CRON_SECRET` | Any long random string. `netlify/functions/day-before.mts` sends it to `/api/cron/reminders` at 5 pm Central; without it the day-before reminders don't go out (the endpoint 404s everything) |
+| `ANTHROPIC_API_KEY` | The AI concierge (home, job pages), receipt scanning. The concierge runs `claude-opus-5` at low effort with server-side fallbacks |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM`, `OWNER_CELL` | The missed-call line — see [`PHONE-LINE.md`](PHONE-LINE.md). Also turns on SMS confirmations. All empty = webhooks answer 503, everything else unchanged |
 
 Generate the auth secret:
@@ -89,8 +93,8 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 
 Leave `VITE_AUTH_ENABLED` unset. Auth stays on. Customers can create an
 email/password account on `/login` and land on `/status` (their own hauls).
-The owner board at `/jobs` only returns rows for `pickitupe@gmail.com` (or
-`OWNER_NOTIFY_EMAIL`). A customer session cannot read the full booking list.
+The owner board at `/jobs` only returns rows for addresses in `OWNER_EMAILS`
+(or `OWNER_NOTIFY_EMAIL`). A customer session cannot read the full booking list.
 
 Shop line (`/call`) writes into the same `bookings` table as the form — the
 crew calendar, `/status` lookup, and `/jobs` board all share it.
