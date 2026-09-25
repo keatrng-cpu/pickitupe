@@ -78,7 +78,7 @@ If a task spans two columns, touch the minimum files and say so in the commit me
   books the expense with a cost **phase** (start-up / equipment / operating, `phaseFor()` in tax.ts against the
   `business.startDate` setting). Bytes live in Postgres (`receipts`, sha256-unique), served owner-only at
   `/api/receipt/$id`. Duplicates (same bytes, or same vendor+date+total) are refused and handed back with
-  "Book anyway". Gate: `isOwnerEmail` — `pickitupe@gmail.com` plus `OWNER_EMAILS`. Money is
+  "Book anyway". Gate: `isOwnerEmail` — `OWNER_EMAILS` (+ `OWNER_NOTIFY_EMAIL`) **only**; there is no hard-coded owner (the old `pickitupe@gmail.com` default was never a mailbox the owner controlled — anyone registering it would have been owner). Owner alerts and customer Reply-To go to `ownerInbox()` in `src/lib/owner.ts`. Money is
   integer cents. Stripe deposits/balances land in `payments` through the webhook (idempotent on session id).
   Bookings carry a `source` tag from `?s=` (dh = door hanger, gbp, chat).
 - **Crew portal** (`/crew`) — for the 1–2 helpers, and for the owner when he's the one on the truck. A crew
@@ -191,7 +191,7 @@ src/lib/receipt-client.ts        client-side downscale (1600px JPEG) / PDF cap b
 src/lib/crew.ts                  crew server fns (CREW_BOOKING_SELECT = what a helper may see), owner crew admin, recordPay
 src/lib/crew-math.ts             hoursBetween / payCents / totals / weekOf — pure, tested (scripts/crew.test.mjs)
 src/lib/owner-schema.ts          ensureOwnerTables() (mirrors 0007–0010) + logEvent()
-src/lib/owner.ts                 isOwnerEmail() gate — pickitupe@gmail.com + OWNER_EMAILS
+src/lib/owner.ts                 isOwnerEmail() gate (OWNER_EMAILS only) + ownerInbox() for alerts
 src/lib/source.ts                ?s= tag remember/read
 src/lib/pricebook.ts             the only place money numbers live
 src/lib/service-area.ts          distance bands + keyless geocoding

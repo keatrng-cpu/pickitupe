@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { ArrowRight, Loader2, Phone } from "lucide-react";
+import { ArrowRight, BellRing, Loader2, Phone } from "lucide-react";
 import { askQuestion } from "@/lib/chat-actions";
 
 type Turn = { role: "user" | "assistant"; content: string };
@@ -25,8 +25,20 @@ const SUGGESTIONS = [
  * number stays visible the whole time because for anything the box can't
  * answer, texting a photo is genuinely the faster path.
  */
-export function AskBox() {
+export function AskBox({
+  token,
+  title = "Have more questions?",
+  intro = "Ask anything about the work, the prices, or the area we cover. Need a change, a callback, or something wasn't right? Say so — it goes straight to Keaton.",
+  suggestions = SUGGESTIONS,
+}: {
+  /** A job's manage token — the assistant then knows which job it's talking about. */
+  token?: string;
+  title?: string;
+  intro?: string;
+  suggestions?: string[];
+} = {}) {
   const [turns, setTurns] = useState<Turn[]>([]);
+  const [flagged, setFlagged] = useState<{ id: number; kind: string } | null>(null);
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState(false);
   const liveRef = useRef<HTMLDivElement>(null);
@@ -47,8 +59,10 @@ export function AskBox() {
           // Trim to the last few turns: the whole point is short factual
           // answers, and a long transcript is just tokens and drift.
           history: turns.slice(-6),
+          ...(token ? { token } : {}),
         },
       });
+      if (res.ok && res.flagged) setFlagged(res.flagged);
       setTurns([
         ...nextTurns,
         {
@@ -72,14 +86,13 @@ export function AskBox() {
 
   return (
     <div className="card-green rounded-2xl p-6 lg:p-8">
-      <h3 className="font-display text-2xl leading-[1.15]">
-        Have more questions?
-      </h3>
-      <p className="mt-2 text-sm leading-[1.6] text-fg/90">
-        Ask anything about the work, the prices, or the area we cover. If it
-        needs a real look at your yard, you'll get pointed straight at the
-        phone.
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-display text-2xl leading-[1.15]">{title}</h3>
+        <span className="rounded-full border border-gold/40 px-2.5 py-1 text-[0.68rem] uppercase tracking-[0.16em] text-gold">
+          AI assistant · Keaton reads the flags
+        </span>
+      </div>
+      <p className="mt-2 text-sm leading-[1.6] text-fg/90">{intro}</p>
 
       {turns.length > 0 ? (
         <div
@@ -90,13 +103,19 @@ export function AskBox() {
           {turns.map((t, i) => (
             <div key={i}>
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gold">
-                {t.role === "user" ? "You" : "Pick It Up E"}
+                {t.role === "user" ? "You" : "Pick It Up E · AI"}
               </p>
               <p className="mt-1.5 whitespace-pre-wrap text-sm leading-[1.6] text-fg/90">
                 {t.content}
               </p>
             </div>
           ))}
+          {flagged ? (
+            <p className="stagger-in flex items-center gap-2 rounded-xl border border-sioux/60 bg-sioux/15 px-3 py-2 text-sm text-fg">
+              <BellRing className="size-4 text-gold" aria-hidden />
+              Sent to Keaton as ticket #{flagged.id}. He'll text you back — usually the same day.
+            </p>
+          ) : null}
           {busy ? (
             <p className="flex items-center gap-2 text-sm text-muted">
               <Loader2 className="size-4 animate-spin" />
@@ -106,7 +125,7 @@ export function AskBox() {
         </div>
       ) : (
         <div className="mt-5 flex flex-wrap gap-2">
-          {SUGGESTIONS.map((s) => (
+          {suggestions.map((s) => (
             <button
               key={s}
               type="button"
@@ -153,8 +172,8 @@ export function AskBox() {
 
       <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
         <Phone className="size-3.5" aria-hidden />
-        Answers come from this site's own price list. For anything about your
-        specific yard, text a photo to
+        An AI answers from this site's own price list; anything it flags goes
+        to the owner. For anything about your specific yard, text a photo to
         <a
           className="text-fg underline decoration-gold/50 underline-offset-4"
           href="sms:7012133969"

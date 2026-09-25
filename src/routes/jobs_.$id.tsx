@@ -1,4 +1,5 @@
 import { useCallback, useState, type FormEvent, useEffect } from "react";
+import { ownerJobLink } from "@/lib/care";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MapPin, MessageSquare, Navigation, Phone } from "lucide-react";
 import { addBookingEvent, addExpense, addPayment, addTrip, deleteExpense, deletePayment, deleteTrip, getBookingDetail, updateBookingDetails, type BookingDetail, type DropSite } from "@/lib/books";
@@ -57,9 +58,12 @@ function JobPage() {
       title={b ? b.name : "Loading…"}
       forbidden={forbidden}
       aside={
-        <Link to="/jobs" className={ghostBtnCls}>
-          ← Board
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          {b ? <CustomerLinkButton id={bookingId} /> : null}
+          <Link to="/jobs" className={ghostBtnCls}>
+            ← Board
+          </Link>
+        </div>
       }
     >
       {error ? <p className="mt-6 text-sm text-gold">{error}</p> : null}
@@ -742,5 +746,34 @@ function LogForm({ id, reload }: { id: number; reload: () => void }) {
         Log it
       </button>
     </form>
+  );
+}
+
+/** Copy the customer's private job link (/my/<token>) — for texting it by hand. */
+function CustomerLinkButton({ id }: { id: number }) {
+  const [state, setState] = useState<"idle" | "copied" | "shown">("idle");
+  const [url, setUrl] = useState("");
+  async function go() {
+    const res = await ownerJobLink({ data: { id } }).catch(() => null);
+    if (!res || !res.ok) return;
+    setUrl(res.url);
+    try {
+      await navigator.clipboard.writeText(res.url);
+      setState("copied");
+    } catch {
+      setState("shown");
+    }
+  }
+  return (
+    <span className="inline-flex items-center gap-2">
+      <button type="button" onClick={go} className={ghostBtnCls}>
+        {state === "copied" ? "Link copied" : "Customer's job link"}
+      </button>
+      {state === "shown" || state === "copied" ? (
+        <a href={url.replace(/^https?:\/\/[^/]+/, "")} target="_blank" rel="noreferrer" className="text-xs text-gold underline underline-offset-4">
+          open
+        </a>
+      ) : null}
+    </span>
   );
 }

@@ -1,6 +1,7 @@
 import { formatDayLong } from "@/lib/schedule";
 import { PHONE, REVIEW_URL } from "@/lib/messages";
 import type { EmailDoc } from "@/lib/email-theme";
+import { ownerInbox } from "@/lib/owner";
 
 if (typeof window !== "undefined") {
   throw new Error("customer-notify.server.ts is server-only");
@@ -52,7 +53,7 @@ export async function sendEmail(to: string, subject: string, text: string, html?
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const from = process.env.RENEWAL_FROM_EMAIL?.trim();
   if (!apiKey || !from || !to.includes("@")) return false;
-  const replyTo = process.env.RENEWAL_REPLY_TO?.trim() || process.env.OWNER_NOTIFY_EMAIL?.trim() || "pickitupe@gmail.com";
+  const replyTo = process.env.RENEWAL_REPLY_TO?.trim() || ownerInbox();
   const ac = new AbortController();
   const t = setTimeout(() => ac.abort(), TIMEOUT_MS);
   try {
@@ -62,7 +63,7 @@ export async function sendEmail(to: string, subject: string, text: string, html?
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ from, to: [to], subject, text, ...(html ? { html } : {}), reply_to: replyTo }),
+      body: JSON.stringify({ from, to: [to], subject, text, ...(html ? { html } : {}), ...(replyTo ? { reply_to: replyTo } : {}) }),
       signal: ac.signal,
     });
     if (!res.ok) console.error(`[customer-notify] resend ${res.status}: ${await res.text()}`);
@@ -81,17 +82,22 @@ export function bookedMessage(input: {
   day: string | null;
   range?: string | null;
   deposit: number;
+  link?: string | null;
+  moved?: boolean;
 }) {
   const first = (input.name || "there").trim().split(/\s+/)[0];
   const when = input.day ? formatDayLong(input.day) : "first open day";
   const range = input.range ? ` Range ${input.range}.` : "";
-  return `You're booked, ${first}. Job #${input.id}. ${when}.${range} $${input.deposit} deposit is on the card and comes off the invoice. I'll text the morning of. — Pick It Up E, ${PHONE}`;
+  const moved = input.moved ? " Your first pick filled while you were checking out, so this is the next open day." : "";
+  const link = input.link ? ` Move it or ask us anything: ${input.link}` : "";
+  return `You're booked, ${first}. Job #${input.id}. ${when}.${moved}${range} $${input.deposit} deposit is on the card and comes off the invoice. I'll text the morning of.${link} — Pick It Up E, ${PHONE}`;
 }
 
-export function doneReviewMessage(name: string, estimate?: string | null) {
+export function doneReviewMessage(name: string, estimate?: string | null, link?: string | null) {
   const first = (name || "there").trim().split(/\s+/)[0];
   const bill = estimate ? ` Invoice is ${estimate} less your deposit.` : "";
-  return `All done, ${first} — load's gone.${bill} If we did right by you, tap this and leave a Google review — takes 30 seconds. ${REVIEW_URL} — Pick It Up E`;
+  const fix = link ? ` Anything not right? ${link}` : "";
+  return `All done, ${first} — load's gone.${bill} How'd we do? A Google review takes 30 seconds: ${REVIEW_URL}${fix} — Pick It Up E`;
 }
 
 /**

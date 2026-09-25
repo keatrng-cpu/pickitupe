@@ -10,6 +10,7 @@ import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { StickyDock } from "@/components/sticky-dock";
 import { speakShop, talkShop, type ChatTurn, type ShopLead } from "@/lib/dispatcher";
 import { lockWithDeposit } from "@/lib/pay-actions";
+import { BookedScreen } from "@/components/booked-screen";
 import { formatPhone, isUsPhone } from "@/lib/phone";
 import { PHONE } from "@/lib/messages";
 import { pageHead } from "@/lib/seo";
@@ -53,6 +54,7 @@ type Search = {
   job?: number;
   when?: string;
   code?: string;
+  sid?: string;
   cancelled?: boolean;
   house?: HousePack;
   addons?: string;
@@ -99,6 +101,7 @@ export const Route = createFileRoute("/call")({
     if (Number.isFinite(job) && job > 0) out.job = job;
     if (typeof search.day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search.day)) out.when = search.day;
     if (typeof search.code === "string") out.code = search.code;
+    if (typeof search.sid === "string" && /^cs_(test|live)_[A-Za-z0-9]+$/.test(search.sid)) out.sid = search.sid;
     if (
       search.house === "yard" ||
       search.house === "yard-gutters" ||
@@ -437,42 +440,13 @@ function CallPage() {
 
   if (locked) {
     return (
-      <div className="relative z-10 min-h-dvh bg-bg text-fg">
-        <SiteHeader />
-        <main id="main" className="mx-auto max-w-lg px-4 py-16 text-center">
-          <p className="kicker">On the truck</p>
-          <h1 className="mt-3 font-display text-5xl leading-none">You're booked.</h1>
-          <p className="mt-4 text-base text-muted">
-            {locked.day ? `${formatDayLong(locked.day)}. ` : null}
-            {priced.range ? `${formatRange(priced.range)} on file. ` : null}
-            Job {locked.code}. Deposit is on the card and comes off the invoice. We'll text{" "}
-            {formatPhone(phone) || "the number you gave"}.
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link
-              to="/status"
-              className="btn-press inline-flex h-12 items-center rounded-full bg-fg px-6 text-sm font-medium text-ink hover:bg-gold"
-            >
-              Your hauls
-            </Link>
-            {!user ? (
-              <Link
-                to="/login"
-                className="btn-press inline-flex h-12 items-center rounded-full border border-border px-6 text-sm text-fg"
-              >
-                Save on an account
-              </Link>
-            ) : null}
-            <a
-              href={`tel:${PHONE.replaceAll("-", "")}`}
-              className="btn-press inline-flex h-12 items-center rounded-full border border-border px-6 text-sm text-fg"
-            >
-              {PHONE}
-            </a>
-          </div>
-        </main>
-        <SiteFooter />
-      </div>
+      <BookedScreen
+        sessionId={params.sid}
+        fallbackDay={locked.day}
+        code={locked.code}
+        phone={formatPhone(phone)}
+        signedIn={Boolean(user)}
+      />
     );
   }
 

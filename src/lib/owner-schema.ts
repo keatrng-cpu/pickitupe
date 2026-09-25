@@ -109,7 +109,53 @@ export async function ensureOwnerTables(sql: Sql) {
        created_at timestamptz not null default now()
      )`,
     "create index if not exists time_entries_crew_idx on time_entries (crew_id, started_at desc)",
-    // 0010_rls.sql
+    // 0011 — customer care (manage link, tickets, reviews)
+    "alter table bookings add column if not exists manage_token text",
+    "create unique index if not exists bookings_manage_token_idx on bookings (manage_token)",
+    `create table if not exists support_tickets (
+       id serial primary key,
+       booking_id integer references bookings (id) on delete set null,
+       kind text not null,
+       urgency text not null default 'normal',
+       summary text not null,
+       name text,
+       phone text,
+       email text,
+       channel text not null default 'concierge',
+       transcript jsonb,
+       status text not null default 'open',
+       owner_note text,
+       created_at timestamptz not null default now(),
+       resolved_at timestamptz
+     )`,
+    "create index if not exists support_tickets_status_idx on support_tickets (status, created_at desc)",
+    `create table if not exists reviews (
+       id serial primary key,
+       booking_id integer not null unique references bookings (id) on delete cascade,
+       rating integer not null check (rating between 1 and 5),
+       body text not null,
+       display_name text not null,
+       area text,
+       service text,
+       status text not null default 'pending',
+       hidden_reason text,
+       owner_reply text,
+       photo_consent boolean not null default false,
+       created_at timestamptz not null default now(),
+       published_at timestamptz
+     )`,
+    "create index if not exists reviews_status_idx on reviews (status, published_at desc)",
+    `create table if not exists review_photos (
+       id serial primary key,
+       review_id integer not null references reviews (id) on delete cascade,
+       mime text not null,
+       bytes bytea not null,
+       byte_size integer not null,
+       sha256 text not null,
+       created_at timestamptz not null default now()
+     )`,
+    "create index if not exists review_photos_review_idx on review_photos (review_id)",
+    // 0010_rls.sql (+ the 0011 tables)
     ...[
       "bookings",
       "booking_events",
@@ -120,6 +166,9 @@ export async function ensureOwnerTables(sql: Sql) {
       "receipts",
       "crew_members",
       "time_entries",
+      "support_tickets",
+      "reviews",
+      "review_photos",
     ].map((t) => `alter table if exists ${t} enable row level security`),
   ];
   for (const text of stmts) {

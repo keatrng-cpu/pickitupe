@@ -6,7 +6,7 @@ import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { cn } from "@/lib/utils";
 
 /**
- * Chrome for every owner page: sign-in gate, the five tabs, and a consistent
+ * Chrome for every owner page: sign-in gate, the tabs, and a consistent
  * header. Owner-ness is decided on the server (isOwnerEmail) — the page calls
  * its loader, and a "Forbidden" turns into the NotOwner panel instead of a
  * bounce to /status.
@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 
 const TABS = [
   { to: "/jobs", label: "Board" },
+  { to: "/jobs/care", label: "Care" },
   { to: "/jobs/customers", label: "Customers" },
   { to: "/jobs/books", label: "Books & taxes" },
   { to: "/jobs/crew", label: "Crew" },
@@ -90,8 +91,8 @@ function NotOwner({ email }: { email: string | null }) {
       <h2 className="font-display text-2xl">This isn't the owner account</h2>
       <p className="mt-3 max-w-prose text-muted">
         You're signed in as <span className="text-fg">{email ?? "an account with no email"}</span>. The board opens
-        for <code className="text-gold">pickitupe@gmail.com</code> and any address listed in the{" "}
-        <code className="text-gold">OWNER_EMAILS</code> environment variable on Netlify. Sign out, then create the
+        only for addresses listed in the <code className="text-gold">OWNER_EMAILS</code> environment variable on
+        Netlify. Sign out, then create the
         owner account at <Link to="/login" className="text-gold">/login</Link> with one of those addresses — or add
         this one to <code>OWNER_EMAILS</code> and redeploy.
       </p>

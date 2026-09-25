@@ -132,6 +132,10 @@ export type BookedInput = {
   range?: { low: number; high: number } | null;
   deposit: number;
   notes?: string | null;
+  /** /my/<token> — the customer's private page for this job. */
+  manageUrl?: string | null;
+  /** True when the tapped day filled during checkout and the job moved. */
+  moved?: boolean;
 };
 
 /** "You're booked" — sent the moment the deposit clears. */
@@ -151,8 +155,12 @@ export function bookedEmail(b: BookedInput): EmailDoc {
       ? `Your gutters are on the calendar for ${b.day ? `<b>${esc(when)}</b>` : "the first open day"}. Ground vacuum, no ladders on your siding, downspouts checked — done before the freeze.`
       : `Consider it gone. We're coming ${b.day ? `on <b>${esc(when)}</b>` : "on the first open day"} to load it up and drive it off — you don't lift a thing.`;
 
+  const movedNote = b.moved
+    ? `<p style="margin:14px 0 0;padding:12px 14px;background:#fff8ea;border-left:4px solid ${C.sioux};border-radius:8px;font-size:15px">The day you tapped filled up while you were checking out, so you're on the next open day instead. Doesn't work? One tap on your job page moves it.</p>`
+    : "";
   const body = `
     <p style="margin:18px 0 0">Hey ${esc(first)} — ${opener}</p>
+    ${movedNote}
     ${ticket([
       ["Job", `#${b.id}`],
       ["Day", when],
@@ -168,7 +176,7 @@ export function bookedEmail(b: BookedInput): EmailDoc {
       `<b>We work</b> — ${isLeaves ? "rake, tarp, load, sweep the walk" : isGutters ? "vacuum, flush the downspouts, bag the muck" : "load, sweep, gone"}. ${isLeaves || isGutters ? "You don't need to be home." : "If it's inside, someone 18+ lets us in."}`,
       `<b>You pay the balance</b> — card, cash or check, ${range ? `the estimate less your $${b.deposit}` : `your quote less the $${b.deposit}`}. Receipt by text and email.`,
     ])}
-    <p style="margin:22px 0 0;padding:14px 16px;background:#fff8ea;border-left:4px solid ${C.gold};border-radius:8px;font-size:15px">Need a different day? Reply to this email or text <b>${PHONE}</b> — moving it is free, no questions.</p>
+    <p style="margin:22px 0 0;padding:14px 16px;background:#fff8ea;border-left:4px solid ${C.gold};border-radius:8px;font-size:15px">Need a different day? ${b.manageUrl ? `<a href="${esc(b.manageUrl)}" style="color:${C.sioux};font-weight:600">Move it yourself on your job page</a>, reply to this email,` : "Reply to this email"} or text <b>${PHONE}</b> — moving it is free, no questions.</p>
     ${b.notes ? `<p style="margin:16px 0 0;font-size:14px;color:${C.muted}"><b>Your note:</b> ${esc(b.notes)}</p>` : ""}`;
 
   const cta = b.day
@@ -181,7 +189,7 @@ export function bookedEmail(b: BookedInput): EmailDoc {
           location: b.address,
         }),
       }
-    : { label: "See your booking", url: `${SITE}/call` };
+    : { label: "See your booking", url: b.manageUrl || `${SITE}/status` };
 
   const subject = isLeaves ? `You're booked, ${first} — leaves out ${b.day ? formatDayLong(b.day) : "soon"} 🍁` : `You're booked, ${first} — job #${b.id}`;
   const text = [
@@ -190,7 +198,8 @@ export function bookedEmail(b: BookedInput): EmailDoc {
     where,
     range ? `Estimate ${range} — final number on the day, before we start.` : "",
     `$${b.deposit} deposit is on the card and comes off the invoice.`,
-    `Keaton texts a window the morning of. Need a different day? Text ${PHONE}.`,
+    b.moved ? "The day you tapped filled during checkout, so this is the next open day." : "",
+    `Keaton texts a window the morning of. Need a different day? ${b.manageUrl ? `Move it here: ${b.manageUrl} — or text` : "Text"} ${PHONE}.`,
     `— Pick It Up E, ${SITE}`,
   ]
     .filter(Boolean)
@@ -205,12 +214,14 @@ export function bookedEmail(b: BookedInput): EmailDoc {
       title: isLeaves ? "The leaves are as good as gone." : isGutters ? "Gutters: handled." : "Consider it hauled.",
       body,
       cta,
-      aside: `Job #${b.id} · ${esc(when)}`,
+      aside: b.manageUrl && b.day
+        ? `Job #${b.id} · ${esc(when)} · <a href="${esc(b.manageUrl)}" style="color:${C.sioux}">your job page</a>`
+        : `Job #${b.id} · ${esc(when)}`,
     }),
   };
 }
 
-export type DoneInput = { id: number; name: string; service: string; estimate?: string | null };
+export type DoneInput = { id: number; name: string; service: string; estimate?: string | null; manageUrl?: string | null };
 
 /** "All done" with the review ask — sent when the owner marks the job done. */
 export function doneEmail(d: DoneInput): EmailDoc {
@@ -220,11 +231,12 @@ export function doneEmail(d: DoneInput): EmailDoc {
   const body = `
     <p style="margin:18px 0 0">${esc(first)} — ${isLeaves ? "the yard's clear and the leaves are on their way to the compost site" : "the load is gone and the spot's swept"}. Thanks for having us out.</p>
     ${d.estimate ? `<p style="margin:14px 0 0">Your invoice is <b>${esc(d.estimate)}</b> less the deposit you already put down. If you haven't settled up on the spot, Keaton will text a card link.</p>` : ""}
-    <p style="margin:14px 0 0">One ask: if we did right by you, a Google review is how the next neighbor finds a truck that shows up. Thirty seconds, and it means more to a two-man outfit than you'd think.</p>
-    <p style="margin:14px 0 0;font-size:15px;color:${C.muted}">Anything not right? Reply here or text ${PHONE} and we'll come back and fix it — no charge.</p>`;
+    <p style="margin:14px 0 0">One ask: tell the next neighbor how it went. A Google review — good, bad or in between — takes thirty seconds, and it's how people here find a truck that shows up.</p>
+    ${d.manageUrl ? `<p style="margin:14px 0 0">Got a before-and-after photo? <a href="${esc(d.manageUrl)}#review" style="color:${C.sioux};font-weight:600">Add it to a review on our site</a> — it goes up on the reviews page with your first name only.</p>` : ""}
+    <p style="margin:14px 0 0;font-size:15px;color:${C.muted}">Anything not right? ${d.manageUrl ? `<a href="${esc(d.manageUrl)}" style="color:${C.sioux}">Tell us on your job page</a>, reply here,` : "Reply here"} or text ${PHONE} and we'll come back and fix it — no charge.</p>`;
   return {
     subject: `All done, ${first} — ${isLeaves ? "yard's clear" : "load's gone"} (job #${d.id})`,
-    text: `All done, ${first} — ${isLeaves ? "yard's clear" : "load's gone"}.${d.estimate ? ` Invoice is ${d.estimate} less your deposit.` : ""} If we did right by you, tap this and leave a Google review — takes 30 seconds. ${REVIEW_URL} — Pick It Up E`,
+    text: `All done, ${first} — ${isLeaves ? "yard's clear" : "load's gone"}.${d.estimate ? ` Invoice is ${d.estimate} less your deposit.` : ""} How'd we do? A Google review takes 30 seconds: ${REVIEW_URL}${d.manageUrl ? ` · Photos or anything not right: ${d.manageUrl}` : ""} — Pick It Up E`,
     html: shell({
       preheader: `Job #${d.id} finished · ${svc}`,
       kicker: "All done",

@@ -220,6 +220,9 @@ export function SiteFooter() {
           <Link to="/east-grand-forks" className="text-muted hover:text-gold">
             East Grand Forks
           </Link>
+          <Link to="/reviews" className="text-muted hover:text-gold">
+            Reviews
+          </Link>
           <Link to="/landlords" className="text-muted hover:text-gold">
             Landlords
           </Link>

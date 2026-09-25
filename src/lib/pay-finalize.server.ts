@@ -7,6 +7,7 @@ import { loadFill } from "@/lib/bookings";
 import { notifyOwnerOfBooking } from "@/lib/booking-alert.server";
 import { bookedMessage, notifyCustomer } from "@/lib/customer-notify.server";
 import { bookedEmail } from "@/lib/email-theme";
+import { ensureManageToken, manageUrl } from "@/lib/care.server";
 
 if (typeof window !== "undefined") {
   throw new Error("pay-finalize.server.ts is server-only");
@@ -33,7 +34,22 @@ async function recordStripePayment(
   await logEvent(sql, bookingId, "payment", `${kind === "deposit" ? "Deposit" : "Balance"} $${(amountCents / 100).toFixed(2)} paid by card`);
 }
 
-export async function finalizePaidDeposit(bookingId: number, sessionId: string, amountCents?: number | null) {
+/**
+ * The deposit cleared: pick the real day, flip the booking to scheduled, and
+ * tell everyone. Called by BOTH the Stripe webhook and the success page
+ * (`confirmDeposit`), whichever lands first — the conditional update below is
+ * the lock, so the customer and owner are notified exactly once.
+ *
+ * Returns the day the job actually landed on. It can differ from the day the
+ * customer tapped: if that day filled while they were typing a card number,
+ * the job moves to the first open day, and the confirmation screen must say
+ * so instead of echoing the day from the URL.
+ */
+export async function finalizePaidDeposit(
+  bookingId: number,
+  sessionId: string,
+  amountCents?: number | null,
+): Promise<{ day: string | null; token: string | null; moved: boolean } | null> {
   const sql = await getSql();
   await ensurePayColumns(sql);
   const rows = await sql.query<{
@@ -59,7 +75,12 @@ export async function finalizePaidDeposit(bookingId: number, sessionId: string, 
     [bookingId],
   );
   const row = rows[0];
-  if (!row || row.deposit_paid) return;
+  if (!row) return null;
+  if (row.deposit_paid) {
+    const token = await ensureManageToken(sql, bookingId);
+    const cur = await sql.query<{ preferred_date: string | null }>(`select preferred_date from bookings where id = $1`, [bookingId]);
+    return { day: cur[0]?.preferred_date ?? null, token, moved: false };
+  }
 
   const fill = await loadFill();
   const need = slotsFor(
@@ -75,15 +96,22 @@ export async function finalizePaidDeposit(bookingId: number, sessionId: string, 
     day = firstOpenDay(fill, need);
   }
 
-  await sql.query(
+  const asked = row.preferred_date;
+  const claimed = await sql.query<{ id: number }>(
     `update bookings
         set deposit_paid = true,
             deposit_session_id = $2,
             status = 'scheduled',
             preferred_date = coalesce($3, preferred_date)
-      where id = $1`,
+      where id = $1 and deposit_paid = false
+      returning id`,
     [bookingId, sessionId, day],
   );
+  const token = await ensureManageToken(sql, bookingId);
+  // Lost the race to the other caller: it already notified everyone.
+  if (!claimed.length) return { day, token, moved: false };
+  const moved = Boolean(asked && day && asked.slice(0, 10) !== day);
+  const link = token ? manageUrl(token) : null;
 
   const deposit = Math.round((row.deposit_cents || 5000) / 100);
   await recordStripePayment(sql, bookingId, sessionId, amountCents ?? row.deposit_cents ?? 5000, "deposit");
@@ -94,7 +122,7 @@ export async function finalizePaidDeposit(bookingId: number, sessionId: string, 
   await notifyCustomer(
     row.phone,
     row.email,
-    bookedMessage({ name: row.name, id: row.id, day, range, deposit }),
+    bookedMessage({ name: row.name, id: row.id, day, range, deposit, link, moved }),
     bookedEmail({
       id: row.id,
       name: row.name,
@@ -107,6 +135,8 @@ export async function finalizePaidDeposit(bookingId: number, sessionId: string, 
       range: row.estimate_low != null && row.estimate_high != null ? { low: row.estimate_low, high: row.estimate_high } : null,
       deposit,
       notes: row.notes,
+      manageUrl: link,
+      moved,
     }),
   );
   await notifyOwnerOfBooking({
@@ -120,8 +150,9 @@ export async function finalizePaidDeposit(bookingId: number, sessionId: string, 
     estimateLow: row.estimate_low,
     estimateHigh: row.estimate_high,
     preferredDate: day,
-    notes: `${row.notes || ""} · DEPOSIT PAID $${deposit}`.trim(),
+    notes: `${row.notes || ""} · DEPOSIT PAID $${deposit}${moved ? ` · asked for ${asked}, full — moved to ${day}` : ""}`.trim(),
   });
+  return { day, token, moved };
 }
 
 export async function finalizeBalance(bookingId: number, sessionId: string, amountCents?: number | null) {

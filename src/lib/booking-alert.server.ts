@@ -1,3 +1,4 @@
+import { ownerInbox } from "@/lib/owner";
 import {
   bookingAlertSubject,
   bookingAlertText,
@@ -21,7 +22,6 @@ import {
  * slow provider cannot hang the customer's submit.
  */
 
-const DEFAULT_TO = "pickitupe@gmail.com";
 const TIMEOUT_MS = 4000;
 
 export type OwnerAlertResult = { sent: true } | { sent: false; reason: string };
@@ -31,7 +31,11 @@ export async function notifyOwnerOfBooking(
 ): Promise<OwnerAlertResult> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const from = process.env.RENEWAL_FROM_EMAIL?.trim();
-  const to = process.env.OWNER_NOTIFY_EMAIL?.trim() || DEFAULT_TO;
+  const to = ownerInbox();
+  if (!to) {
+    console.warn("[booking-alert] OWNER_NOTIFY_EMAIL / OWNER_EMAILS not set — no owner alert sent");
+    return { sent: false, reason: "owner inbox not configured" };
+  }
   if (!apiKey || !from) {
     // Not an error: the site works without email. It is logged so the owner
     // can see why alerts aren't arriving, and nothing else.

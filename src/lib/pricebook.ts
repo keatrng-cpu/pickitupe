@@ -563,7 +563,7 @@ export const ADD_ONS: {
     // applies here — the September percent is on the leaf base only.
     key: "gutters-here",
     label: "Gutters while we're here",
-    hint: "Rake first, then we climb. Ranch, one story. Trip already paid.",
+    hint: "Rake first, then the gutter vac — from the ground. Ranch, one story. Trip already paid.",
     range: { low: 80, high: 110 },
     appliesTo: ["leaf-cleanup"],
   },
@@ -709,7 +709,7 @@ export const HOUSE_PACKS: {
     value: "yard-gutters",
     label: "Yard + gutters",
     kicker: "One stop",
-    hint: "Rake first, then we climb. Ranch gutters at trip rate — not a second roll.",
+    hint: "Rake first, then the gutter vac — from the ground. Ranch gutters at trip rate — not a second roll.",
     service: "leaf-cleanup",
     size: "medium",
     addOns: ["gutters-here"],
@@ -1124,7 +1124,7 @@ export function estimate(input: EstimateInput): Estimate {
   }
   if (appliedDiscount === "bundle") {
     notes.push(
-      "Rake first, then we climb. Same-stop gutters and the porch piece are trip-priced — not a second roll, not another percent off.",
+      "Rake first, then the gutter vac — from the ground. Same-stop gutters and the porch piece are trip-priced — not a second roll, not another percent off.",
     );
   }
   if (appliedDiscount === "block" && discount > 0) {

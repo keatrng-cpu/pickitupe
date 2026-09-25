@@ -18,7 +18,7 @@ export function HousePacks() {
         Yard. Yard + gutters. The couch too.
       </h2>
       <p className="mt-4 max-w-xl text-sm text-muted">
-        Same truck, trip already paid. We rake first, then we climb. Deposit stays $
+        Same truck, trip already paid. We rake first, then run the gutter vac from the ground. Deposit stays $
         {DEPOSIT}. Not a second roll. Not another percent off.
       </p>
       <div className="mt-8 grid gap-4 lg:grid-cols-3">

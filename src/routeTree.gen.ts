@@ -22,14 +22,18 @@ import { Route as LandlordsRouteImport } from './routes/landlords'
 import { Route as LeafCleanupGrandForksRouteImport } from './routes/leaf-cleanup-grand-forks'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PlanRouteImport } from './routes/plan'
+import { Route as ReviewsRouteImport } from './routes/reviews'
 import { Route as StatusRouteImport } from './routes/status'
 import { Route as JobsIdRouteImport } from './routes/jobs_.$id'
 import { Route as JobsBooksRouteImport } from './routes/jobs_.books'
+import { Route as JobsCareRouteImport } from './routes/jobs_.care'
 import { Route as JobsCrewRouteImport } from './routes/jobs_.crew'
 import { Route as JobsCustomersRouteImport } from './routes/jobs_.customers'
+import { Route as MyTokenRouteImport } from './routes/my.$token'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiCronRenewalNoticesRouteImport } from './routes/api/cron/renewal-notices'
 import { Route as ApiReceiptIdRouteImport } from './routes/api/receipt.$id'
+import { Route as ApiReviewPhotoIdRouteImport } from './routes/api/review-photo.$id'
 import { Route as ApiSmsInboundRouteImport } from './routes/api/sms/inbound'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe/webhook'
 import { Route as ApiVoiceAfterRouteImport } from './routes/api/voice/after'
@@ -102,6 +106,11 @@ const PlanRoute = PlanRouteImport.update({
   path: '/plan',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReviewsRoute = ReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StatusRoute = StatusRouteImport.update({
   id: '/status',
   path: '/status',
@@ -117,6 +126,11 @@ const JobsBooksRoute = JobsBooksRouteImport.update({
   path: '/jobs/books',
   getParentRoute: () => rootRouteImport,
 } as any)
+const JobsCareRoute = JobsCareRouteImport.update({
+  id: '/jobs_/care',
+  path: '/jobs/care',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JobsCrewRoute = JobsCrewRouteImport.update({
   id: '/jobs_/crew',
   path: '/jobs/crew',
@@ -125,6 +139,11 @@ const JobsCrewRoute = JobsCrewRouteImport.update({
 const JobsCustomersRoute = JobsCustomersRouteImport.update({
   id: '/jobs_/customers',
   path: '/jobs/customers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyTokenRoute = MyTokenRouteImport.update({
+  id: '/my/$token',
+  path: '/my/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
@@ -140,6 +159,11 @@ const ApiCronRenewalNoticesRoute = ApiCronRenewalNoticesRouteImport.update({
 const ApiReceiptIdRoute = ApiReceiptIdRouteImport.update({
   id: '/api/receipt/$id',
   path: '/api/receipt/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiReviewPhotoIdRoute = ApiReviewPhotoIdRouteImport.update({
+  id: '/api/review-photo/$id',
+  path: '/api/review-photo/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSmsInboundRoute = ApiSmsInboundRouteImport.update({
@@ -182,14 +206,18 @@ export interface FileRoutesByFullPath {
   '/leaf-cleanup-grand-forks': typeof LeafCleanupGrandForksRoute
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
+  '/reviews': typeof ReviewsRoute
   '/status': typeof StatusRoute
   '/jobs/$id': typeof JobsIdRoute
   '/jobs/books': typeof JobsBooksRoute
+  '/jobs/care': typeof JobsCareRoute
   '/jobs/crew': typeof JobsCrewRoute
   '/jobs/customers': typeof JobsCustomersRoute
+  '/my/$token': typeof MyTokenRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
   '/api/receipt/$id': typeof ApiReceiptIdRoute
+  '/api/review-photo/$id': typeof ApiReviewPhotoIdRoute
   '/api/sms/inbound': typeof ApiSmsInboundRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/voice/after': typeof ApiVoiceAfterRoute
@@ -210,14 +238,18 @@ export interface FileRoutesByTo {
   '/leaf-cleanup-grand-forks': typeof LeafCleanupGrandForksRoute
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
+  '/reviews': typeof ReviewsRoute
   '/status': typeof StatusRoute
   '/jobs/$id': typeof JobsIdRoute
   '/jobs/books': typeof JobsBooksRoute
+  '/jobs/care': typeof JobsCareRoute
   '/jobs/crew': typeof JobsCrewRoute
   '/jobs/customers': typeof JobsCustomersRoute
+  '/my/$token': typeof MyTokenRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
   '/api/receipt/$id': typeof ApiReceiptIdRoute
+  '/api/review-photo/$id': typeof ApiReviewPhotoIdRoute
   '/api/sms/inbound': typeof ApiSmsInboundRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/voice/after': typeof ApiVoiceAfterRoute
@@ -239,14 +271,18 @@ export interface FileRoutesById {
   '/leaf-cleanup-grand-forks': typeof LeafCleanupGrandForksRoute
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
+  '/reviews': typeof ReviewsRoute
   '/status': typeof StatusRoute
   '/jobs_/$id': typeof JobsIdRoute
   '/jobs_/books': typeof JobsBooksRoute
+  '/jobs_/care': typeof JobsCareRoute
   '/jobs_/crew': typeof JobsCrewRoute
   '/jobs_/customers': typeof JobsCustomersRoute
+  '/my/$token': typeof MyTokenRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/renewal-notices': typeof ApiCronRenewalNoticesRoute
   '/api/receipt/$id': typeof ApiReceiptIdRoute
+  '/api/review-photo/$id': typeof ApiReviewPhotoIdRoute
   '/api/sms/inbound': typeof ApiSmsInboundRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/voice/after': typeof ApiVoiceAfterRoute
@@ -269,14 +305,18 @@ export interface FileRouteTypes {
     | '/leaf-cleanup-grand-forks'
     | '/login'
     | '/plan'
+    | '/reviews'
     | '/status'
     | '/jobs/$id'
     | '/jobs/books'
+    | '/jobs/care'
     | '/jobs/crew'
     | '/jobs/customers'
+    | '/my/$token'
     | '/api/auth/$'
     | '/api/cron/renewal-notices'
     | '/api/receipt/$id'
+    | '/api/review-photo/$id'
     | '/api/sms/inbound'
     | '/api/stripe/webhook'
     | '/api/voice/after'
@@ -297,14 +337,18 @@ export interface FileRouteTypes {
     | '/leaf-cleanup-grand-forks'
     | '/login'
     | '/plan'
+    | '/reviews'
     | '/status'
     | '/jobs/$id'
     | '/jobs/books'
+    | '/jobs/care'
     | '/jobs/crew'
     | '/jobs/customers'
+    | '/my/$token'
     | '/api/auth/$'
     | '/api/cron/renewal-notices'
     | '/api/receipt/$id'
+    | '/api/review-photo/$id'
     | '/api/sms/inbound'
     | '/api/stripe/webhook'
     | '/api/voice/after'
@@ -325,14 +369,18 @@ export interface FileRouteTypes {
     | '/leaf-cleanup-grand-forks'
     | '/login'
     | '/plan'
+    | '/reviews'
     | '/status'
     | '/jobs_/$id'
     | '/jobs_/books'
+    | '/jobs_/care'
     | '/jobs_/crew'
     | '/jobs_/customers'
+    | '/my/$token'
     | '/api/auth/$'
     | '/api/cron/renewal-notices'
     | '/api/receipt/$id'
+    | '/api/review-photo/$id'
     | '/api/sms/inbound'
     | '/api/stripe/webhook'
     | '/api/voice/after'
@@ -354,14 +402,18 @@ export interface RootRouteChildren {
   LeafCleanupGrandForksRoute: typeof LeafCleanupGrandForksRoute
   LoginRoute: typeof LoginRoute
   PlanRoute: typeof PlanRoute
+  ReviewsRoute: typeof ReviewsRoute
   StatusRoute: typeof StatusRoute
   JobsIdRoute: typeof JobsIdRoute
   JobsBooksRoute: typeof JobsBooksRoute
+  JobsCareRoute: typeof JobsCareRoute
   JobsCrewRoute: typeof JobsCrewRoute
   JobsCustomersRoute: typeof JobsCustomersRoute
+  MyTokenRoute: typeof MyTokenRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCronRenewalNoticesRoute: typeof ApiCronRenewalNoticesRoute
   ApiReceiptIdRoute: typeof ApiReceiptIdRoute
+  ApiReviewPhotoIdRoute: typeof ApiReviewPhotoIdRoute
   ApiSmsInboundRoute: typeof ApiSmsInboundRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
   ApiVoiceAfterRoute: typeof ApiVoiceAfterRoute
@@ -462,6 +514,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlanRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reviews': {
+      id: '/reviews'
+      path: '/reviews'
+      fullPath: '/reviews'
+      preLoaderRoute: typeof ReviewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/status': {
       id: '/status'
       path: '/status'
@@ -483,6 +542,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JobsBooksRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/jobs_/care': {
+      id: '/jobs_/care'
+      path: '/jobs/care'
+      fullPath: '/jobs/care'
+      preLoaderRoute: typeof JobsCareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/jobs_/crew': {
       id: '/jobs_/crew'
       path: '/jobs/crew'
@@ -495,6 +561,13 @@ declare module '@tanstack/react-router' {
       path: '/jobs/customers'
       fullPath: '/jobs/customers'
       preLoaderRoute: typeof JobsCustomersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my/$token': {
+      id: '/my/$token'
+      path: '/my/$token'
+      fullPath: '/my/$token'
+      preLoaderRoute: typeof MyTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
@@ -516,6 +589,13 @@ declare module '@tanstack/react-router' {
       path: '/api/receipt/$id'
       fullPath: '/api/receipt/$id'
       preLoaderRoute: typeof ApiReceiptIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/review-photo/$id': {
+      id: '/api/review-photo/$id'
+      path: '/api/review-photo/$id'
+      fullPath: '/api/review-photo/$id'
+      preLoaderRoute: typeof ApiReviewPhotoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/sms/inbound': {
@@ -570,14 +650,18 @@ const rootRouteChildren: RootRouteChildren = {
   LeafCleanupGrandForksRoute: LeafCleanupGrandForksRoute,
   LoginRoute: LoginRoute,
   PlanRoute: PlanRoute,
+  ReviewsRoute: ReviewsRoute,
   StatusRoute: StatusRoute,
   JobsIdRoute: JobsIdRoute,
   JobsBooksRoute: JobsBooksRoute,
+  JobsCareRoute: JobsCareRoute,
   JobsCrewRoute: JobsCrewRoute,
   JobsCustomersRoute: JobsCustomersRoute,
+  MyTokenRoute: MyTokenRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCronRenewalNoticesRoute: ApiCronRenewalNoticesRoute,
   ApiReceiptIdRoute: ApiReceiptIdRoute,
+  ApiReviewPhotoIdRoute: ApiReviewPhotoIdRoute,
   ApiSmsInboundRoute: ApiSmsInboundRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
   ApiVoiceAfterRoute: ApiVoiceAfterRoute,

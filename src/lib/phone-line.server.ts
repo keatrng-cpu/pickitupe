@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { ownerInbox } from "@/lib/owner";
 import { getSql, type Sql } from "@/lib/db";
 import { ensurePayColumns } from "@/lib/pay-columns";
 import { ensureOwnerTables, logEvent } from "@/lib/owner-schema";
@@ -204,7 +205,7 @@ export async function alertOwner(input: { channel: string; phone: string; transc
     ` · ${jobsUrl}`;
   const [sms, mail] = await Promise.all([
     smsEnabled() ? sendSms(ownerCell, smsBody) : Promise.resolve(false),
-    sendEmail(process.env.OWNER_NOTIFY_EMAIL?.trim() || "pickitupe@gmail.com", doc.subject, doc.text, doc.html),
+    sendEmail(ownerInbox() ?? "", doc.subject, doc.text, doc.html),
   ]);
   return { sms, mail };
 }

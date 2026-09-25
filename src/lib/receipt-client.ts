@@ -38,6 +38,21 @@ export async function prepareReceiptFile(file: File): Promise<{ dataUrl: string;
   }
 }
 
+/**
+ * A review photo, ready to upload: re-encoded to a max-1600 px JPEG. Re-encoding
+ * through a canvas also drops EXIF — including the GPS tag a phone camera
+ * writes, which would otherwise publish the customer's home coordinates.
+ */
+export async function prepareReviewPhoto(file: File): Promise<string> {
+  if (!/^image\//.test(file.type) && !/\.(jpe?g|png|webp)$/i.test(file.name)) {
+    throw new Error("Use a photo — JPG, PNG or WebP.");
+  }
+  const { dataUrl, kind } = await prepareReceiptFile(file);
+  if (kind !== "image") throw new Error("Use a photo — JPG, PNG or WebP.");
+  if (dataUrl.length > 2_100_000) throw new Error("That photo is too large even after shrinking — try another.");
+  return dataUrl;
+}
+
 function readAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const r = new FileReader();

@@ -304,7 +304,9 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
     if (before[0] && before[0].status !== data.status) {
       await logEvent(sql, data.id, "status", `${before[0].status} → ${data.status}`);
     }
-    if (data.status === "done") {
+    // Only on the transition INTO done — re-saving a done job must not
+    // text the customer a second review ask.
+    if (data.status === "done" && before[0]?.status !== "done") {
       const rows = await sql.query<{ name: string; phone: string; email: string | null; service: string; estimate_low: number | null; estimate_high: number | null; final_cents: number | null }>(
         `select name, phone, email, service, estimate_low, estimate_high, final_cents from bookings where id = $1`,
         [data.id],
@@ -320,28 +322,19 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
             : row.estimate_low != null && row.estimate_high != null
               ? `$${row.estimate_low}–$${row.estimate_high}`
               : null;
-        await notifyCustomer(row.phone, row.email, doneReviewMessage(row.name, est), doneEmail({ id: data.id, name: row.name, service: row.service, estimate: est }));
+        const { ensureManageToken, manageUrl } = await import("@/lib/care.server");
+        const token = await ensureManageToken(sql, data.id);
+        const link = token ? manageUrl(token) : null;
+        await notifyCustomer(
+          row.phone,
+          row.email,
+          doneReviewMessage(row.name, est, link),
+          doneEmail({ id: data.id, name: row.name, service: row.service, estimate: est, manageUrl: link }),
+        );
       }
     }
     return { ok: true as const };
   });
-
-const phoneInput = z.object({ phone: z.string().min(7).max(24) });
-
-export async function jobsForPhone(raw: string) {
-  const phone = digitsPhone(raw);
-  if (!isUsPhone(phone)) return [] as BookingRow[];
-  const sql = await getSql();
-  await ensurePayColumns(sql);
-  const rows = await sql.query<BookingRow>(
-    `select ${BOOKING_SELECT} from bookings order by created_at desc limit 200`,
-  );
-  return rows.filter((r) => digitsPhone(r.phone).slice(-10) === phone).slice(0, 20);
-}
-
-export const lookupByPhone = createServerFn({ method: "POST" })
-  .validator((input: unknown) => phoneInput.parse(input))
-  .handler(async ({ data }) => jobsForPhone(data.phone));
 
 export const listMyBookings = createServerFn({ method: "GET" })
   .middleware([sessionEmail])
@@ -378,29 +371,6 @@ export const claimByPhone = createServerFn({ method: "POST" })
       n += 1;
     }
     return { ok: true as const, n };
-  });
-
-export const completeByPhone = createServerFn({ method: "POST" })
-  .validator((input: unknown) =>
-    z.object({ id: z.number().int().positive(), phone: z.string().min(7).max(24) }).parse(input),
-  )
-  .handler(async ({ data }) => {
-    const phone = digitsPhone(data.phone);
-    if (!isUsPhone(phone)) return null;
-    const sql = await getSql();
-    const rows = await sql<BookingRow>`
-      update bookings
-      set status = 'done'
-      where id = ${data.id}
-        and regexp_replace(phone, '[^0-9]', '', 'g') = ${phone}
-        and status not in ('done', 'cancelled')
-      returning id, name, phone, email, address, service, notes,
-                preferred_date, early_bird, status, created_at,
-                urgency, job_size, add_ons, estimate_low, estimate_high,
-                lat, lon, area_tier, neighbor_of,
-                households, applied_discount, discount_amount
-    `;
-    return rows[0] ?? null;
   });
 
 export const completeMyBooking = createServerFn({ method: "POST" })

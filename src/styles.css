@@ -572,6 +572,158 @@
   }
 }
 
+/* ------------------------------------------------------------------ motion
+ * One vocabulary, four verbs, all on the same ease so the site reads as one
+ * hand: PRINT (a ticket feeds out of a slot), STAMP (a rubber stamp lands),
+ * REVEAL (a section rises into view as you reach it), ROLL (the truck).
+ * Every one is off under prefers-reduced-motion (block at the bottom).
+ */
+:root {
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ticket-print {
+  animation: ticket-print 900ms var(--ease-out-soft) both;
+}
+
+.ticket-stamp {
+  animation: ticket-stamp 420ms cubic-bezier(0.3, 1.4, 0.5, 1) 820ms both;
+}
+
+.ticket::before,
+.ticket::after {
+  /* punched notches on the tear line, the paper-ticket tell */
+  content: "";
+  position: absolute;
+  top: 3.35rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 999px;
+  background: var(--color-bg);
+}
+.ticket::before {
+  left: -0.55rem;
+}
+.ticket::after {
+  right: -0.55rem;
+}
+
+/* Sections rise as they arrive. `data-reveal` is set by <Reveal>; without JS
+   (or before hydration) nothing is hidden — the class only animates. */
+[data-reveal="pending"] {
+  opacity: 0;
+  transform: translateY(14px);
+}
+[data-reveal="shown"] {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 700ms var(--ease-out-soft),
+    transform 700ms var(--ease-out-soft);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.roll-away {
+  animation: roll-away 1.6s cubic-bezier(0.55, 0, 0.3, 1) 1.2s both;
+}
+
+.day-chip {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms var(--ease-out-soft);
+}
+.day-chip[aria-pressed="true"] {
+  transform: translateY(-2px);
+}
+
+/* Capacity bar under each day: how full the truck already is. */
+.bed-fill {
+  transform-origin: left center;
+  animation: bed-fill 700ms var(--ease-out-soft) both;
+}
+
+.star-btn svg {
+  transition:
+    transform 160ms var(--ease-out-soft),
+    fill 160ms ease,
+    color 160ms ease;
+}
+.star-btn:hover svg,
+.star-btn:focus-visible svg {
+  transform: scale(1.18) rotate(-6deg);
+}
+
+@keyframes ticket-print {
+  from {
+    clip-path: inset(0 0 100% 0 round 1rem);
+    transform: translateY(-18px);
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 1rem);
+    transform: none;
+  }
+}
+
+@keyframes ticket-stamp {
+  0% {
+    opacity: 0;
+    transform: rotate(-9deg) scale(2.1);
+  }
+  70% {
+    opacity: 1;
+    transform: rotate(-9deg) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(-9deg) scale(1);
+  }
+}
+
+@keyframes roll-away {
+  0% {
+    transform: translateX(0);
+  }
+  18% {
+    transform: translateX(-10px);
+  }
+  100% {
+    transform: translateX(120vw);
+  }
+}
+
+@keyframes bed-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticket-print,
+  .ticket-stamp,
+  .roll-away,
+  .bed-fill {
+    animation: none !important;
+  }
+  [data-reveal="pending"],
+  [data-reveal="shown"] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .day-chip,
+  .star-btn svg {
+    transition: none !important;
+  }
+  .day-chip[aria-pressed="true"] {
+    transform: none;
+  }
+}
+
 @keyframes drift {
   from {
     transform: translate3d(0, -10vh, 0) rotate(0deg);

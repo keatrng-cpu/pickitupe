@@ -4,18 +4,25 @@ import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import {
   claimByPhone,
-  completeByPhone,
   completeMyBooking,
   listMyBookings,
-  lookupByPhone,
   type BookingRow,
 } from "@/lib/bookings";
+import { sendMyLinks } from "@/lib/care";
 import { formatPhone, isUsPhone } from "@/lib/phone";
 import { formatRange } from "@/lib/pricebook";
 import { readLastBooking } from "@/lib/returning";
 import { formatDayLong } from "@/lib/schedule";
 
-export const Route = createFileRoute("/status")({ component: StatusPage });
+export const Route = createFileRoute("/status")({
+  head: () => ({
+    meta: [
+      { title: "Your jobs | Pick It Up E" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: StatusPage,
+});
 
 const SERVICE_LABEL: Record<string, string> = {
   "leaf-cleanup": "Fall leaf & yard cleanup",
@@ -30,6 +37,7 @@ function StatusPage() {
   const [jobs, setJobs] = useState<BookingRow[] | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState("");
 
   useEffect(() => {
     const last = readLastBooking();
@@ -60,17 +68,17 @@ function StatusPage() {
       return;
     }
     setBusy(true);
-    const rows = await lookupByPhone({ data: { phone } }).catch(() => []);
+    const res = await sendMyLinks({ data: { phone } }).catch(() => null);
     setBusy(false);
-    setJobs(rows);
-    if (!rows.length) setError("Nothing on file for that phone. Try the number on the booking.");
+    if (!res) return setError("Couldn't send just now — text the number at the bottom.");
+    if (!res.ok) return setError(res.message);
+    setSent(res.message);
   }
 
   async function hauled(job: BookingRow) {
+    if (!user) return;
     setBusy(true);
-    const done = user
-      ? await completeMyBooking({ data: { id: job.id } }).catch(() => null)
-      : await completeByPhone({ data: { id: job.id, phone } }).catch(() => null);
+    const done = await completeMyBooking({ data: { id: job.id } }).catch(() => null);
     setBusy(false);
     if (!done) {
       setError("Couldn't mark it hauled. Call the shop line if you need a hand.");
@@ -85,12 +93,12 @@ function StatusPage() {
       <main id="main" className="mx-auto max-w-lg px-4 py-12">
         <p className="kicker">Your hauls</p>
         <h1 className="mt-2 font-display text-4xl leading-none sm:text-5xl">
-          {user ? "What's on your list." : "Look up with your phone."}
+          {user ? "What's on your list." : "Get your job links."}
         </h1>
         <p className="mt-3 text-base text-muted">
           {user
             ? "Jobs you book while signed in land here. Shop line and the form share this list."
-            : "Type the phone number you used when you booked. That's all we need."}
+            : "Every job has a private page — see the day, move it, ask for a change, leave a review. Put in the phone you booked with and we'll send the links to the phone and email on the booking."}
         </p>
 
         {isPending ? (
@@ -115,7 +123,7 @@ function StatusPage() {
                 disabled={busy}
                 className="btn-press h-14 rounded-full bg-fg text-base font-medium text-ink hover:bg-gold disabled:opacity-60"
               >
-                {busy ? "Looking…" : "Find my hauls"}
+                {busy ? "Sending…" : "Send me my links"}
               </button>
             </form>
             <p className="mt-4 text-sm text-muted">
@@ -129,6 +137,11 @@ function StatusPage() {
         )}
 
         {error ? <p className="mt-4 text-sm text-gold">{error}</p> : null}
+        {sent ? (
+          <p role="status" className="stagger-in mt-4 rounded-xl border border-sioux/60 bg-sioux/15 px-4 py-3 text-sm">
+            {sent}
+          </p>
+        ) : null}
 
         {jobs && jobs.length > 0 ? (
           <ul className="mt-8 grid gap-3">

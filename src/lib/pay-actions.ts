@@ -144,7 +144,10 @@ export const lockWithDeposit = createServerFn({ method: "POST" })
           },
         },
       ],
-      success_url: `${SITE}/call?held=1&job=${id}&day=${encodeURIComponent(preferredDate || "")}&code=${encodeURIComponent(`#${id}`)}`,
+      // {CHECKOUT_SESSION_ID} is filled in by Stripe. The success screen trades
+      // it for the day the job actually landed on (confirmDeposit) instead of
+      // trusting the day in the URL, which can be stale if it filled mid-checkout.
+      success_url: `${SITE}/call?held=1&job=${id}&day=${encodeURIComponent(preferredDate || "")}&code=${encodeURIComponent(`#${id}`)}&sid={CHECKOUT_SESSION_ID}`,
       cancel_url: `${SITE}/call?cancelled=1`,
       customer_email: data.email || undefined,
       phone_number_collection: { enabled: true },

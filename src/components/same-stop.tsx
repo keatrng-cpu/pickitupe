@@ -16,7 +16,7 @@ export function SameStop({ addOns, onChange }: Props) {
     <fieldset className="mt-4">
       <legend className="text-xs font-medium text-muted">While we're here</legend>
       <p className="mt-2 text-sm text-muted">
-        Gutters while we're there? Rake first, then we climb. Trip already paid —
+        Gutters while we're there? Rake first, then the gutter vac — from the ground. Trip already paid —
         not a second roll, not another percent off.
       </p>
       <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Same-stop add-ons">

@@ -18,7 +18,7 @@ import {
   type ServiceKey,
 } from "@/lib/pricebook";
 import { dayOptions, firstOpenDay, formatDayLong, parseSpokenDay, slotsFor } from "@/lib/schedule";
-import { jobsForPhone, loadFill } from "@/lib/bookings";
+import { loadFill } from "@/lib/bookings";
 import { lockWithDeposit } from "@/lib/pay-actions";
 import { digitsPhone, isUsPhone } from "@/lib/phone";
 import { optionalSession } from "@/lib/optional-session";
@@ -97,7 +97,7 @@ On a leaf stop, same-stop extras — keep service=leaf-cleanup, do NOT switch to
 - gutters-here: ranch / single-story $80–$110
 - gutters-wrap: wraparound or split $110–$145
 - porch-piece: one bulky piece $55–$85
-Ask once after they pick leaves: "Gutters while we're there?" Sequence: rake first, climb second. Bundle extras never take the September percent. Deposit stays $50. Do not offer gutter add-ons on landlord stacks.
+Ask once after they pick leaves: "Gutters while we're there?" Sequence: rake first, then the gutter vac from the ground (single-story only, no ladder). Bundle extras never take the September percent. Deposit stays $50. Do not offer gutter add-ons on landlord stacks.
 Promo: ${isPromoActive() ? `${PROMO_DEADLINE_LABEL} still takes 20% off the leaf/junk base, capped at $75, floor $55. Bundle extras are already trip-priced — no percent on those.` : "Percent-off window is closed. Book before the city vacuum (mid-Oct to mid-Nov). Neighbor/block credit for same-street density. Floor still $55. No extra coupon."}
 Deposit: $50 on the card holds the day (landlord stacks $75–$100) and comes off the invoice. No hold without the card. Owner cell if they insist: ${PHONE}.
 
@@ -219,7 +219,7 @@ const tools = [
     type: "function",
     function: {
       name: "find_job",
-      description: "Look up bookings by the phone they booked with, or a job number.",
+      description: "Caller asks about an existing booking: sends the private job links to the phone/email ON the booking. Returns no job details — never read a booking back to the caller.",
       parameters: {
         type: "object",
         properties: { phone: { type: "string" } },
@@ -453,17 +453,15 @@ async function runTool(name: string, raw: string, lead: ShopLead, email: string 
   }
 
   if (name === "find_job") {
+    // Privacy: never read a booking back to whoever typed a phone number.
+    // Send the private job links to the contact details on the booking.
     const phone = String(args.phone || lead.phone || "");
-    const rows = await jobsForPhone(phone);
-    return JSON.stringify(
-      rows.slice(0, 5).map((r) => ({
-        id: r.id,
-        day: r.preferred_date,
-        service: r.service,
-        size: r.job_size,
-        status: r.status,
-      })),
-    );
+    const { sendLinksForPhone } = await import("@/lib/care.server");
+    await sendLinksForPhone(phone);
+    return JSON.stringify({
+      ok: true,
+      note: "If that phone is on a booking, its private job links were just sent to the email/phone on the booking. Tell the caller to check there; do not state any job details.",
+    });
   }
 
   return JSON.stringify({ error: "unknown tool" });
@@ -690,11 +688,10 @@ async function fallbackReply(
   const next = absorb(lead, last);
 
   if (/(look up|status|where's my|where is my)/.test(t) && (next.phone || lead.phone)) {
-    const rows = await jobsForPhone(next.phone || lead.phone || "");
-    if (!rows.length) return { text: "Nothing on file for that phone.", lead: next };
-    const r = rows[0];
+    const { sendLinksForPhone } = await import("@/lib/care.server");
+    await sendLinksForPhone(next.phone || lead.phone || "");
     return {
-      text: `Job #${r.id} is ${r.status}${r.preferred_date ? ` for ${formatDayLong(r.preferred_date)}` : ""}.`,
+      text: "If that number's on a booking, I just sent the job links to the phone and email on it — the day, moving it, all there.",
       lead: next,
     };
   }
