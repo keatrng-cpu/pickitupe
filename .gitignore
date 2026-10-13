@@ -11,7 +11,7 @@ dist/
 *.log
 screenshots/
 artifacts/
-.grok/
+.grok/*
 AGENTS.md
 # Claude Code — commit shared rules, ignore machine-local state
 .claude/settings.local.json
@@ -33,3 +33,6 @@ attachments/*VIN*
 print/.business-plan.built.html
 ai/.sessions.log
 graphify-out/.post-commit.log
+# auto-memory: keep these tracked
+!.grok/GROK.md
+!AGENTS.md
