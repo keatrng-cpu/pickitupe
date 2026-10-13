@@ -36,3 +36,5 @@ graphify-out/.post-commit.log
 # auto-memory: keep these tracked
 !.grok/GROK.md
 !AGENTS.md
+ai/.context.md
+ai/.context.md.tmp
