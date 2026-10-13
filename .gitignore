@@ -31,3 +31,5 @@ attachments/*VIN*
 
 # Intermediate render from scripts/make-plan-pdf.mjs
 print/.business-plan.built.html
+ai/.sessions.log
+graphify-out/.post-commit.log
