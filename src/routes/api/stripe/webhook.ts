@@ -7,6 +7,7 @@ import {
   upsertSubscription,
 } from "@/lib/subscriptions.server";
 import { finalizeBalance, finalizePaidDeposit } from "@/lib/pay-finalize.server";
+import { isAmericanPennyPowerObject } from "@/lib/foreign-stripe";
 
 /**
  * Stripe webhook endpoint — https://pickitupe.com/api/stripe/webhook
@@ -59,6 +60,12 @@ export const Route = createFileRoute("/api/stripe/webhook")({
           return new Response(`signature verification failed: ${message}`, {
             status: 400,
           });
+        }
+
+        // Shared Stripe account: another business's (American Penny Power)
+        // events are acknowledged and ignored, before anything is claimed or written.
+        if (isAmericanPennyPowerObject(event.data?.object)) {
+          return new Response("ignored: other business", { status: 200 });
         }
 
         try {
