@@ -7,6 +7,7 @@ import {
   upsertSubscription,
 } from "@/lib/subscriptions.server";
 import { finalizeBalance, finalizePaidDeposit } from "@/lib/pay-finalize.server";
+import { isAmericanPennyPowerObject } from "@/lib/foreign-stripe";
 
 /**
  * Stripe webhook endpoint — https://pickitupe.com/api/stripe/webhook
@@ -61,6 +62,12 @@ export const Route = createFileRoute("/api/stripe/webhook")({
           });
         }
 
+        // Shared Stripe account: another business's (American Penny Power)
+        // events are acknowledged and ignored, before anything is claimed or written.
+        if (isAmericanPennyPowerObject(event.data?.object)) {
+          return new Response("ignored: other business", { status: 200 });
+        }
+
         try {
           const fresh = await claimEvent(event.id, event.type);
           if (!fresh) {
@@ -91,6 +98,10 @@ export const Route = createFileRoute("/api/stripe/webhook")({
                   ? session.subscription
                   : session.subscription.id,
               );
+
+              // Second check on the resolved subscription (covers APP invoices/sessions
+              // that carry no tag themselves).
+              if (isAmericanPennyPowerObject(sub)) break;
 
               await upsertSubscription({
                 subscriptionId: sub.id,
@@ -144,6 +155,9 @@ export const Route = createFileRoute("/api/stripe/webhook")({
               if (!subId) break;
 
               const sub = await getStripe().subscriptions.retrieve(subId);
+              // Second check on the resolved subscription (covers APP invoices/sessions
+              // that carry no tag themselves).
+              if (isAmericanPennyPowerObject(sub)) break;
               const end = sub.items.data[0]?.current_period_end
                 ? new Date(sub.items.data[0].current_period_end * 1000).toISOString()
                 : null;
@@ -166,6 +180,9 @@ export const Route = createFileRoute("/api/stripe/webhook")({
               const subId = subscriptionIdOf(invoice);
               if (!subId) break;
               const sub = await getStripe().subscriptions.retrieve(subId);
+              // Second check on the resolved subscription (covers APP invoices/sessions
+              // that carry no tag themselves).
+              if (isAmericanPennyPowerObject(sub)) break;
               await upsertSubscription({
                 subscriptionId: sub.id,
                 customerId:
