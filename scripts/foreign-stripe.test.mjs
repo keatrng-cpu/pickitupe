@@ -29,3 +29,10 @@ test("Pick It Up E objects are not mistaken for APP ones", () => {
   assert.equal(isApp(null), false);
   assert.equal(isApp("evt"), false);
 });
+
+test("an untagged APP invoice is still caught on its resolved subscription", () => {
+  // The webhook re-checks the subscription it retrieves for invoice/session events.
+  assert.equal(isApp({ id: "in_u", lines: { data: [{ pricing: { price_details: { price: "price_u", product: "prod_other" } } }] } }), false);
+  assert.equal(isApp({ id: "sub_u", metadata: {}, items: { data: [{ price: { id: "price_u", lookup_key: "apg_collector_monthly", metadata: {} } }] } }), true);
+  assert.equal(isApp({ id: "in_u", lines: { data: [{ pricing: { price_details: { price: "price_u", product: "prod_VV7WilOqfRELCF" } } }] } }), true);
+});

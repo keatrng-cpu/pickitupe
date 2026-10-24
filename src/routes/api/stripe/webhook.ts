@@ -99,6 +99,10 @@ export const Route = createFileRoute("/api/stripe/webhook")({
                   : session.subscription.id,
               );
 
+              // Second check on the resolved subscription (covers APP invoices/sessions
+              // that carry no tag themselves).
+              if (isAmericanPennyPowerObject(sub)) break;
+
               await upsertSubscription({
                 subscriptionId: sub.id,
                 customerId:
@@ -151,6 +155,9 @@ export const Route = createFileRoute("/api/stripe/webhook")({
               if (!subId) break;
 
               const sub = await getStripe().subscriptions.retrieve(subId);
+              // Second check on the resolved subscription (covers APP invoices/sessions
+              // that carry no tag themselves).
+              if (isAmericanPennyPowerObject(sub)) break;
               const end = sub.items.data[0]?.current_period_end
                 ? new Date(sub.items.data[0].current_period_end * 1000).toISOString()
                 : null;
@@ -173,6 +180,9 @@ export const Route = createFileRoute("/api/stripe/webhook")({
               const subId = subscriptionIdOf(invoice);
               if (!subId) break;
               const sub = await getStripe().subscriptions.retrieve(subId);
+              // Second check on the resolved subscription (covers APP invoices/sessions
+              // that carry no tag themselves).
+              if (isAmericanPennyPowerObject(sub)) break;
               await upsertSubscription({
                 subscriptionId: sub.id,
                 customerId:
