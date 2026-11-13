@@ -1078,6 +1078,14 @@
 .road-track {
   position: relative;
   height: 6.5rem;
+  --truck-w: 10rem;
+}
+
+@media (min-width: 1024px) {
+  .road-track {
+    height: 8rem;
+    --truck-w: 13rem;
+  }
 }
 
 .road-lane {
@@ -1099,14 +1107,14 @@
   right: 0;
   bottom: 0.55rem;
   height: 100%;
-  transform: translateX(calc(100% - 10rem));
+  transform: translateX(calc(100% - var(--truck-w, 10rem)));
 }
 
 .road-truck {
   position: absolute;
   bottom: 0;
   left: 0;
-  width: 10rem;
+  width: var(--truck-w, 10rem);
 }
 
 .road-step {
@@ -1168,7 +1176,7 @@
     transform: translateX(0);
   }
   to {
-    transform: translateX(calc(100% - 10rem));
+    transform: translateX(calc(100% - var(--truck-w, 10rem)));
   }
 }
 
@@ -1295,7 +1303,7 @@ html[data-motion="paused"] .truck-stage-svg {
   .road-section .road-driver {
     animation: none !important;
     transition: none !important;
-    transform: translateX(calc(100% - 10rem)) !important;
+    transform: translateX(calc(100% - var(--truck-w, 10rem))) !important;
   }
   .road-step,
   .road-step .road-step-num {
