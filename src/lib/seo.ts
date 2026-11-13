@@ -1,3 +1,4 @@
+import { SITE_E164, SITE_PHONE, SITE_TEL } from "@/lib/site-phone";
 /**
  * Structured data so Google can answer "leaf removal near me" with this
  * business instead of a directory page.
@@ -13,9 +14,9 @@
 
 export const BUSINESS = {
   name: "Pick It Up E",
-  phone: "701-213-3969",
-  telHref: "tel:7012133969",
-  telE164: "+1-701-213-3969",
+  phone: SITE_PHONE,
+  telHref: SITE_TEL,
+  telE164: SITE_E164,
   city: "Grand Forks",
   region: "ND",
   /**

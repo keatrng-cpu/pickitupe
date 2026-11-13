@@ -15,15 +15,17 @@ import { MotionToggle } from "@/components/winter/motion-toggle";
 import { Snowfall } from "@/components/winter/snowfall";
 import { TruckStage } from "@/components/winter/truck-stage";
 import { getOfferStatus } from "@/lib/bookings";
+import { MEDIA } from "@/lib/media";
 import { DEPOSIT, ESTATE_TIERS, listedSizesFor } from "@/lib/pricebook";
 import { firstName, readLastBooking, type SavedBooking } from "@/lib/returning";
 import { DAILY_SLOTS } from "@/lib/schedule";
 import { faqJsonLd, localBusinessJsonLd, SITE_URL } from "@/lib/seo";
+import { SITE_PHONE } from "@/lib/site-phone";
 
 const TITLE =
   "Junk Removal, Appliance Pickup & Estate Cleanouts in Grand Forks, ND | Pick It Up E";
 const DESCRIPTION =
-  "Junk, furniture and appliance removal plus whole-house and estate cleanouts in Grand Forks and East Grand Forks. Carried from the basement, price before you call, $50 holds the day. 701-213-3969.";
+  `Junk, furniture and appliance removal plus whole-house and estate cleanouts in Grand Forks and East Grand Forks. Carried from the basement, price before you call, $50 holds the day. ${SITE_PHONE}.`;
 
 /** From the pricebook, never typed: the "One piece" rung's low end. */
 const ONE_PIECE_FROM = listedSizesFor("junk-removal").find((s) => s.value === "single")?.range.low ?? 59;
@@ -75,7 +77,7 @@ function Home() {
           <Snowfall />
           <div className="winter-hero-grid mx-auto max-w-6xl px-4">
             <div className="winter-hero-stage">
-              <TruckStage />
+              <TruckStage video={MEDIA.heroLoop} allow3D={MEDIA.hero3D} />
               <MotionToggle className="absolute bottom-3 right-3 z-20" />
             </div>
             <div className="winter-hero-copy hero-enter">

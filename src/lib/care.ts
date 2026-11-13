@@ -258,7 +258,9 @@ export const confirmDeposit = createServerFn({ method: "POST" })
       return { ok: false as const, pending: true as const, error: "The card is still processing." };
     }
     const { finalizePaidDeposit } = await import("@/lib/pay-finalize.server");
-    const done = await finalizePaidDeposit(id, session.id, session.amount_total);
+    const done = await finalizePaidDeposit(id, session.id, session.amount_total, {
+      email: session.customer_details?.email,
+    });
     if (!done) return { ok: false as const, error: "Couldn't find the job." };
     const { careSql } = await import("@/lib/care.server");
     const sql = await careSql();

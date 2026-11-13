@@ -14,6 +14,7 @@ import { firstOpenDay, needFor } from "@/lib/schedule";
 import { sessionEmail } from "@/lib/optional-session";
 import { isOwnerEmail } from "@/lib/owner";
 import { isUsPhone } from "@/lib/phone";
+import { SITE_PHONE } from "@/lib/site-phone";
 
 const SITE = (process.env.BETTER_AUTH_URL?.trim().replace(/\/$/, "") || "https://pickitupe.com");
 
@@ -61,7 +62,7 @@ export const lockWithDeposit = createServerFn({ method: "POST" })
     if (!stripeConfigured()) {
       return {
         ok: false as const,
-        error: "Card checkout isn't live yet. Text 701-213-3969 and we'll hold the day.",
+        error: `Card checkout isn't live yet. Text ${SITE_PHONE} and we'll hold the day.`,
       };
     }
 
@@ -149,8 +150,9 @@ export const lockWithDeposit = createServerFn({ method: "POST" })
       // trusting the day in the URL, which can be stale if it filled mid-checkout.
       success_url: `${SITE}/call?held=1&job=${id}&day=${encodeURIComponent(preferredDate || "")}&code=${encodeURIComponent(`#${id}`)}&sid={CHECKOUT_SESSION_ID}`,
       cancel_url: `${SITE}/call?cancelled=1`,
+      // Phone is required and validated on our own form; asking again here
+      // put a second phone field on the card page.
       customer_email: data.email || undefined,
-      phone_number_collection: { enabled: true },
       metadata: {
         app: "pickitupe",
         kind: "deposit",
@@ -163,7 +165,7 @@ export const lockWithDeposit = createServerFn({ method: "POST" })
       },
     });
     if (!session.url) {
-      return { ok: false as const, error: "Couldn't open card checkout. Text 701-213-3969." };
+      return { ok: false as const, error: `Couldn't open card checkout. Text ${SITE_PHONE}.` };
     }
     await sql.query(`update bookings set deposit_session_id = $2 where id = $1`, [id, session.id]);
     return { ok: true as const, id, url: session.url, deposit, preferredDate };
@@ -248,7 +250,7 @@ export const startSpringHold = createServerFn({ method: "POST" })
     }
     const { getStripe, stripeConfigured } = await stripeClient();
     if (!stripeConfigured()) {
-      return { ok: false as const, error: "Text 701-213-3969 and we'll hold spring at this year's rate." };
+      return { ok: false as const, error: `Text ${SITE_PHONE} and we'll hold spring at this year's rate.` };
     }
     const { getSql } = await import("@/lib/db");
     const { ensurePayColumns } = await import("@/lib/pay-columns");
@@ -292,8 +294,9 @@ export const startSpringHold = createServerFn({ method: "POST" })
       ],
       success_url: `${SITE}/plan?held=1`,
       cancel_url: `${SITE}/plan?cancelled=1`,
+      // Phone is required and validated on our own form; asking again here
+      // put a second phone field on the card page.
       customer_email: data.email || undefined,
-      phone_number_collection: { enabled: true },
       metadata: { app: "pickitupe", kind: "deposit", bookingId: String(id) },
     });
     if (!session.url) return { ok: false as const, error: "Couldn't open checkout." };

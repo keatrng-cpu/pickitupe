@@ -24,6 +24,7 @@ Path-scoped rules also live in [`.claude/rules/`](.claude/rules/).
 - Name: Pick It Up E (temporary)
 - Owner market: Grand Forks, ND / East Grand Forks
 - Phone — TWO numbers, both the owner's, split on purpose so print response can be measured apart from web: **701-213-3969 is the SITE number** (header + footer only, plus error toasts / emails / JSON-LD — do not repeat it on every section). **218-779-2553 is the PRINT number** — reserved for print. **Owner decision 2026-09-11: the VistaPrint door-hanger run uses 701-213-3969 anyway** (see `print/DOOR-HANGER.md`); print response is tracked by the QR `?s=dh` tag instead. Never put both numbers on one surface.
+- **Phone, Nov 13 2026 (owner): 701-213-3969 is being retired** for a Twilio line answered by an ElevenLabs voice agent. The site number lives in **one place, `src/lib/site-phone.ts`** — nothing else may hard-code it (door-hanger replica excepted: it shows what was printed). `NEW_LINE_DIGITS` there stays `null` until the Twilio line is bought *and answering*; then set it and `SITE_PHONE_DIGITS` together. Print (`scripts/make-winter-print.mjs`) uses only `NEW_LINE_DIGITS` and stamps every proof PROOF / NEW NUMBER while it's null. Keep 3969 forwarding for 6+ months after the switch — hangers and the Google profile carry it.
 - Services: fall leaf cleanup, junk/debris haul, furniture & appliances, gutter cleaning (**single-story only** — 120V ground vacuum, no ladder work; two-story is handed off). Garage & basement cleanouts survive as the `cleanout` add-on, not a service.
 - Real truck: **2020 GMC Sierra 1500 Denali**, silver. Do not brand the company as GMC.
 - Marketing art: **vintage cream letterpress pickup** (right-facing, leaves in the bed). Owner replaced the silver photo. `public/haul-truck.webp` is still used on `/login`; source sketch `attachments/image.png`.
@@ -94,7 +95,7 @@ Do not add a second package manager. Do not rewrite the stack (TanStack Start + 
 ## When changing marketing
 
 - Update the live door hanger **and** `print/DOOR-HANGER.md`
-- Site phone stays `701-213-3969` / `tel:7012133969`; print (door hanger) phone stays `218-779-2553` / `tel:2187792553`
+- Site phone comes from `src/lib/site-phone.ts` (see the Nov 13 note above); never type a number into a component. New print uses `NEW_LINE_DIGITS`, not 3969
 - Keep the illustrated cream truck unless the owner says otherwise
 
 ## Do not

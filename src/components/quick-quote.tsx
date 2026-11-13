@@ -2,8 +2,10 @@ import { ArrowRight, Droplets, Leaf, Trash2 } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { SameStop } from "@/components/same-stop";
+import { BedLoad } from "@/components/winter/bed-load";
 import {
   canonicalService,
+  canonicalSize,
   estimate,
   featuredSizesFor,
   formatRange,
@@ -54,6 +56,7 @@ export function QuickQuote() {
     ? size
     : (sizes[0]?.value ?? "");
   const currentHint = sizes.find((s) => s.value === current)?.hint;
+  const showBed = service === "junk-removal";
   const sizeHeading =
     service === "leaf-cleanup"
       ? "Yard size"
@@ -136,7 +139,13 @@ export function QuickQuote() {
         <SameStop addOns={addOns} onChange={(next) => setAddOns(next as AddOnKey[])} />
       ) : null}
 
-      <div className="card-estimate relative mt-8 overflow-hidden rounded-2xl p-6">
+      <div className={`mt-8 grid items-stretch gap-4 ${showBed ? "lg:grid-cols-[1.1fr_1fr]" : ""}`}>
+      {showBed ? (
+        <div className="card-green load-card flex items-center rounded-2xl px-3 py-4 sm:px-6">
+          <BedLoad size={canonicalSize(service, current)} className="mx-auto max-w-md" />
+        </div>
+      ) : null}
+      <div className="card-estimate relative overflow-hidden rounded-2xl p-6">
         <p className="kicker">Your range</p>
         <div className="mt-3 flex flex-wrap items-end gap-3">
           <p
@@ -166,6 +175,7 @@ export function QuickQuote() {
           Lock this
           <ArrowRight className="size-4" />
         </Link>
+      </div>
       </div>
     </section>
   );

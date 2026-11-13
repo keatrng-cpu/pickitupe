@@ -49,9 +49,21 @@ export async function finalizePaidDeposit(
   bookingId: number,
   sessionId: string,
   amountCents?: number | null,
+  contact?: { email?: string | null } | null,
 ): Promise<{ day: string | null; token: string | null; moved: boolean } | null> {
   const sql = await getSql();
   await ensurePayColumns(sql);
+  // /call doesn't ask a guest for email — Stripe Checkout does. Keep the one
+  // they typed there, or the booked email, job link and day-before reminder
+  // have nowhere to go while texting is off. Never overwrites an email the
+  // booking already has.
+  const stripeEmail = contact?.email?.trim().toLowerCase();
+  if (stripeEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(stripeEmail) && stripeEmail.length <= 254) {
+    await sql.query(
+      `update bookings set email = $2 where id = $1 and (email is null or email = '')`,
+      [bookingId, stripeEmail],
+    );
+  }
   const rows = await sql.query<{
     id: number;
     name: string;

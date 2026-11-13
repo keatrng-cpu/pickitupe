@@ -1,6 +1,8 @@
 import { Camera, CalendarCheck, Receipt, Truck } from "lucide-react";
 import { useEffect, useRef, type CSSProperties } from "react";
 import { TruckSvg } from "@/components/winter/truck-svg";
+import { smsLink } from "@/lib/messages";
+import { BUSINESS } from "@/lib/seo";
 
 /**
  * "How it works" as a road. The truck drives left to right while the section
@@ -17,6 +19,13 @@ const STEPS = [
   { icon: CalendarCheck, title: "Pick a day", body: "$50 on a card holds it and comes off the bill." },
   { icon: Truck, title: "Gone", body: "We carry it out, load it and haul it. You don't lift a thing." },
 ] as const;
+
+/** Step 01 is the one thing the customer does, so it is a real button: it opens
+ * their texting app with the number and a starter line filled in. */
+const PHOTO_TEXT = smsLink(
+  BUSINESS.phone,
+  "Junk pickup quote. Photo of the pile attached. Address: ",
+);
 
 export function HowItWorksRoad() {
   const ref = useRef<HTMLElement>(null);
@@ -59,6 +68,15 @@ export function HowItWorksRoad() {
             <s.icon className="mt-3 size-6 text-gold" aria-hidden="true" />
             <p className="mt-3 font-display text-2xl leading-none">{s.title}</p>
             <p className="mt-2 text-sm leading-6 text-fg/85">{s.body}</p>
+            {i === 0 ? (
+              <a
+                href={PHOTO_TEXT}
+                className="btn-press mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-fg px-4 text-sm font-medium text-ink hover:bg-gold"
+              >
+                <Camera className="size-4" aria-hidden="true" />
+                Text a photo
+              </a>
+            ) : null}
           </li>
         ))}
       </ol>

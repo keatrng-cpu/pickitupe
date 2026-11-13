@@ -1,3 +1,4 @@
+import { SITE_PHONE } from "@/lib/site-phone";
 /**
  * Pick It Up E — flat-rate pricebook and instant estimator.
  *
@@ -981,7 +982,7 @@ export function estimate(input: EstimateInput): Estimate {
       deposit: DEPOSIT,
       lines: [],
       notes: [
-        "Tell us what it is and we'll price it the same day — call or text 701-213-3969.",
+        `Tell us what it is and we'll price it the same day — call or text ${SITE_PHONE}.`,
       ],
       refused: refusedItemsIn(input.notes ?? ""),
       needsWalkthrough: true,

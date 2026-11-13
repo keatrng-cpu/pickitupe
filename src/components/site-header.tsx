@@ -9,8 +9,9 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { looksLikeOwner } from "@/lib/owner";
 import { Button } from "@/components/ui/button";
 import { BUSINESS } from "@/lib/seo";
+import { SITE_PHONE, SITE_TEL } from "@/lib/site-phone";
 
-const PHONE = "701-213-3969";
+const PHONE = SITE_PHONE;
 
 type NavItem =
   | { to: "/"; hash?: "faq"; label: string }
@@ -235,8 +236,8 @@ export function SiteFooter() {
           <div>
             <p className="font-display text-xl">Pick It Up E</p>
             <p className="mt-1 text-sm text-muted">Grand Forks, ND · {BUSINESS.hoursLine}</p>
-            <a className="mt-1 block text-sm text-fg hover:text-gold" href="tel:7012133969">
-              701-213-3969
+            <a className="mt-1 block text-sm text-fg hover:text-gold" href={SITE_TEL}>
+              {PHONE}
             </a>
           </div>
         </div>
@@ -289,8 +290,8 @@ export function SiteFooter() {
           <Link to="/" hash="faq" className="text-muted hover:text-gold">
             FAQ
           </Link>
-          <a className="text-fg hover:text-gold" href="tel:7012133969">
-            701-213-3969
+          <a className="text-fg hover:text-gold" href={SITE_TEL}>
+            {PHONE}
           </a>
         </nav>
       </div>

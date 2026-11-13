@@ -1284,6 +1284,85 @@
   outline-offset: 3px;
 }
 
+/* --- Bed load (quick quote) ----------------------------------------
+ * The junk size picker loads a cutaway truck bed. One drop per pick (the
+ * group is re-keyed), never a loop. Off under prefers-reduced-motion.     */
+
+.load-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.load-item {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: load-drop 560ms var(--ease-out-soft) both;
+  animation-delay: calc(var(--i, 0) * 80ms);
+}
+.load-strap {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: load-strap 420ms var(--ease-out-soft) forwards;
+  animation-delay: calc(var(--i, 0) * 80ms + 160ms);
+}
+.load-gauge-fill {
+  transform-box: fill-box;
+  transform-origin: right center;
+  transition: transform 650ms var(--ease-out-soft);
+}
+.load-trips {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: load-pop 380ms var(--ease-out-soft) 520ms both;
+}
+
+@keyframes load-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-42px) rotate(-3deg);
+  }
+  45% {
+    opacity: 1;
+  }
+  72% {
+    transform: translateY(2px) rotate(0.5deg) scaleY(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes load-strap {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes load-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .load-item,
+  .load-trips {
+    animation: none !important;
+  }
+  .load-strap {
+    animation: none !important;
+    stroke-dashoffset: 0;
+  }
+  .load-gauge-fill {
+    transition: none !important;
+  }
+}
+
 /* --- Motion off ------------------------------------------------------ */
 
 html[data-motion="paused"] .snowfall span,

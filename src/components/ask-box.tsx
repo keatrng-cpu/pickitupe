@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { ArrowRight, BellRing, Loader2, Phone } from "lucide-react";
 import { askQuestion } from "@/lib/chat-actions";
+import { SITE_PHONE, SITE_SMS } from "@/lib/site-phone";
 
 type Turn = { role: "user" | "assistant"; content: string };
 
@@ -76,7 +77,7 @@ export function AskBox({
         {
           role: "assistant",
           content:
-            "Couldn't reach the answer service. Call or text 701-213-3969.",
+            `Couldn't reach the answer service. Call or text ${SITE_PHONE}.`,
         },
       ]);
     } finally {
@@ -146,7 +147,7 @@ export function AskBox({
         className="mt-6"
       >
         <label htmlFor="ask" className="sr-only">
-          Ask a question about leaf cleanup or junk removal
+          Ask a question about junk removal, appliances or a cleanout
         </label>
         <div className="flex flex-col gap-3 sm:flex-row">
           <input
@@ -173,12 +174,12 @@ export function AskBox({
       <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
         <Phone className="size-3.5" aria-hidden />
         An AI answers from this site's own price list; anything it flags goes
-        to the owner. For anything about your specific yard, text a photo to
+        to the owner. For your specific pile or house, text a photo to
         <a
           className="text-fg underline decoration-gold/50 underline-offset-4"
-          href="sms:7012133969"
+          href={SITE_SMS}
         >
-          701-213-3969
+          {SITE_PHONE}
         </a>
         and the owner will reply the same day.
       </p>

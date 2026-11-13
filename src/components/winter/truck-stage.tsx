@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { TruckSvg } from "@/components/winter/truck-svg";
 import { useMotionPaused } from "@/components/winter/motion";
+import type { VideoSlot } from "@/lib/media";
 
 /**
  * Hero stage: an SVG poster paints with the HTML (no network, no layout
@@ -15,8 +16,8 @@ import { useMotionPaused } from "@/components/winter/motion";
  *
  * Swap slot: pass `video` (mp4/webm + poster) to replace the 3D scene with a
  * rendered loop — e.g. the Higgsfield clips — without touching the layout.
+ * Home reads it from MEDIA.heroLoop in src/lib/media.ts.
  */
-type VideoSlot = { mp4: string; webm?: string; poster: string };
 
 function canRun3D() {
   try {
@@ -34,7 +35,16 @@ function canRun3D() {
   }
 }
 
-export function TruckStage({ video, className }: { video?: VideoSlot; className?: string }) {
+export function TruckStage({
+  video,
+  allow3D = false,
+  className,
+}: {
+  video?: VideoSlot;
+  /** Load the procedural 3D truck after idle. Off: the SVG truck is the hero. */
+  allow3D?: boolean;
+  className?: string;
+}) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [mode, setMode] = useState<"poster" | "3d" | "video">("poster");
@@ -48,7 +58,7 @@ export function TruckStage({ video, className }: { video?: VideoSlot; className?
       setMode("video");
       return;
     }
-    if (!canRun3D()) return;
+    if (!allow3D || !canRun3D()) return;
     let cancelled = false;
     const start = () => {
       if (cancelled) return;
@@ -72,7 +82,7 @@ export function TruckStage({ video, className }: { video?: VideoSlot; className?
     return () => {
       cancelled = true;
     };
-  }, [video]);
+  }, [video, allow3D]);
 
   useEffect(() => {
     if (mode !== "3d") return;

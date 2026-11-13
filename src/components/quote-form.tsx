@@ -31,6 +31,7 @@ import {
   type ServiceKey,
 } from "@/lib/pricebook";
 import type { AreaVerdict } from "@/lib/service-area";
+import { SITE_PHONE, SITE_SMS } from "@/lib/site-phone";
 
 const schema = z.object({
   name: z.string().min(2, "Name please"),
@@ -254,7 +255,7 @@ export function QuoteForm({
         return;
       }
     } catch {
-      toast.error("Could not open checkout. Call or text 701-213-3969.");
+      toast.error(`Could not open checkout. Call or text ${SITE_PHONE}.`);
     }
   }
 
@@ -285,7 +286,7 @@ export function QuoteForm({
       if (res.ok) setAssessment(res);
       else toast.error(res.error);
     } catch {
-      toast.error("Couldn't size it up. Call or text 701-213-3969.");
+      toast.error(`Couldn't size it up. Call or text ${SITE_PHONE}.`);
     } finally {
       setEstimating(false);
     }
@@ -312,7 +313,7 @@ export function QuoteForm({
         </p>
         <a
           className="mt-6 inline-flex text-sm underline decoration-gold/50 underline-offset-4"
-          href="sms:7012133969"
+          href={SITE_SMS}
         >
           Text a photo of the pile now
         </a>
@@ -674,7 +675,7 @@ export function QuoteForm({
               {assessment.confidence === "low" ? (
                 <p className="mt-3 text-xs text-muted">
                   Low confidence on this one — a photo, or a text to
-                  701-213-3969, will get you a firmer number.
+                  {SITE_PHONE}, will get you a firmer number.
                 </p>
               ) : null}
 
