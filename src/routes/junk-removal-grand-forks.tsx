@@ -56,7 +56,7 @@ const FAQS: Faq[] = [
   },
   {
     q: "Do you do whole-house or estate cleanouts?",
-    a: `Our full bed is about 2.5 cubic yards, so a whole house is several trips. We'll walk it first, quote it as a garage or basement cleanout (${formatRange(cleanout.range)} of sort-and-carry labor on top of the load) and tell you honestly if it's a dumpster job instead.`,
+    a: `Yes. A garage or basement is a haul plus ${formatRange(cleanout.range)} of sort-and-carry labor. A whole house or an estate gets a free walkthrough and one fixed written price, with a roll-off on site when it's big. See estate cleanouts.`,
   },
 ];
 
@@ -175,7 +175,7 @@ function Page() {
           driving off with them.
         </p>
         <p>
-          Turning units this fall? The{" "}
+          Turning units this winter? The{" "}
           <Link to="/landlords" className="underline underline-offset-4 hover:text-gold">
             landlord packs
           </Link>{" "}

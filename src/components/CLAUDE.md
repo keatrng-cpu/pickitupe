@@ -2,6 +2,29 @@
 
 Read the root [`CLAUDE.md`](../../CLAUDE.md) first. This folder is the **visual / motion** workstream.
 
+## Winter (2026-11): `winter/`
+
+Owner, Nov 13: favor junk removal, be as creative as possible with design, animation and a 3D look, keep navigation clean.
+
+| File | Job |
+|---|---|
+| `winter/truck-scene.ts` | Procedural three.js scene: the cream pickup (couch, fridge, boxes, door lettering) in snow with pines. No model or texture downloads. Renders only while visible, tab shown and motion not paused; one still frame otherwise. Disposes everything. |
+| `winter/truck-stage.tsx` | Home hero stage. SVG poster paints first (reserved aspect box, no CLS); the scene chunk loads after `load` + idle, skipped on Save-Data / 2g / low memory / no WebGL. **Swap slot:** `video={{ mp4, webm, poster }}` replaces the 3D with a rendered loop (e.g. Higgsfield) without layout changes. |
+| `winter/truck-svg.tsx` | Side-view SVG truck (faces right — never flip). Poster, how-it-works road, estate hero. |
+| `winter/snowfall.tsx` | CSS-only snow. Seeded positions (no hydration mismatch). Three falls then stops on phones. |
+| `winter/motion.ts`, `motion-toggle.tsx` | `html[data-motion="paused"]` + localStorage. The "Pause snow" button (WCAG 2.2.2). Reduced motion counts as paused. |
+| `winter/how-it-works.tsx` | Truck drives the road as the section scrolls (CSS `animation-timeline: view()`); IntersectionObserver fallback parks it. |
+| `winter/scroll-road.tsx` | Gold fill under the header ticker on `animation-timeline: scroll()`. Decorative, hidden where unsupported. |
+| `winter/count-up.tsx` | Count-up once on view; server renders the final number. Only numbers from code (pricebook, schedule). |
+| `winter/before-after.tsx` | Range-input wipe, illustrated garage until real photos exist. **Swap slot:** `before` / `after` image props — real job photos only, never AI renders. |
+| `winter/bed-load.tsx` | Quick-quote junk sizes load a cutaway truck bed (one drop per pick, keyed on size; gauge shows only the fractions the pricebook names). Decorative, aria-hidden; off under reduced motion. |
+| `src/lib/truck-art.ts` | **The brand truck**, Nov 13 (owner: "a little more classy"): vintage cream pickup, chrome, whitewalls, walnut stake rails, tarp load. Plain SVG markup shared by `TruckSvg` (site) and the print build — change it here and both follow. viewBox 0 0 320 160, faces right. |
+| `src/lib/media.ts` | `MEDIA.heroLoop` (Higgsfield loop slot, see `docs/HIGGSFIELD.md` + `scripts/ingest-clip.mjs`) and `MEDIA.hero3D` — the procedural 3D truck is **off** since Nov 13 (it read toy-like next to the classy illustration); flip to `true` to bring it back. |
+
+Scroll-driven motion is allowed **only** as CSS scroll timelines: no JS scroll listeners, no pinning, no `currentTime` scrubbing (the reasons the old rule existed).
+
+The home hero no longer uses `haul-junk.mp4` (leaf tarp + rake). `haul-video.tsx` / `haul-on-scroll.tsx` stay in the repo for spring.
+
 | File | Job |
 |---|---|
 | `falling-leaves.tsx` | **Not mounted anywhere.** Owner asked for the edge leaves gone; `__root.tsx` no longer imports or renders it. Component itself is untouched — if it comes back, mount it once in `__root.tsx`, never per-page. |

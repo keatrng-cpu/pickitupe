@@ -4,7 +4,7 @@ import { sessionEmail } from "@/lib/optional-session";
 import { isOwnerEmail } from "@/lib/owner";
 import { digitsPhone, isUsPhone } from "@/lib/phone";
 import { formatAddOns, parseAddOns, type ServiceKey } from "@/lib/pricebook";
-import { dayOptions, slotsFor, todayISO, DAILY_SLOTS, type DayFill } from "@/lib/schedule";
+import { dayOptions, fillFromRows, needFor, overCapacity, todayISO, type DayFill } from "@/lib/schedule";
 
 /**
  * Customer care — the private job page (/my/<token>), the confirmed-date
@@ -93,7 +93,7 @@ function publicView(r: Row) {
 
 export type ManageView = ReturnType<typeof publicView> & {
   canMove: boolean;
-  days: { day: string; label: string; open: boolean; used: number }[];
+  days: { day: string; label: string; open: boolean; used: number; capacity: number }[];
   review: { status: string; rating: number } | null;
   canReview: boolean;
   openTickets: number;
@@ -115,13 +115,13 @@ async function fillExcluding(bookingId: number): Promise<DayFill[]> {
         and status not in ('cancelled', 'done', 'hold') and id <> $2`,
     [todayISO(), bookingId],
   );
-  const used = new Map<string, number>();
-  for (const r of rows) {
-    const day = isoDay(r.preferred_date);
-    if (!day) continue;
-    used.set(day, (used.get(day) ?? 0) + slotsFor((r.service as ServiceKey) || "junk-removal", r.job_size || "single", parseAddOns(r.add_ons)));
-  }
-  return [...used.entries()].map(([day, u]) => ({ day, used: u }));
+  return fillFromRows(
+    rows.flatMap((r) => {
+      const day = isoDay(r.preferred_date);
+      if (!day) return [];
+      return [{ day, service: (r.service as ServiceKey) || "junk-removal", size: r.job_size || "single", addOns: parseAddOns(r.add_ons) }];
+    }),
+  );
 }
 
 export const getManage = createServerFn({ method: "POST" })
@@ -131,7 +131,7 @@ export const getManage = createServerFn({ method: "POST" })
     if (limited("manage", 40)) return null;
     const { sql, row } = await loadByToken(data.token);
     if (!row) return null;
-    const need = slotsFor((row.service as ServiceKey) || "junk-removal", row.job_size || "single", parseAddOns(row.add_ons));
+    const need = needFor((row.service as ServiceKey) || "junk-removal", row.job_size || "single", parseAddOns(row.add_ons));
     const canMove = canSelfMove(row);
     const days = canMove
       ? dayOptions(await fillExcluding(row.id), need).filter((d) => daysBetween(todayISO(), d.day) > SELF_SERVE_CUTOFF_DAYS)
@@ -164,7 +164,7 @@ export const moveMyDay = createServerFn({ method: "POST" })
     if (!canSelfMove(row)) {
       return { ok: false as const, error: "It's too close to the day to move it here — ask below and Keaton will sort it." };
     }
-    const need = slotsFor((row.service as ServiceKey) || "junk-removal", row.job_size || "single", parseAddOns(row.add_ons));
+    const need = needFor((row.service as ServiceKey) || "junk-removal", row.job_size || "single", parseAddOns(row.add_ons));
     const option = dayOptions(await fillExcluding(row.id), need).find((d) => d.day === data.day);
     if (!option || !option.open || daysBetween(todayISO(), data.day) <= SELF_SERVE_CUTOFF_DAYS) {
       return { ok: false as const, error: "That day just filled. Pick another one." };
@@ -179,7 +179,8 @@ export const moveMyDay = createServerFn({ method: "POST" })
     // two customers grabbed the last slot at the same moment, the day is now
     // over capacity — put this one back and ask them to pick again.
     const after = await fillExcluding(-1);
-    if ((after.find((f) => f.day === data.day)?.used ?? 0) > DAILY_SLOTS) {
+    const landed = after.find((f) => f.day === data.day);
+    if (landed && overCapacity(landed)) {
       await sql.query(`update bookings set preferred_date = $2 where id = $1`, [row.id, row.preferred_date]);
       return { ok: false as const, error: "That day just filled. Pick another one." };
     }
@@ -257,7 +258,9 @@ export const confirmDeposit = createServerFn({ method: "POST" })
       return { ok: false as const, pending: true as const, error: "The card is still processing." };
     }
     const { finalizePaidDeposit } = await import("@/lib/pay-finalize.server");
-    const done = await finalizePaidDeposit(id, session.id, session.amount_total);
+    const done = await finalizePaidDeposit(id, session.id, session.amount_total, {
+      email: session.customer_details?.email,
+    });
     if (!done) return { ok: false as const, error: "Couldn't find the job." };
     const { careSql } = await import("@/lib/care.server");
     const sql = await careSql();

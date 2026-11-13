@@ -83,7 +83,9 @@ export const Route = createFileRoute("/api/stripe/webhook")({
                   if (session.metadata?.kind === "balance") {
                     await finalizeBalance(id, session.id, session.amount_total);
                   } else {
-                    await finalizePaidDeposit(id, session.id, session.amount_total);
+                    await finalizePaidDeposit(id, session.id, session.amount_total, {
+                      email: session.customer_details?.email,
+                    });
                   }
                 }
                 break;

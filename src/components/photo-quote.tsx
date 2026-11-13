@@ -10,6 +10,7 @@ import {
   type LandlordPack,
   type ServiceKey,
 } from "@/lib/pricebook";
+import { SITE_PHONE } from "@/lib/site-phone";
 
 async function shrink(file: File): Promise<string> {
   const url = URL.createObjectURL(file);
@@ -108,7 +109,7 @@ export function PhotoQuote({ service, pack, stops = 1, lotSqFt = 0, onApply }: P
       setResult(res);
       if (res.size) onApply({ size: res.size, addOns: res.addOns, lotSqFt: res.lotSqFt ?? undefined });
     } catch {
-      setError("Couldn't size it up. Try again or text 701-213-3969.");
+      setError(`Couldn't size it up. Try again or text ${SITE_PHONE}.`);
     } finally {
       setBusy(false);
     }
