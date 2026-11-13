@@ -6,9 +6,9 @@ type Turn = { role: "user" | "assistant"; content: string };
 
 const SUGGESTIONS = [
   "Do you take old appliances?",
-  "How much for a standard lot?",
-  "Do you do gutters?",
-  "What if it snows before you come?",
+  "How much to haul a couch?",
+  "Do you do estate cleanouts?",
+  "Can you carry it up from the basement?",
 ];
 
 /**
@@ -154,7 +154,7 @@ export function AskBox({
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             maxLength={500}
-            placeholder="Type your question…"
+            placeholder="Ask about junk, appliances or a cleanout…"
             disabled={busy}
             className="w-full rounded-xl border border-border bg-bg-deep/50 px-4 py-3 text-base text-fg outline-none placeholder:text-muted/70 focus:border-gold disabled:opacity-60"
           />
