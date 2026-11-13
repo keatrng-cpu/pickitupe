@@ -10,7 +10,7 @@ import { googleCalendarUrl } from "@/lib/calendar";
 import { prepareReviewPhoto } from "@/lib/receipt-client";
 import { REVIEW_URL } from "@/lib/messages";
 import { NEIGHBORHOODS } from "@/lib/seo";
-import { DAILY_SLOTS, formatDayLong } from "@/lib/schedule";
+import { formatDayLong } from "@/lib/schedule";
 
 /**
  * /my/<token> — one customer's own job. Reached only by the private link in
@@ -230,7 +230,7 @@ function MoveDay({ view, token, onMoved }: { view: ManageView; token: string; on
         {view.days.slice(0, 15).map((d, i) => {
           const current = d.day === view.day;
           const pressed = pick === d.day;
-          const pct = Math.min(100, Math.round((d.used / DAILY_SLOTS) * 100));
+          const pct = d.capacity ? Math.min(100, Math.round((d.used / d.capacity) * 100)) : 100;
           return (
             <li key={d.day}>
               <button

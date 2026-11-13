@@ -18,8 +18,11 @@ export const BUSINESS = {
   telE164: "+1-701-213-3969",
   city: "Grand Forks",
   region: "ND",
-  /** GBP hours through Nov 15 — "open at time of search" is a pack signal. */
-  hoursLine: "Mon–Sat 7am–8pm",
+  /**
+   * Truck hours from 2026-11-13, built around the landfill (Mon–Fri 8–4,
+   * Sat 8–11). Mirror on the Google Business Profile by hand.
+   */
+  hoursLine: "Mon–Fri 9:30–5:30 · Sat 12–4",
   /** GBP pin (address hidden; proximity still computes from it). */
   geo: { lat: 47.92409, lng: -97.0862134 },
   /** The profile's g.page short link (same id family as REVIEW_URL). */
@@ -99,9 +102,15 @@ function areaServedJsonLd() {
 const OPENING_HOURS = [
   {
     "@type": "OpeningHoursSpecification",
-    dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-    opens: "07:00",
-    closes: "20:00",
+    dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    opens: "09:30",
+    closes: "17:30",
+  },
+  {
+    "@type": "OpeningHoursSpecification",
+    dayOfWeek: ["Saturday"],
+    opens: "12:00",
+    closes: "16:00",
   },
 ];
 

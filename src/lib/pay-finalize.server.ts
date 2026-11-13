@@ -2,7 +2,7 @@ import { getSql } from "@/lib/db";
 import { ensurePayColumns } from "@/lib/pay-columns";
 import { ensureOwnerTables, logEvent } from "@/lib/owner-schema";
 import { formatRange, parseAddOns, type ServiceKey } from "@/lib/pricebook";
-import { DAILY_SLOTS, firstOpenDay, slotsFor } from "@/lib/schedule";
+import { firstOpenDay, fitsDay, needFor } from "@/lib/schedule";
 import { loadFill } from "@/lib/bookings";
 import { notifyOwnerOfBooking } from "@/lib/booking-alert.server";
 import { bookedMessage, notifyCustomer } from "@/lib/customer-notify.server";
@@ -83,15 +83,15 @@ export async function finalizePaidDeposit(
   }
 
   const fill = await loadFill();
-  const need = slotsFor(
+  const need = needFor(
     (row.service as ServiceKey) || "junk-removal",
     row.job_size || "single",
     parseAddOns(row.add_ons),
   );
   let day = row.preferred_date;
   if (day && /^\d{4}-\d{2}-\d{2}$/.test(day)) {
-    const used = fill.find((f) => f.day === day)?.used ?? 0;
-    if (used + need > DAILY_SLOTS) day = firstOpenDay(fill, need);
+    const f = fill.find((x) => x.day === day);
+    if (!fitsDay(day, f?.used ?? 0, f?.landfill ?? 0, need)) day = firstOpenDay(fill, need);
   } else {
     day = firstOpenDay(fill, need);
   }

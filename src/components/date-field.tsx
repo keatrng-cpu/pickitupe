@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { getScheduleFill } from "@/lib/bookings";
 import {
-  DAILY_SLOTS,
   dayOptions,
   firstOpenDay,
   formatDayLong,
-  slotsFor,
+  needFor,
 } from "@/lib/schedule";
 import type { ServiceKey } from "@/lib/pricebook";
 
@@ -39,7 +38,8 @@ export function DateField({
       .finally(() => setLoaded(true));
   }, [refreshKey, service, size, addOns.join(",")]);
 
-  const need = slotsFor(service, size, addOns);
+  const addOnsKey = addOns.join(",");
+  const need = useMemo(() => needFor(service, size, addOnsKey ? addOnsKey.split(",") : []), [service, size, addOnsKey]);
   const options = useMemo(() => dayOptions(fill, need), [fill, need]);
   const asapDay = useMemo(() => firstOpenDay(fill, need), [fill, need]);
   const visible = options.slice(0, 10);
@@ -103,7 +103,7 @@ export function DateField({
       >
         {visible.map((d) => {
           const selected = !asap && day === d.day;
-          const openLeft = Math.max(0, DAILY_SLOTS - d.used);
+          const openLeft = Math.max(0, d.capacity - d.used);
           return (
             <button
               key={d.day}
