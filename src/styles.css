@@ -850,3 +850,463 @@
     transform: none;
   }
 }
+
+/* ------------------------------------------------------------------ *
+ * WINTER (2026-11): junk-first hero, 3D truck stage, snow, the road.  *
+ * Every loop pauses on html[data-motion="paused"] and is off under    *
+ * prefers-reduced-motion. Scroll-driven bits use CSS scroll timelines *
+ * only — no scroll listeners, no pinning.                             *
+ * ------------------------------------------------------------------ */
+
+.winter-hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 55% at 72% 38%, color-mix(in srgb, var(--color-sioux) 26%, transparent) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 20% 100%, color-mix(in srgb, var(--color-fg) 7%, transparent) 0%, transparent 70%),
+    var(--color-bg);
+}
+
+.winter-hero-grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 0.5rem;
+  padding-block: 0.75rem 2.5rem;
+}
+
+.winter-hero-stage {
+  position: relative;
+  /* Reserved box: nothing shifts when the 3D canvas lands */
+  aspect-ratio: 4 / 3;
+  width: 100%;
+}
+
+.winter-hero-copy {
+  position: relative;
+}
+
+@media (min-width: 1024px) {
+  .winter-hero {
+    min-height: calc(100dvh - 4.5rem);
+    display: flex;
+    align-items: center;
+  }
+  .winter-hero-grid {
+    width: 100%;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.1fr);
+    align-items: center;
+    gap: 2rem;
+    padding-block: 3rem 3.5rem;
+  }
+  .winter-hero-copy {
+    order: -1;
+  }
+  .winter-hero-stage {
+    aspect-ratio: 1 / 0.86;
+  }
+}
+
+/* --- 3D stage --------------------------------------------------------- */
+
+.truck-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  touch-action: pan-y;
+  /* Feather the edges so the snowfield melts into the page green */
+  -webkit-mask-image: radial-gradient(ellipse 72% 72% at 50% 50%, #000 62%, transparent 100%);
+  mask-image: radial-gradient(ellipse 72% 72% at 50% 50%, #000 62%, transparent 100%);
+}
+
+.truck-stage-poster {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: end center;
+  transition: opacity 600ms var(--ease-out-soft, ease-out);
+}
+
+.truck-stage-ground {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: 0;
+  height: 42%;
+  background: radial-gradient(ellipse 60% 70% at 50% 100%, #eef3ef 0%, #dfe9e3 46%, transparent 72%);
+}
+
+.truck-stage-svg {
+  position: relative;
+  width: 86%;
+  margin-bottom: 12%;
+  filter: drop-shadow(0 18px 24px #0006);
+  animation: truck-idle 1.6s ease-in-out infinite;
+}
+
+.truck-stage-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+  transition: opacity 700ms var(--ease-out-soft, ease-out);
+  cursor: grab;
+}
+
+.truck-stage-canvas:active {
+  cursor: grabbing;
+}
+
+.truck-stage[data-ready] .truck-stage-canvas,
+.truck-stage-canvas[data-shown] {
+  opacity: 1;
+}
+
+.truck-stage[data-ready] .truck-stage-poster {
+  opacity: 0;
+}
+
+@keyframes truck-idle {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.5px);
+  }
+}
+
+.truck-wheel {
+  animation: wheel-spin 0.9s linear infinite;
+  animation-play-state: paused;
+}
+
+/* --- Snow ------------------------------------------------------------- */
+
+.snowfall {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.snowfall span {
+  position: absolute;
+  top: -12px;
+  border-radius: 999px;
+  background: #fff;
+  filter: blur(0.4px);
+  animation: snow-fall var(--dur, 12s) linear var(--delay, 0s) infinite;
+  will-change: transform;
+}
+
+.snowfall-soft span {
+  opacity: 0.35 !important;
+}
+
+@keyframes snow-fall {
+  0% {
+    transform: translate3d(0, -12px, 0);
+  }
+  50% {
+    transform: translate3d(var(--sway, 20px), 50vh, 0);
+  }
+  100% {
+    transform: translate3d(0, 105vh, 0);
+  }
+}
+
+@media (max-width: 767px) {
+  /* Phones: three falls, then it settles (battery) */
+  .snowfall span {
+    animation-iteration-count: 3;
+    animation-fill-mode: forwards;
+  }
+}
+
+.winter-strip {
+  position: relative;
+  min-height: 14rem;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* --- Header progress road -------------------------------------------- */
+
+.scroll-road {
+  display: none;
+}
+
+@supports (animation-timeline: scroll()) {
+  .scroll-road {
+    display: block;
+    position: relative;
+    height: 4px;
+    overflow: hidden;
+    background: repeating-linear-gradient(
+      to right,
+      color-mix(in srgb, var(--color-fg) 22%, transparent) 0 10px,
+      transparent 10px 18px
+    );
+  }
+  .scroll-road-fill {
+    position: absolute;
+    inset: 0;
+    background: var(--color-gold);
+    transform: translateX(-100%);
+    animation: road-fill linear both;
+    animation-timeline: scroll(root block);
+  }
+}
+
+@keyframes road-fill {
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* --- How it works road ----------------------------------------------- */
+
+.road-section {
+  view-timeline-name: --road;
+  view-timeline-axis: block;
+}
+
+.road-track {
+  position: relative;
+  height: 6.5rem;
+}
+
+.road-lane {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.4rem;
+  height: 0.9rem;
+  border-radius: 999px;
+  background:
+    linear-gradient(to right, color-mix(in srgb, var(--color-gold) 75%, transparent) 0 50%, transparent 50%) 0 50% / 26px 2px repeat-x,
+    linear-gradient(#0b2a1a, #0b2a1a);
+  box-shadow: 0 -6px 0 -3px #eef3ef inset, 0 6px 14px -8px #000a;
+}
+
+.road-driver {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.55rem;
+  height: 100%;
+  transform: translateX(calc(100% - 10rem));
+}
+
+.road-truck {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 10rem;
+}
+
+.road-step {
+  transition:
+    transform 400ms var(--ease-out-soft, ease-out),
+    box-shadow 400ms var(--ease-out-soft, ease-out);
+}
+
+.road-step-num {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+}
+
+/* Fallback (no scroll timelines): park the truck and light every stop once seen */
+.road-section .road-driver {
+  transition: transform 1.6s var(--ease-out-soft, ease-out);
+}
+.road-section:not([data-arrived]) .road-driver {
+  transform: translateX(0);
+}
+.road-section[data-arrived] .road-step-num {
+  background: var(--color-gold);
+  color: var(--color-ink);
+}
+
+@supports (animation-timeline: view()) {
+  .road-section .road-driver {
+    transition: none;
+    transform: translateX(0);
+    animation: road-drive linear both;
+    animation-timeline: --road;
+    animation-range: entry 30% cover 62%;
+  }
+  .road-section .truck-wheel {
+    animation-play-state: running;
+    animation-timeline: --road;
+    animation-range: entry 30% cover 62%;
+    animation-duration: auto;
+    animation-iteration-count: 9;
+  }
+  .road-step {
+    animation: step-light linear both;
+    animation-timeline: --road;
+    animation-range: entry calc(30% + var(--i) * 9%) entry calc(36% + var(--i) * 9%);
+  }
+  .road-step .road-step-num {
+    animation: step-num linear both;
+    animation-timeline: --road;
+    animation-range: entry calc(30% + var(--i) * 9%) entry calc(36% + var(--i) * 9%);
+  }
+}
+
+@keyframes road-drive {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(100% - 10rem));
+  }
+}
+
+@keyframes wheel-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes step-light {
+  from {
+    transform: translateY(10px);
+    opacity: 0.55;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes step-num {
+  to {
+    background: var(--color-gold);
+    color: var(--color-ink);
+    border-color: var(--color-gold);
+  }
+}
+
+/* --- Before / after -------------------------------------------------- */
+
+.ba-frame {
+  user-select: none;
+}
+
+.ba-tag {
+  position: absolute;
+  top: 0.75rem;
+  z-index: 3;
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  background: color-mix(in srgb, var(--color-bg-deep) 78%, transparent);
+  color: var(--color-fg);
+}
+
+.ba-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  width: 3px;
+  margin-left: -1.5px;
+  background: var(--color-fg);
+  pointer-events: none;
+}
+
+.ba-handle span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: var(--color-fg);
+  box-shadow: 0 6px 18px -6px #000c;
+}
+
+.ba-handle span::before,
+.ba-handle span::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border: 6px solid transparent;
+  transform: translateY(-50%);
+}
+
+.ba-handle span::before {
+  left: 5px;
+  border-right-color: var(--color-ink);
+}
+
+.ba-handle span::after {
+  right: 5px;
+  border-left-color: var(--color-ink);
+}
+
+.ba-range {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: ew-resize;
+  margin: 0;
+}
+
+.ba-frame:has(.ba-range:focus-visible) {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+}
+
+/* --- Motion off ------------------------------------------------------ */
+
+html[data-motion="paused"] .snowfall span,
+html[data-motion="paused"] .truck-stage-svg {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .snowfall,
+  .scroll-road {
+    display: none !important;
+  }
+  .truck-stage-svg,
+  .truck-wheel {
+    animation: none !important;
+  }
+  .road-section .road-driver {
+    animation: none !important;
+    transition: none !important;
+    transform: translateX(calc(100% - 10rem)) !important;
+  }
+  .road-step,
+  .road-step .road-step-num {
+    animation: none !important;
+  }
+  .road-step .road-step-num {
+    background: var(--color-gold);
+    color: var(--color-ink);
+  }
+  .truck-stage-poster,
+  .truck-stage-canvas {
+    transition: none;
+  }
+}

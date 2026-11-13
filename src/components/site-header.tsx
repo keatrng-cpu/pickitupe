@@ -3,6 +3,7 @@ import { Menu, Phone, X } from "lucide-react";
 import { useState } from "react";
 import { HashScroll, scrollToHash } from "@/components/hash-scroll";
 import { HaulTicker } from "@/components/haul-ticker";
+import { ScrollRoad } from "@/components/winter/scroll-road";
 import { SignedIn, SignedOut, UserButton } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { looksLikeOwner } from "@/lib/owner";
@@ -13,23 +14,44 @@ const PHONE = "701-213-3969";
 
 type NavItem =
   | { to: "/"; hash?: "faq"; label: string }
-  | { to: "/about" | "/landlords" | "/plan" | "/call" | "/reviews"; label: string };
+  | {
+      to:
+        | "/junk-removal-grand-forks"
+        | "/estate-cleanout-grand-forks"
+        | "/appliance-removal-grand-forks"
+        | "/pricing"
+        | "/about"
+        | "/landlords"
+        | "/plan"
+        | "/call"
+        | "/reviews"
+        | "/leaf-cleanup-grand-forks"
+        | "/gutter-cleaning-grand-forks";
+      label: string;
+    };
 
+/** Winter order: junk first, estates second. Leaves live in the footer until spring. */
 const NAV: NavItem[] = [
+  { to: "/junk-removal-grand-forks", label: "Junk removal" },
+  { to: "/estate-cleanout-grand-forks", label: "Estate cleanouts" },
+  { to: "/appliance-removal-grand-forks", label: "Appliances" },
   { to: "/landlords", label: "Landlords" },
-  { to: "/plan", label: "Plan" },
-  { to: "/reviews", label: "Reviews" },
-  { to: "/about", label: "About" },
+  { to: "/pricing", label: "Pricing" },
 ];
 
 const MOBILE_NAV: NavItem[] = [
   { to: "/", label: "Home" },
+  ...NAV,
   { to: "/call", label: "Book" },
-  { to: "/landlords", label: "Landlords" },
-  { to: "/plan", label: "Plan" },
+];
+
+const MOBILE_MORE: NavItem[] = [
   { to: "/reviews", label: "Reviews" },
+  { to: "/plan", label: "Plan" },
   { to: "/about", label: "About" },
   { to: "/", hash: "faq", label: "FAQ" },
+  { to: "/gutter-cleaning-grand-forks", label: "Gutters" },
+  { to: "/leaf-cleanup-grand-forks", label: "Leaves (spring)" },
 ];
 
 function Mark() {
@@ -91,7 +113,7 @@ export function SiteHeader() {
           <span className="font-display text-lg tracking-wide">Pick It Up E</span>
         </Link>
 
-        <nav className="hidden items-center gap-6 text-sm text-muted md:flex" aria-label="Primary">
+        <nav className="hidden items-center gap-5 text-sm text-muted lg:flex" aria-label="Primary">
           {NAV.map((item) => (
             <NavLink
               key={item.label}
@@ -116,7 +138,7 @@ export function SiteHeader() {
         <div className="flex items-center gap-2">
           <a
             href={`tel:${PHONE.replaceAll("-", "")}`}
-            className="hidden h-11 items-center gap-2 rounded-full border border-border px-3 text-sm text-fg hover:bg-fg/8 lg:inline-flex"
+            className="hidden h-11 items-center gap-2 rounded-full border border-border px-3 text-sm text-fg hover:bg-fg/8 xl:inline-flex"
           >
             <Phone className="size-4" />
             {PHONE}
@@ -134,7 +156,7 @@ export function SiteHeader() {
               <SignedOut>
                 <Link
                   to="/login"
-                  className="hidden h-11 items-center rounded-full px-3 text-sm text-muted hover:text-fg sm:inline-flex"
+                  className="hidden h-11 items-center rounded-full px-3 text-sm text-muted hover:text-fg xl:inline-flex"
                 >
                   Sign in
                 </Link>
@@ -143,7 +165,7 @@ export function SiteHeader() {
           )}
           <button
             type="button"
-            className="grid size-11 place-items-center rounded-full border border-border text-fg md:hidden"
+            className="grid size-11 place-items-center rounded-full border border-border text-fg lg:hidden"
             aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
             aria-controls="mobile-nav"
@@ -154,8 +176,9 @@ export function SiteHeader() {
         </div>
       </div>
       <HaulTicker />
+      <ScrollRoad />
       {open ? (
-        <div id="mobile-nav" className="border-t border-border bg-bg px-4 py-4 md:hidden">
+        <div id="mobile-nav" className="border-t border-border bg-bg px-4 py-4 lg:hidden">
           <nav className="flex flex-col gap-1">
             {MOBILE_NAV.map((item) => (
               <NavLink
@@ -163,6 +186,16 @@ export function SiteHeader() {
                 item={item}
                 active={pathname === item.to && !("hash" in item && item.hash)}
                 className="rounded-xl px-3 py-3 text-fg hover:bg-fg/8"
+                onClick={() => setOpen(false)}
+              />
+            ))}
+            <p className="kicker mt-3 px-3 py-2">More</p>
+            {MOBILE_MORE.map((item) => (
+              <NavLink
+                key={item.label}
+                item={item}
+                active={pathname === item.to && !("hash" in item && item.hash)}
+                className="rounded-xl px-3 py-2.5 text-sm text-muted hover:bg-fg/8"
                 onClick={() => setOpen(false)}
               />
             ))}
@@ -211,23 +244,32 @@ export function SiteFooter() {
           <Link to="/call" className="text-fg hover:text-gold">
             Book
           </Link>
-          <Link to="/leaf-cleanup-grand-forks" className="text-muted hover:text-gold">
-            Leaf cleanup
-          </Link>
           <Link to="/junk-removal-grand-forks" className="text-muted hover:text-gold">
             Junk removal
           </Link>
-          <Link to="/gutter-cleaning-grand-forks" className="text-muted hover:text-gold">
-            Gutters
+          <Link to="/estate-cleanout-grand-forks" className="text-muted hover:text-gold">
+            Estate cleanouts
+          </Link>
+          <Link to="/appliance-removal-grand-forks" className="text-muted hover:text-gold">
+            Appliances
+          </Link>
+          <Link to="/pricing" className="text-muted hover:text-gold">
+            Pricing
+          </Link>
+          <Link to="/landlords" className="text-muted hover:text-gold">
+            Landlords
           </Link>
           <Link to="/east-grand-forks" className="text-muted hover:text-gold">
             East Grand Forks
           </Link>
+          <Link to="/gutter-cleaning-grand-forks" className="text-muted hover:text-gold">
+            Gutters
+          </Link>
+          <Link to="/leaf-cleanup-grand-forks" className="text-muted hover:text-gold">
+            Leaf cleanup
+          </Link>
           <Link to="/reviews" className="text-muted hover:text-gold">
             Reviews
-          </Link>
-          <Link to="/landlords" className="text-muted hover:text-gold">
-            Landlords
           </Link>
           <Link to="/plan" className="text-muted hover:text-gold">
             Plan

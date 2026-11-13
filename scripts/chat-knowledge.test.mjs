@@ -18,6 +18,7 @@ const {
   planPriceFor,
   RUSH_SURCHARGE,
   LEAF_KSF,
+  ESTATE_TIERS,
 } = await import("../src/lib/pricebook.ts");
 
 /**
@@ -144,6 +145,12 @@ test("the facts contain no price that the pricebook does not produce", () => {
   for (const s of springSizeOptions()) addRange(s.range);
   for (const a of ADD_ONS) addRange(a.range);
   for (const t of BLOCK_TIERS) legal.add(String(t.credit));
+  // Estate tiers are pricebook figures too; the facts print them with commas.
+  for (const t of ESTATE_TIERS) {
+    addRange(t.range);
+    legal.add(t.range.low.toLocaleString("en-US"));
+    legal.add(t.range.high.toLocaleString("en-US"));
+  }
   addRange(RUSH_SURCHARGE);
   for (const band of Object.values(LEAF_KSF)) {
     if ("low" in band) legal.add(String(band.low));
