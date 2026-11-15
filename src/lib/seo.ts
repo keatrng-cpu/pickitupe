@@ -1,3 +1,4 @@
+import { SITE_E164, SITE_PHONE, SITE_TEL } from "@/lib/site-phone";
 /**
  * Structured data so Google can answer "leaf removal near me" with this
  * business instead of a directory page.
@@ -13,13 +14,16 @@
 
 export const BUSINESS = {
   name: "Pick It Up E",
-  phone: "701-213-3969",
-  telHref: "tel:7012133969",
-  telE164: "+1-701-213-3969",
+  phone: SITE_PHONE,
+  telHref: SITE_TEL,
+  telE164: SITE_E164,
   city: "Grand Forks",
   region: "ND",
-  /** GBP hours through Nov 15 — "open at time of search" is a pack signal. */
-  hoursLine: "Mon–Sat 7am–8pm",
+  /**
+   * Truck hours from 2026-11-13, built around the landfill (Mon–Fri 8–4,
+   * Sat 8–11). Mirror on the Google Business Profile by hand.
+   */
+  hoursLine: "Mon–Fri 9:30–5:30 · Sat 12–4",
   /** GBP pin (address hidden; proximity still computes from it). */
   geo: { lat: 47.92409, lng: -97.0862134 },
   /** The profile's g.page short link (same id family as REVIEW_URL). */
@@ -44,16 +48,18 @@ export function canonical(path: string) {
  */
 export const SAME_AS: string[] = [BUSINESS.mapsUrl];
 
+// Winter order (2026-11): junk and estates first, leaves last until spring.
 const SERVICES = [
-  "Fall leaf & yard cleanup",
-  "Leaf raking and hauling",
   "Junk removal",
-  "Yard debris hauling",
-  "Gutter cleaning",
+  "Estate cleanout",
+  "Whole-house cleanout",
+  "Appliance removal",
+  "Furniture removal",
   "Garage cleanout",
   "Basement cleanout",
-  "Furniture removal",
-  "Appliance removal",
+  "Gutter cleaning",
+  "Leaf raking and hauling",
+  "Yard debris hauling",
 ] as const;
 
 /** City / state pairs — rendered as City objects in the JSON-LD, text in copy. */
@@ -99,9 +105,15 @@ function areaServedJsonLd() {
 const OPENING_HOURS = [
   {
     "@type": "OpeningHoursSpecification",
-    dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-    opens: "07:00",
-    closes: "20:00",
+    dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    opens: "09:30",
+    closes: "17:30",
+  },
+  {
+    "@type": "OpeningHoursSpecification",
+    dayOfWeek: ["Saturday"],
+    opens: "12:00",
+    closes: "16:00",
   },
 ];
 
@@ -112,12 +124,12 @@ export function localBusinessJsonLd() {
     "@id": `${SITE_URL}/#business`,
     name: BUSINESS.name,
     description:
-      "Fall leaf & yard cleanup, single-story gutter cleaning and junk removal in Grand Forks, ND and East Grand Forks, MN. Price before you call, book in 60 seconds, leaves gone before the city vacuum.",
+      "Junk, furniture and appliance removal, estate and whole-house cleanouts, and single-story gutter cleaning in Grand Forks, ND and East Grand Forks, MN. Carried from the basement, price before you call, book in 60 seconds.",
     telephone: BUSINESS.telE164,
     url: SITE_URL,
-    image: [`${SITE_URL}/og.jpg`, `${SITE_URL}/work/leaves-lot.jpg`],
+    image: [`${SITE_URL}/og.jpg`, `${SITE_URL}/work/couch-bed.jpg`],
     logo: `${SITE_URL}/logo.png`,
-    priceRange: "$59–$490",
+    priceRange: "$59–$4,500",
     address: {
       "@type": "PostalAddress",
       addressLocality: BUSINESS.city,
@@ -178,28 +190,28 @@ export function serviceJsonLd(input: {
  */
 export const FAQ: { q: string; a: string }[] = [
   {
-    q: "Do I bag the leaves?",
-    a: "No. Loose piles are fine — we rake, blow, and haul. You never touch a bag.",
+    q: "What does junk removal cost in Grand Forks?",
+    a: "Priced by the truck bed, not the hour. One piece is $59–$95. Half the bed is $125–$195. A full strapped load is $175–$265. You see the range before you book and we confirm it when we see the pile.",
   },
   {
-    q: "What does leaf cleanup cost in Grand Forks?",
-    a: "Most city lots land between $160 and $345 — about $32–$46 per 1,000 sq ft on the first 8,000. You get the range before you book and we confirm the number before any work starts.",
+    q: "Does it have to be at the curb?",
+    a: "No. We carry it out of the basement, the garage or the back bedroom. Stairs add $30–$60. That's the difference from the city's curbside pickup.",
+  },
+  {
+    q: "Do you do estate or whole-house cleanouts?",
+    a: "Yes. Free walkthrough, then one fixed written price. Most land between $650 and $4,500. That covers one room up to a full house with a packed basement. Usable things go to donation, metal to scrap.",
   },
   {
     q: "What can't you take?",
-    a: "Paint, chemicals, oil, propane, concrete, dirt, roofing, or asbestos. Everything else in a normal yard, garage or basement pile is fine.",
-  },
-  {
-    q: "When does the city leaf vacuum run?",
-    a: "Usually mid-October to mid-November, street by street. Book before your street's week. Leaves loose, within 3 ft of the curb, not in the street. Confirm dates with the city at 701-738-8740.",
+    a: "Paint, chemicals, oil, propane, concrete, dirt, roofing, or asbestos. Everything else in a normal house, garage or basement pile is fine.",
   },
   {
     q: "How do I hold a day?",
     a: "$50 on the card locks it and comes off the invoice. Landlord stacks run $75–$150. I'll text the morning of.",
   },
   {
-    q: "Gutters with the leaves?",
-    a: "Yes — single-story only, cleaned from the ground with a 120V gutter vacuum, no ladder on your siding. Ranch $80–$110 while we're there, trip already paid. Two-story we'll tell you straight and hand you off.",
+    q: "Gutters?",
+    a: "Yes — single-story only, cleaned from the ground with a 120V gutter vacuum, no ladder on your siding. Two-story we'll tell you straight and hand you off. Leaf cleanup is back in spring.",
   },
 ];
 

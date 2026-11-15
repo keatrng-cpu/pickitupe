@@ -1,3 +1,4 @@
+import { SITE_PHONE } from "@/lib/site-phone";
 /**
  * Pick It Up E — flat-rate pricebook and instant estimator.
  *
@@ -981,7 +982,7 @@ export function estimate(input: EstimateInput): Estimate {
       deposit: DEPOSIT,
       lines: [],
       notes: [
-        "Tell us what it is and we'll price it the same day — call or text 701-213-3969.",
+        `Tell us what it is and we'll price it the same day — call or text ${SITE_PHONE}.`,
       ],
       refused: refusedItemsIn(input.notes ?? ""),
       needsWalkthrough: true,
@@ -1161,3 +1162,63 @@ export function estimate(input: EstimateInput): Estimate {
 export function formatRange(r: Range): string {
   return `$${r.low}–$${r.high}`;
 }
+
+/** A heaped pickup bed (PRICEBOOK.md "Haul work"). Not money — the honest unit
+ *  every haul size is measured in, shown so nobody compares our "full truck"
+ *  with a 13–18 yard box truck's. */
+export const BED_CUBIC_YARDS = 2.5;
+
+/**
+ * The one like-for-like public comparison the site makes: a single bulky
+ * item. Box-truck "half/full load" prices are a different volume (see the
+ * truck-size caveat in PRICEBOOK.md), so they are never compared on the page.
+ * Re-check the source before the `checked` month is a season old; the claim
+ * only renders while our low end is actually under theirs.
+ */
+export const LOCAL_COMPARABLE = {
+  who: "LoadUp",
+  what: "a single bulky item in Grand Forks",
+  from: 70,
+  url: "https://goloadup.com/grand-forks-nd/",
+  checked: "Nov 2026",
+} as const;
+
+/**
+ * Estate and whole-house cleanouts (winter 2026). Published ranges from the
+ * Nov 13 winter plan — a build-up from roll-off, helper and dump costs, not
+ * market prices. Every estate job is quoted after a free walkthrough; these
+ * ranges exist so a family or an attorney can see the ballpark before they
+ * call. Adjust after the first three real jobs. No card deposit on the site:
+ * the estate deposit is set on the written quote.
+ */
+export const ESTATE_TIERS: {
+  key: "room" | "house" | "full";
+  label: string;
+  size: string;
+  days: string;
+  range: Range;
+  note?: string;
+}[] = [
+  {
+    key: "room",
+    label: "Room or apartment",
+    size: "Up to about 8 cubic yards, roughly 4 truck loads",
+    days: "1 crew day",
+    range: { low: 650, high: 950 },
+  },
+  {
+    key: "house",
+    label: "House after the estate sale",
+    size: "About 15–20 cubic yards, one 20-yard roll-off",
+    days: "2 crew days",
+    range: { low: 1400, high: 2400 },
+  },
+  {
+    key: "full",
+    label: "Full house, packed basement or garage",
+    size: "30+ cubic yards, two roll-offs",
+    days: "3 days",
+    range: { low: 2800, high: 4500 },
+    note: "Walkthrough required",
+  },
+];

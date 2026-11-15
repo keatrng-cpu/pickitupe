@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { CalendarPlus, Phone } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { JobTicket } from "@/components/job-ticket";
+import { TruckSvg } from "@/components/winter/truck-svg";
 import { confirmDeposit } from "@/lib/care";
 import { PHONE } from "@/lib/messages";
 import { formatDayLong } from "@/lib/schedule";
@@ -96,6 +97,11 @@ export function BookedScreen({
                   </p>
                 }
               />
+              {data?.emailedTo ? (
+                <p className="mt-4 text-center text-sm text-muted">
+                  Your confirmation and the day-before reminder go to <span className="text-fg">{data.emailedTo}</span>.
+                </p>
+              ) : null}
             </>
           ) : (
             <div className="rounded-2xl border border-border p-6 text-center">
@@ -154,7 +160,7 @@ export function BookedScreen({
 
         {job ? (
           <div aria-hidden className="pointer-events-none mt-12 h-16 overflow-visible">
-            <img src="/haul-truck.webp" alt="" width={180} height={90} className="roll-away h-16 w-auto" />
+            <TruckSvg className="roll-away h-16 w-auto" />
           </div>
         ) : null}
       </main>

@@ -2,6 +2,7 @@ import { FAQ, BUSINESS, AREA_SERVED_TEXT } from "@/lib/seo";
 import {
   ADD_ONS,
   DEPOSIT,
+  ESTATE_TIERS,
   PROMO_CAP,
   PROMO_DEADLINE_LABEL,
   PROMO_PERCENT,
@@ -161,9 +162,13 @@ export function knowledge(): string {
     (a) => `  - ${a.label} (${a.hint}): ${formatRange(a.range)}`,
   ).join("\n");
   const faq = FAQ.map((f) => `Q: ${f.q}\nA: ${f.a}`).join("\n\n");
+  const money = (n: number) => `$${n.toLocaleString("en-US")}`;
+  const estate = ESTATE_TIERS.map(
+    (t) => `  - ${t.label} (${t.size}, ${t.days}): ${money(t.range.low)}–${money(t.range.high)}${t.note ? ` — ${t.note}` : ""}`,
+  ).join("\n");
   const promo = isPromoActive()
     ? `ACTIVE: book by ${PROMO_DEADLINE_LABEL} for ${Math.round(PROMO_PERCENT * 100)}% off, capped at $${PROMO_CAP}. It locks the RATE, not the service date — leaves are not down by then.`
-    : `CLOSED. The ${PROMO_DEADLINE_LABEL} percent-off is done. Book before the city vacuum (mid-October to mid-November). Neighbor/block credit for density. Floor still $55.`;
+    : `CLOSED. The ${PROMO_DEADLINE_LABEL} percent-off is done and leaf season is over. Winter work is junk, appliances, tenant turns and estate cleanouts. Neighbor/block credit for density. Floor still $55.`;
 
   return `
 BUSINESS: ${BUSINESS.name}, ${BUSINESS.city} ${BUSINESS.region}. Phone ${BUSINESS.phone}.
@@ -177,6 +182,10 @@ ${leaf}
 JUNK / HAUL WORK (furniture and appliances are the same service — sized by how much is there):
 ${load}
 Garage or basement cleanouts add $50-$100 of sort-and-carry labor on top.
+
+ESTATE AND WHOLE-HOUSE CLEANOUTS (winter focus; always a free walkthrough first, then one fixed written price — never give a final number in chat):
+${estate}
+Usable items go to donation, metal to scrap, house left broom-swept. The family clears firearms, medications, cash and valuables first. No biohazard or hoarding cleanup. To start: text photos to ${BUSINESS.phone} or call for the walkthrough. The estate page is /estate-cleanout-grand-forks.
 
 SPRING CLEANUP (thatch, winter street sand, matted leaves, branches):
 ${spring}
@@ -225,7 +234,7 @@ ${faq}
 `.trim();
 }
 
-export const SYSTEM = `You answer questions for a small leaf-cleanup, gutter-cleaning and junk-removal business in Grand Forks, North Dakota. You are on the company's own website, talking to a potential customer.
+export const SYSTEM = `You answer questions for a small junk-removal, appliance-pickup and cleanout business in Grand Forks, North Dakota (it also does single-story gutter cleaning, and leaf cleanup in spring and fall). You are on the company's own website, talking to a potential customer.
 
 HARD RULES — these are not style preferences:
 

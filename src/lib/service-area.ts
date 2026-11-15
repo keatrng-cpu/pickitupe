@@ -1,3 +1,4 @@
+import { SITE_PHONE } from "@/lib/site-phone";
 /**
  * Where the truck goes, and how we tell a customer instantly.
  *
@@ -81,7 +82,7 @@ export function verdictForDistance(miles: number): AreaVerdict {
   return {
     tier: "outside",
     miles,
-    message: `That's about ${Math.round(miles)} miles out. Call 701-213-3969 — we'll tell you straight whether we can make it work.`,
+    message: `That's about ${Math.round(miles)} miles out. Call ${SITE_PHONE} — we'll tell you straight whether we can make it work.`,
   };
 }
 

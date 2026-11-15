@@ -1,8 +1,9 @@
 import {
   BedDouble,
+  Building2,
   CloudRain,
   CookingPot,
-  Leaf,
+  Home,
   Package,
   Pause,
   Play,
@@ -12,22 +13,21 @@ import {
   Truck,
   Warehouse,
   WashingMachine,
-  Wind,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 const ITEMS = [
-  { icon: Leaf, label: "Leaves" },
-  { icon: Wind, label: "Yard" },
-  { icon: CloudRain, label: "Gutters" },
   { icon: Package, label: "Junk" },
   { icon: Sofa, label: "Furniture" },
   { icon: BedDouble, label: "Mattress" },
   { icon: Refrigerator, label: "Fridge" },
   { icon: WashingMachine, label: "Washer" },
   { icon: CookingPot, label: "Stove" },
-  { icon: ShoppingBag, label: "Bags" },
   { icon: Warehouse, label: "Garage" },
+  { icon: Home, label: "Estates" },
+  { icon: ShoppingBag, label: "Bags" },
+  { icon: Building2, label: "Turns" },
+  { icon: CloudRain, label: "Gutters" },
   { icon: Truck, label: "Hauled" },
 ] as const;
 

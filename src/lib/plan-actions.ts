@@ -8,6 +8,7 @@ import {
   SERVICE_WINDOW,
   type PlanTier,
 } from "@/lib/plan";
+import { SITE_PHONE } from "@/lib/site-phone";
 
 const SITE = "https://pickitupe.com";
 
@@ -160,7 +161,7 @@ export const startPlanCheckout = createServerFn({ method: "POST" })
       }
       return { ok: true as const, url: session.url };
     } catch {
-      return { ok: false as const, error: "Could not start checkout. Text 701-213-3969." };
+      return { ok: false as const, error: `Could not start checkout. Text ${SITE_PHONE}.` };
     }
   });
 
@@ -194,7 +195,7 @@ export const openBillingPortal = createServerFn({ method: "POST" })
         return {
           ok: false as const,
           error:
-            "We couldn't find a plan for that email. Text 701-213-3969 and we'll sort it out.",
+            `We couldn't find a plan for that email. Text ${SITE_PHONE} and we'll sort it out.`,
         };
       }
 
@@ -206,7 +207,7 @@ export const openBillingPortal = createServerFn({ method: "POST" })
     } catch {
       return {
         ok: false as const,
-        error: "Billing isn't available right now. Text 701-213-3969.",
+        error: `Billing isn't available right now. Text ${SITE_PHONE}.`,
       };
     }
   });
