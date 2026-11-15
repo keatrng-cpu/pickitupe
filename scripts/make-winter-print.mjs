@@ -62,13 +62,14 @@ if (junk.bags.range.low !== junk.single.range.low || junk.bags.range.high !== ju
   throw new Error("Bags and One piece no longer share a price; split the print row");
 }
 const addOn = (key) => {
-  const a = pb.ADD_ONS.find((x) => x.key === key && x.appliesTo.includes("junk-removal"));
+  const a = pb.addOnsFor("junk-removal").find((x) => x.key === key);
   if (!a) throw new Error(`junk add-on "${key}" missing from pricebook`);
   return a;
 };
 const STAIRS = addOn("stairs");
 const FRIDGE = addOn("appliance-freon");
 const CLEANOUT = addOn("cleanout");
+const LONG_CARRY = addOn("long-carry");
 const [BLOCK2, BLOCK3] = pb.BLOCK_TIERS;
 const ESTATE_LOW = pb.ESTATE_TIERS[0].range.low;
 const ESTATE_HIGH = pb.ESTATE_TIERS.at(-1).range.high;
@@ -362,7 +363,7 @@ ${FONTS}
       (r) => `<tr><td class="icon">${bedIcon(r.fill, r.trips)}</td><td>${r.label}</td><td class="amt">${range(r.r)}</td></tr>`,
     ).join("")}</table>
     <p class="label section-label">Add-ons</p>
-    <table class="addons tab">${[STAIRS, FRIDGE, CLEANOUT]
+    <table class="addons tab">${[STAIRS, FRIDGE, CLEANOUT, LONG_CARRY]
       .map((a) => `<tr><td>${a.label}</td><td>+${range(a.range)}</td></tr>`)
       .join("")}</table>
     <p class="label section-label">How it works</p>

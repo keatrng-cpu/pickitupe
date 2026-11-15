@@ -21,6 +21,7 @@ import {
   addOnsFor,
   BLOCK_TIERS,
   canonicalService,
+  DEPOSIT,
   estimate as computeEstimate,
   formatRange,
   PROMO_DEADLINE_LABEL,
@@ -766,12 +767,12 @@ export function QuoteForm({
           {form.formState.isSubmitting ? (
             <Loader2 className="size-4 animate-spin" />
           ) : null}
-          Pay $50 to hold
+          Pay ${DEPOSIT} to hold
           <ArrowRight className="size-4" />
         </Button>
       </div>
       <p className="mt-3 text-sm leading-[1.5] text-muted">
-        No lock without the card. $50 deposit comes off the invoice.
+        No lock without the card. ${DEPOSIT} deposit comes off the invoice.
       </p>
     </form>
   );

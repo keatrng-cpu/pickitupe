@@ -1295,9 +1295,11 @@
   outline-offset: 3px;
 }
 
-/* --- Bed load (quick quote) ----------------------------------------
- * The junk size picker loads a cutaway truck bed. One drop per pick (the
- * group is re-keyed), never a loop. Off under prefers-reduced-motion.     */
+/* --- Bed load + load slider (quick quote, /call) ---------------------
+ * Pieces are always mounted and switched with data-on, so a drag up drops
+ * new ones in (a little bounce) and a drag down lifts them out. Transitions,
+ * not keyframes: a fast scrub interrupts cleanly instead of restarting.
+ * Off under prefers-reduced-motion. */
 
 .load-svg {
   display: block;
@@ -1308,68 +1310,143 @@
 .load-item {
   transform-box: fill-box;
   transform-origin: center bottom;
-  animation: load-drop 560ms var(--ease-out-soft) both;
-  animation-delay: calc(var(--i, 0) * 80ms);
+  transition:
+    opacity 260ms ease,
+    transform 520ms cubic-bezier(0.34, 1.45, 0.64, 1);
+}
+.load-item[data-on="true"] {
+  opacity: 1;
+  transform: none;
+  transition-delay: calc(var(--i, 0) * 55ms);
+}
+.load-item[data-on="false"] {
+  opacity: 0;
+  transform: translateY(-44px) rotate(-4deg);
+  transition-duration: 200ms, 260ms;
+}
+.load-body {
+  transition: transform 480ms cubic-bezier(0.34, 1.6, 0.64, 1);
 }
 .load-strap {
   stroke-dasharray: 1;
+  transition: stroke-dashoffset 420ms var(--ease-out-soft);
+}
+.load-strap[data-on="true"] {
+  stroke-dashoffset: 0;
+  transition-delay: 380ms;
+}
+.load-strap[data-on="false"] {
   stroke-dashoffset: 1;
-  animation: load-strap 420ms var(--ease-out-soft) forwards;
-  animation-delay: calc(var(--i, 0) * 80ms + 160ms);
 }
 .load-gauge-fill {
   transform-box: fill-box;
   transform-origin: right center;
-  transition: transform 650ms var(--ease-out-soft);
+  transition: transform 600ms var(--ease-out-soft);
 }
 .load-trips {
   transform-box: fill-box;
   transform-origin: center;
-  animation: load-pop 380ms var(--ease-out-soft) 520ms both;
+  transition:
+    opacity 240ms ease,
+    transform 380ms cubic-bezier(0.34, 1.6, 0.64, 1);
+}
+.load-trips[data-on="true"] {
+  opacity: 1;
+  transform: none;
+  transition-delay: 420ms;
+}
+.load-trips[data-on="false"] {
+  opacity: 0;
+  transform: scale(0.6);
 }
 
-@keyframes load-drop {
-  from {
-    opacity: 0;
-    transform: translateY(-42px) rotate(-3deg);
-  }
-  45% {
-    opacity: 1;
-  }
-  72% {
-    transform: translateY(2px) rotate(0.5deg) scaleY(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+/* The slider: cream track, gold fill up to the thumb, a truck on the knob. */
+.load-range {
+  --p: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 2.75rem; /* 44px tap row; the visible track is thinner */
+  background: transparent;
+  cursor: pointer;
+  touch-action: pan-y;
 }
-@keyframes load-strap {
-  to {
-    stroke-dashoffset: 0;
-  }
+.load-range::-webkit-slider-runnable-track {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--color-gold) 0 calc(var(--p) * 100%),
+    color-mix(in srgb, var(--color-fg) 22%, transparent) calc(var(--p) * 100%) 100%
+  );
 }
-@keyframes load-pop {
-  from {
-    opacity: 0;
-    transform: scale(0.6);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+.load-range::-moz-range-track {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-fg) 22%, transparent);
+}
+.load-range::-moz-range-progress {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--color-gold);
+}
+.load-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-top: -1rem;
+  border: 0;
+  border-radius: 50%;
+  background: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2040%2040'%3E%3Ccircle%20cx%3D'20'%20cy%3D'20'%20r%3D'19'%20fill%3D'%23f3ead6'%2F%3E%3Cpath%20d%3D'M8%2025%20V19%20H18%20V14%20Q18%2012%2020%2012%20H25%20Q27%2012%2028%2014%20L31%2019%20Q33%2020%2033%2022%20V25%20Z'%20fill%3D'%234a2418'%2F%3E%3Cpath%20d%3D'M21%2014.5%20H25%20L27%2018.5%20H21%20Z'%20fill%3D'%23f3ead6'%2F%3E%3Ccircle%20cx%3D'13'%20cy%3D'26'%20r%3D'3.2'%20fill%3D'%231b1612'%2F%3E%3Ccircle%20cx%3D'13'%20cy%3D'26'%20r%3D'1.3'%20fill%3D'%23f3ead6'%2F%3E%3Ccircle%20cx%3D'27'%20cy%3D'26'%20r%3D'3.2'%20fill%3D'%231b1612'%2F%3E%3Ccircle%20cx%3D'27'%20cy%3D'26'%20r%3D'1.3'%20fill%3D'%23f3ead6'%2F%3E%3C%2Fsvg%3E") center / contain no-repeat;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.35);
+  transition: transform 160ms var(--ease-out-soft);
+}
+.load-range::-moz-range-thumb {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 0;
+  border-radius: 50%;
+  background: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2040%2040'%3E%3Ccircle%20cx%3D'20'%20cy%3D'20'%20r%3D'19'%20fill%3D'%23f3ead6'%2F%3E%3Cpath%20d%3D'M8%2025%20V19%20H18%20V14%20Q18%2012%2020%2012%20H25%20Q27%2012%2028%2014%20L31%2019%20Q33%2020%2033%2022%20V25%20Z'%20fill%3D'%234a2418'%2F%3E%3Cpath%20d%3D'M21%2014.5%20H25%20L27%2018.5%20H21%20Z'%20fill%3D'%23f3ead6'%2F%3E%3Ccircle%20cx%3D'13'%20cy%3D'26'%20r%3D'3.2'%20fill%3D'%231b1612'%2F%3E%3Ccircle%20cx%3D'13'%20cy%3D'26'%20r%3D'1.3'%20fill%3D'%23f3ead6'%2F%3E%3Ccircle%20cx%3D'27'%20cy%3D'26'%20r%3D'3.2'%20fill%3D'%231b1612'%2F%3E%3Ccircle%20cx%3D'27'%20cy%3D'26'%20r%3D'1.3'%20fill%3D'%23f3ead6'%2F%3E%3C%2Fsvg%3E") center / contain no-repeat;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.35);
+}
+.load-range:active::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+.load-range:focus-visible {
+  outline: none;
+}
+.load-range:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+}
+.load-range:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+}
+.load-tick {
+  color: var(--color-muted);
+  transition:
+    color 160ms ease,
+    background-color 160ms ease;
+}
+.load-tick:hover {
+  color: var(--color-fg);
+}
+.load-tick[aria-pressed="true"] {
+  color: var(--color-ink);
+  background: var(--color-gold);
+  font-weight: 600;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .load-item,
-  .load-trips {
-    animation: none !important;
-  }
-  .load-strap {
-    animation: none !important;
-    stroke-dashoffset: 0;
-  }
-  .load-gauge-fill {
+  .load-body,
+  .load-strap,
+  .load-gauge-fill,
+  .load-trips,
+  .load-range::-webkit-slider-thumb {
     transition: none !important;
   }
 }

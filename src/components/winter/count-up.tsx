@@ -20,6 +20,7 @@ export function CountUp({ value, prefix = "", suffix = "", className }: { value:
     if (el.getBoundingClientRect().top < window.innerHeight * 0.9) return;
     setShown(0);
     let raf = 0;
+    let settle = 0;
     const io = new IntersectionObserver(
       ([e]) => {
         if (!e.isIntersecting) return;
@@ -31,13 +32,17 @@ export function CountUp({ value, prefix = "", suffix = "", className }: { value:
           if (p < 1) raf = requestAnimationFrame(tick);
         };
         raf = requestAnimationFrame(tick);
+        // Animation frames get throttled (background tab, battery saver); a
+        // price must never be left reading $0, so land on the real number.
+        settle = window.setTimeout(() => setShown(value), 1100);
       },
-      { threshold: 0.6 },
+      { threshold: 0.3 },
     );
     io.observe(el);
     return () => {
       io.disconnect();
       cancelAnimationFrame(raf);
+      window.clearTimeout(settle);
     };
   }, [value]);
 
