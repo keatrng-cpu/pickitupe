@@ -12,6 +12,7 @@ import { BeforeAfter } from "@/components/winter/before-after";
 import { CountUp } from "@/components/winter/count-up";
 import { HowItWorksRoad } from "@/components/winter/how-it-works";
 import { MotionToggle } from "@/components/winter/motion-toggle";
+import { RiverCrossing } from "@/components/winter/river-crossing";
 import { Snowfall } from "@/components/winter/snowfall";
 import { TruckStage } from "@/components/winter/truck-stage";
 import { getOfferStatus } from "@/lib/bookings";
@@ -195,6 +196,9 @@ function Home() {
             <h2 id="where-we-work" className="mt-3 font-display text-3xl leading-none sm:text-4xl">
               Grand Forks and East Grand Forks, one truck, all winter.
             </h2>
+            <div className="mt-6">
+              <RiverCrossing />
+            </div>
             <p className="mt-4 max-w-3xl text-sm leading-6 text-fg/90">
               Every neighborhood in Grand Forks, across the river into East Grand Forks, and out to Thompson, Manvel,
               Emerado and the base. Two jobs on the same street the same day get the neighbor credit. Anything farther

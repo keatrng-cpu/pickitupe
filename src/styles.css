@@ -1090,6 +1090,10 @@
   position: relative;
   height: 6.5rem;
   --truck-w: 10rem;
+  /* The driver box slides a full track-width right as it drives; clip it so
+     the page never gets wider than the screen (iOS honours this, body
+     overflow-x alone it sometimes doesn't). clip, not hidden: no scroll box. */
+  overflow-x: clip;
 }
 
 @media (min-width: 1024px) {
@@ -1448,6 +1452,87 @@
   .load-trips,
   .load-range::-webkit-slider-thumb {
     transition: none !important;
+  }
+}
+
+/* --- River crossing ("Where we work") ----------------------------------
+ * The pickup crosses the Sorlie Bridge from Grand Forks to East Grand Forks
+ * on a CSS scroll timeline (--river). No listeners, no pinning. Without
+ * scroll timelines an IntersectionObserver rolls it across once. Phones crop
+ * to the bridge instead of shrinking the whole skyline. */
+
+.river-section {
+  view-timeline-name: --river;
+  view-timeline-axis: block;
+}
+.river-frame {
+  overflow: hidden;
+  border-radius: 1rem;
+}
+.river-svg {
+  display: block;
+  width: max(100%, 860px);
+  height: auto;
+  margin-left: calc((100% - max(100%, 860px)) / 2);
+}
+.river-truck {
+  transform: translateX(880px);
+  transition: transform 2.6s var(--ease-out-soft);
+}
+.river-section:not([data-arrived]) .river-truck {
+  transform: translateX(0);
+}
+.river-floes {
+  animation: floe-drift 26s ease-in-out infinite alternate;
+}
+
+@supports (animation-timeline: view()) {
+  .river-section .river-truck {
+    transition: none;
+    transform: translateX(0);
+    animation: river-drive linear both;
+    animation-timeline: --river;
+    animation-range: entry 25% cover 65%;
+  }
+  .river-section .truck-wheel {
+    animation-play-state: running;
+    animation-timeline: --river;
+    animation-range: entry 25% cover 65%;
+    animation-duration: auto;
+    animation-iteration-count: 14;
+  }
+}
+
+@keyframes river-drive {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(880px);
+  }
+}
+@keyframes floe-drift {
+  from {
+    transform: translateX(-18px);
+  }
+  to {
+    transform: translateX(22px);
+  }
+}
+
+html[data-motion="paused"] .river-floes {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .river-floes,
+  .river-section .river-truck,
+  .river-section .truck-wheel {
+    animation: none !important;
+    transition: none !important;
+  }
+  .river-section .river-truck {
+    transform: translateX(440px) !important;
   }
 }
 
