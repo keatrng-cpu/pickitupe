@@ -20,6 +20,31 @@ Owner, Nov 13: favor junk removal, be as creative as possible with design, anima
 | `winter/bed-load.tsx` | Cutaway truck bed loaded to a junk size. Every piece is always mounted and switched with `data-on` (CSS transitions, not keyframes), so a fast slider drag drops pieces in and lifts them out smoothly; the body settles on its springs; gauge shows only the fractions the pricebook names. Decorative, aria-hidden; off under reduced motion. |
 | `winter/load-slider.tsx` | **Owner, Nov 14: "a slider from least to most with a pickup that fills up as you slide."** Native `<input type=range>` over `featuredSizesFor("junk-removal")` (arrows/Home/End/touch/`aria-valuetext`), tappable size labels, truck glyph on the thumb. Used on the home quick quote and on `/call` for junk. |
 | `add-on-picker.tsx` | `addOnsFor(service)` minus bundle add-ons (stairs, long carry, cleanout, fridge/freezer/AC for junk). They ride `?addons=` to `/call` and into the server estimate — before Nov 14 junk add-ons weren't pickable anywhere and jobs were quoted low. |
+| `rate-reel.tsx` | **Haul rates as a printed receipt** (Nov 14 design pass): paper with punched edges, mahogany ink, every size from `estimate()`, every add-on from `addOnsFor()`, rows link to `/call` with that size. Only competitor line is the like-for-like single item from `LOCAL_COMPARABLE` (sourced + dated, renders only while we're under it). Never compare box-truck "half/full load" prices — different volume (`BED_CUBIC_YARDS`). `scripts/price-literals.test.mjs` fails on any typed `# Visual / motion
+
+Read the root [`CLAUDE.md`](../../CLAUDE.md) first. This folder is the **visual / motion** workstream.
+
+## Winter (2026-11): `winter/`
+
+Owner, Nov 13: favor junk removal, be as creative as possible with design, animation and a 3D look, keep navigation clean.
+
+| File | Job |
+|---|---|
+| `winter/truck-scene.ts` | Procedural three.js scene: the cream pickup (couch, fridge, boxes, door lettering) in snow with pines. No model or texture downloads. Renders only while visible, tab shown and motion not paused; one still frame otherwise. Disposes everything. |
+| `winter/truck-stage.tsx` | Home hero stage. SVG poster paints first (reserved aspect box, no CLS); the scene chunk loads after `load` + idle, skipped on Save-Data / 2g / low memory / no WebGL. **Swap slot:** `video={{ mp4, webm, poster }}` replaces the 3D with a rendered loop (e.g. Higgsfield) without layout changes. |
+| `winter/truck-svg.tsx` | Side-view SVG truck (faces right — never flip). Poster, how-it-works road, estate hero. |
+| `winter/snowfall.tsx` | CSS-only snow. Seeded positions (no hydration mismatch). Three falls then stops on phones. |
+| `winter/motion.ts`, `motion-toggle.tsx` | `html[data-motion="paused"]` + localStorage. The "Pause snow" button (WCAG 2.2.2). Reduced motion counts as paused. |
+| `winter/how-it-works.tsx` | Truck drives the road as the section scrolls (CSS `animation-timeline: view()`); IntersectionObserver fallback parks it. |
+| `winter/scroll-road.tsx` | Gold fill under the header ticker on `animation-timeline: scroll()`. Decorative, hidden where unsupported. |
+| `winter/count-up.tsx` | Count-up once on view; server renders the final number. Only numbers from code (pricebook, schedule). |
+| `winter/before-after.tsx` | Range-input wipe, illustrated garage until real photos exist. **Swap slot:** `before` / `after` image props — real job photos only, never AI renders. |
+| `winter/bed-load.tsx` | Cutaway truck bed loaded to a junk size. Every piece is always mounted and switched with `data-on` (CSS transitions, not keyframes), so a fast slider drag drops pieces in and lifts them out smoothly; the body settles on its springs; gauge shows only the fractions the pricebook names. Decorative, aria-hidden; off under reduced motion. |
+| `winter/load-slider.tsx` | **Owner, Nov 14: "a slider from least to most with a pickup that fills up as you slide."** Native `<input type=range>` over `featuredSizesFor("junk-removal")` (arrows/Home/End/touch/`aria-valuetext`), tappable size labels, truck glyph on the thumb. Used on the home quick quote and on `/call` for junk. |
+| `add-on-picker.tsx` | `addOnsFor(service)` minus bundle add-ons (stairs, long carry, cleanout, fridge/freezer/AC for junk). They ride `?addons=` to `/call` and into the server estimate — before Nov 14 junk add-ons weren't pickable anywhere and jobs were quoted low. |
+ amount here. Pointer-follow `.spotlight` glow on hover devices only. |
+| `fine-print.tsx` | FAQ as native `<details>` on hairlines, asymmetric 4/8 grid. Same `FAQ` list as the JSON-LD — change copy in `seo.ts` only. |
+| `winter/how-it-works.tsx` (steps) | Numbered editorial steps (big Playfair numerals) on hairline rules, **no icon cards**. Rule fill (`scaleX`) + numeral opacity ride the `--road` timeline; IO fallback and reduced motion show them lit. |
 | `winter/river-crossing.tsx` | "Where we work": Grand Forks ↔ East Grand Forks over the Red River on the Sorlie Memorial Bridge (1929, two-span Parker through truss, east end of DeMers Ave). Truck crosses on CSS view timeline `--river`; IO fallback; parked mid-bridge under reduced motion; floes obey Pause snow. Phones crop to the bridge + caption row. |
 | `src/lib/truck-art.ts` | **The brand truck**, Nov 13 (owner: "a little more classy"): vintage cream pickup, chrome, whitewalls, walnut stake rails, tarp load. Plain SVG markup shared by `TruckSvg` (site) and the print build — change it here and both follow. viewBox 0 0 320 160, faces right. |
 | `src/lib/media.ts` | `MEDIA.heroLoop` (Higgsfield loop slot, see `docs/HIGGSFIELD.md` + `scripts/ingest-clip.mjs`) and `MEDIA.hero3D` — the procedural 3D truck is **off** since Nov 13 (it read toy-like next to the classy illustration); flip to `true` to bring it back. |

@@ -62,7 +62,8 @@ export function QuickQuote() {
         What are we taking?
       </h2>
 
-      <div className="mt-8 grid grid-cols-3 gap-3" role="radiogroup" aria-label="Service">
+      {/* A segmented switch, not three tiles: one decision, one row. */}
+      <div className="segmented mt-8 grid w-full max-w-md grid-cols-3 p-1" role="radiogroup" aria-label="Service">
         {JOBS.map((job) => {
           const on = service === job.value;
           return (
@@ -72,12 +73,12 @@ export function QuickQuote() {
               role="radio"
               aria-checked={on}
               onClick={() => pick(job.value)}
-              className={`btn-press flex min-h-24 flex-col items-start gap-3 rounded-2xl p-4 text-left ring-1 transition-[transform,background-color,box-shadow] duration-200 ${
-                on ? "bg-fg text-ink ring-gold" : "card-green text-fg ring-transparent"
+              className={`btn-press flex min-h-11 items-center justify-center gap-2 rounded-full px-3 text-sm font-medium transition-colors duration-200 ${
+                on ? "bg-fg text-ink" : "text-fg/80 hover:text-fg"
               }`}
             >
-              <span className={on ? "text-ink" : "text-gold"}>{job.icon}</span>
-              <span className="font-display text-xl leading-none">{job.label}</span>
+              <span className={`[&>svg]:size-4 ${on ? "text-ink" : "text-gold"}`}>{job.icon}</span>
+              {job.label}
             </button>
           );
         })}

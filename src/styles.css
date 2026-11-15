@@ -787,12 +787,16 @@
     mask-image: none;
   }
 
+  /* One still line, clipped — wrapping it turned the sticky header into a
+     four-row block covering a quarter of a phone screen. */
   .ticker-track {
-    flex-wrap: wrap;
-    width: 100%;
-    justify-content: center;
-    row-gap: 0.4rem;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
     column-gap: 1.25rem;
+  }
+
+  .ticker-clip {
+    overflow: hidden;
   }
 
   .ticker-pause {
@@ -1533,6 +1537,168 @@ html[data-motion="paused"] .river-floes {
   }
   .river-section .river-truck {
     transform: translateX(440px) !important;
+  }
+}
+
+/* --- Design pass (Nov 14): receipt, numbered road, FAQ, segmented ---------
+ * Hairlines over boxes, one printed surface (the receipt), GPU-only motion.
+ * Hover effects only where hover exists. */
+
+/* The rate receipt: paper with punched top/bottom edges. The shadow lives on
+   the wrapper because a mask would clip the receipt's own shadow. */
+.receipt-wrap {
+  filter: drop-shadow(0 22px 34px rgb(0 0 0 / 0.42)) drop-shadow(0 2px 3px rgb(0 0 0 / 0.25));
+}
+.receipt {
+  border-radius: 6px;
+  box-shadow: none;
+  -webkit-mask:
+    radial-gradient(circle 7px at 50% 0, #0000 97%, #000) top / 20px 51% repeat-x,
+    radial-gradient(circle 7px at 50% 100%, #0000 97%, #000) bottom / 20px 51% repeat-x;
+  mask:
+    radial-gradient(circle 7px at 50% 0, #0000 97%, #000) top / 20px 51% repeat-x,
+    radial-gradient(circle 7px at 50% 100%, #0000 97%, #000) bottom / 20px 51% repeat-x;
+}
+.receipt-rule {
+  height: 0;
+  border-top: 1.5px dashed color-mix(in srgb, var(--color-mahogany) 32%, transparent);
+}
+.receipt-row {
+  transition: background-color 160ms ease;
+}
+.receipt-row:hover,
+.receipt-row:focus-visible {
+  background: color-mix(in srgb, var(--color-mahogany) 6%, transparent);
+}
+.receipt-row:focus-visible {
+  outline: 2px solid var(--color-mahogany);
+  outline-offset: 1px;
+}
+
+/* Pointer-follow glow (design director §5): two custom properties, the glow
+   is a pseudo-element whose opacity is the only thing that transitions. */
+.spotlight {
+  position: relative;
+}
+.spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 300ms ease;
+  background: radial-gradient(
+    420px circle at var(--x, 50%) var(--y, 30%),
+    color-mix(in srgb, var(--color-gold) 30%, transparent),
+    transparent 62%
+  );
+}
+@media (hover: hover) {
+  .spotlight:hover::before {
+    opacity: 1;
+  }
+}
+
+/* How it works: a hairline per step that fills gold as the truck reaches it. */
+.road-rule {
+  position: relative;
+  display: block;
+  height: 2px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+.road-rule::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--color-gold);
+  transform-origin: left center;
+  transform: scaleX(1);
+  transition: transform 900ms var(--ease-out-soft);
+}
+.road-numeral {
+  opacity: 1;
+  transition: opacity 600ms var(--ease-out-soft);
+}
+.road-section:not([data-arrived]) .road-rule::after {
+  transform: scaleX(0);
+}
+.road-section:not([data-arrived]) .road-numeral {
+  opacity: 0.35;
+}
+@supports (animation-timeline: view()) {
+  .road-section .road-rule::after {
+    transition: none;
+    transform: scaleX(0);
+    animation: rule-fill linear both;
+    animation-timeline: --road;
+    animation-range: entry calc(30% + var(--i) * 9%) entry calc(38% + var(--i) * 9%);
+  }
+  .road-section .road-numeral {
+    transition: none;
+    animation: numeral-light linear both;
+    animation-timeline: --road;
+    animation-range: entry calc(30% + var(--i) * 9%) entry calc(38% + var(--i) * 9%);
+  }
+}
+@keyframes rule-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes numeral-light {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* FAQ: hairline list, native <details>. */
+.faq-list {
+  border-top: 1px solid var(--color-border);
+}
+.faq-item {
+  border-bottom: 1px solid var(--color-border);
+}
+.faq-item > summary::-webkit-details-marker {
+  display: none;
+}
+.faq-item > summary:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+@media (hover: hover) {
+  .faq-item > summary:hover > span:first-child {
+    color: var(--color-gold);
+  }
+}
+
+/* Segmented service switch. */
+.segmented {
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-bg-deep) 55%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .road-section .road-rule::after,
+  .road-section .road-numeral {
+    animation: none !important;
+    transition: none !important;
+    transform: scaleX(1) !important;
+    opacity: 1 !important;
+  }
+  .road-section .road-numeral {
+    transform: none !important;
+  }
+  .spotlight::before {
+    transition: none;
   }
 }
 

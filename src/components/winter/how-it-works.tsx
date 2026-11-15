@@ -1,7 +1,8 @@
-import { Camera, CalendarCheck, Receipt, Truck } from "lucide-react";
+import { Camera } from "lucide-react";
 import { useEffect, useRef, type CSSProperties } from "react";
 import { TruckSvg } from "@/components/winter/truck-svg";
 import { smsLink } from "@/lib/messages";
+import { DEPOSIT } from "@/lib/pricebook";
 import { BUSINESS } from "@/lib/seo";
 
 /**
@@ -14,10 +15,10 @@ import { BUSINESS } from "@/lib/seo";
  * with a transition and lights every stop. Reduced motion: truck parked, all lit.
  */
 const STEPS = [
-  { icon: Camera, title: "Text a photo", body: "Or tap the size of the pile. No account." },
-  { icon: Receipt, title: "See the price", body: "A range up front, from the same pricebook every time." },
-  { icon: CalendarCheck, title: "Pick a day", body: "$50 on a card holds it and comes off the bill." },
-  { icon: Truck, title: "Gone", body: "We carry it out, load it and haul it. You don't lift a thing." },
+  { title: "Text a photo", body: "Or slide to the size of the pile. No account." },
+  { title: "See the price", body: "A range up front, from the same pricebook every time." },
+  { title: "Pick a day", body: `$${DEPOSIT} on a card holds it and comes off the bill.` },
+  { title: "Gone", body: "We carry it out, load it and haul it. You don't lift a thing." },
 ] as const;
 
 /** Step 01 is the one thing the customer does, so it is a real button: it opens
@@ -61,13 +62,17 @@ export function HowItWorksRoad() {
         </div>
       </div>
 
-      <ol className="road-steps mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Numbered steps on hairlines, not icon cards: the rule over each step
+          fills gold as the truck on the road above reaches it. */}
+      <ol className="road-steps mt-8 grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4 lg:gap-x-8">
         {STEPS.map((s, i) => (
-          <li key={s.title} className="road-step card-green rounded-2xl p-5" style={{ "--i": i } as CSSProperties}>
-            <span className="road-step-num font-display text-sm text-gold">0{i + 1}</span>
-            <s.icon className="mt-3 size-6 text-gold" aria-hidden="true" />
-            <p className="mt-3 font-display text-2xl leading-none">{s.title}</p>
-            <p className="mt-2 text-sm leading-6 text-fg/85">{s.body}</p>
+          <li key={s.title} className="road-step" style={{ "--i": i } as CSSProperties}>
+            <span className="road-rule" aria-hidden="true" />
+            <span className="road-numeral mt-5 block font-display text-5xl leading-none text-gold tabular-nums sm:text-6xl lg:text-7xl" aria-hidden="true">
+              0{i + 1}
+            </span>
+            <p className="mt-4 font-display text-xl leading-none sm:text-2xl">{s.title}</p>
+            <p className="mt-2 max-w-[28ch] text-sm leading-6 text-fg/85">{s.body}</p>
             {i === 0 ? (
               <a
                 href={PHOTO_TEXT}
