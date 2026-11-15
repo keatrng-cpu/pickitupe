@@ -85,6 +85,7 @@ phone numbers in descriptions.
 | Fridge, freezer or AC (add-on) | +$25–$45 |
 | Garage or basement cleanout (add-on) | +$50–$100 |
 | Stairs or basement carry (add-on) | +$30–$60 |
+| Long carry, more than ~75 ft to the truck (add-on) | +$20–$40 |
 | Estate / whole-house cleanout | $650–$4,500, free walkthrough |
 | Gutter cleaning, single-story | $135–$215 |
 

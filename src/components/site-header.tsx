@@ -58,7 +58,7 @@ const MOBILE_MORE: NavItem[] = [
 function Mark() {
   return (
     <img
-      src="/logo.png"
+      src="/logo-120.webp"
       alt=""
       width={40}
       height={40}
@@ -227,7 +227,7 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-[1.2fr_1fr]">
         <div className="flex items-center gap-3">
           <img
-            src="/logo.png"
+            src="/logo-120.webp"
             alt=""
             width={40}
             height={40}

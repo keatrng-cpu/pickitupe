@@ -1,26 +1,49 @@
 # NOW — pickitupe current truth
 
-**As of:** 2026-11-13 · winter stack: PR 9 (hours) → PR 10 (winter redesign) → branch `claude/winter-higgsfield` (this). None merged.
+**As of:** 2026-11-14 · winter stack: PR 9 (hours) → PR 10 (winter redesign) → PR 11 `claude/winter-higgsfield`. None merged.
 
 > Keep under 150 lines. Current truth only; history goes in `ai/DECISIONS.md`.
 
 ## Goal
-Winter 2026–27: lead with junk removal, appliance pickup and estate / whole-house cleanouts. Leaves come back in spring.
+Winter 2026–27: junk-removal-first. Every order priced from the pricebook, easy to pick, and able to go through. Fun to scroll, plainly Grand Forks. Leaves come back in spring.
 
 ## In flight
 - PR 9: truck hours built around the landfill (Mon–Fri 9:30–5:30 · Sat 12–4). Merge first.
 - PR 10: junk-first home, estate / appliance / pricing pages, scroll road, snow. Merge second.
-- `claude/winter-higgsfield` (stacked on PR 10): classy vintage truck (`src/lib/truck-art.ts`) on site + print, 3D hero off (`MEDIA.hero3D`), quick-quote truck-bed gauge, "Text a photo" button, guest confirmation email fix, phone centralised in `src/lib/site-phone.ts`, winter print set, Higgsfield workflow, marketing plans v2.
+- PR 11 (stacked on PR 10):
+  - Site: classy vintage truck (`src/lib/truck-art.ts`), 3D hero off (`MEDIA.hero3D`), **load slider with a pickup that fills** (home + `/call`), **junk add-ons pickable and priced** (stairs, long carry, cleanout, fridge/freezer/AC), Sorlie Bridge river scene in "Where we work", masked confirmation email on the booked screen.
+  - Fixes: phone centralised in `src/lib/site-phone.ts`, guest email from Stripe saved, CountUp never stuck at $0, road no longer widens the page.
+  - Also: winter print set, Higgsfield workflow, marketing plans v2, order e2e test.
 
 ## Known facts / constraints
-- **Phone:** owner (Nov 13) is retiring 701-213-3969 for a Twilio line + ElevenLabs voice agent. Not bought yet ((701) 738-1596 sat at Twilio's buy screen; 738-3210 was not reserved). Site still shows 3969 until the new line answers. Swap = `SITE_PHONE_DIGITS` + `NEW_LINE_DIGITS` in `src/lib/site-phone.ts`; `src/lib/og/site.json` share text also carries the number (JSON, edit by hand). Keep 3969 forwarding 6+ months.
-- **Print:** `node scripts/make-winter-print.mjs` → `print/winter/` (card `?s=bcg`, canvass hanger `?s=dhc`, neighbor hanger `?s=dhn`). Proof-stamped until `NEW_LINE_DIGITS` is set. Hangers also wait on Grand Forks Finance (transient merchant license question). Ice-melt offer printed through Dec 31, 2026 — owner must confirm and stock it.
-- **Higgsfield:** connector attached, Plus, 163.75 credits (Nov 13). **The connector can't generate** (balance / models / history / import only), so the hero loop has to be rendered on higgsfield.ai or with the CLI (`@higgsfield/cli` 1.2.2 installed, not signed in). **No hero-loop take exists yet; `MEDIA.heroLoop` is still empty.** Kling 3.0 is 16:9-only → `media/higgsfield/hero-start-frame-16x9.png` as start = end frame, then `ingest-clip.mjs --slot hero-loop --aspect 4:3`. ffmpeg: not on PATH; use `FFMPEG=` the imageio-ffmpeg binary (path in docs/HIGGSFIELD.md). Hero video path is fixed and tested with a stand-in: cover-fit, plays only on screen, Pause/reduced motion mount the poster `<img>` and no `<video>`. Frame edges retuned to the measured page green (old vignette showed a dark box). Brand animation only — never AI before/after or "job" footage.
-- **Off-limits Higgsfield takes already in the account (Nov 13, 09:00):** one Kling 3.0 photoreal basement before/after with blurred "crew", two Seedance 2.5 photoreal green Toyota pickups. Never put these on the site or socials: fake job evidence, and a branded vehicle that isn't ours.
-- Uncommitted on `claude/winter-higgsfield`: refs script + 16:9 frame, `ingest-clip.mjs --aspect`, `truck-stage.tsx` video fix, `.truck-stage-media` CSS, HIGGSFIELD.md. Owner's plan: commit with the clip.
-- Guest bookers: Stripe checkout email is now saved to the booking (`finalizePaidDeposit(..., { email })`), so booked / done / reminder emails reach guests. Stripe no longer asks for phone (our form already requires it).
-- Nav (winter): Junk removal · Estate cleanouts · Appliances · Landlords · Pricing · Book.
-- Estate prices are `ESTATE_TIERS` in `pricebook.ts`; estate CTA is a free walkthrough, no $50 card wall.
-- Every loop pauses via `html[data-motion="paused"]` and is off under prefers-reduced-motion. Scroll-driven motion = CSS scroll timelines only.
-- Marketing plans v2: `docs/marketing/` (repo is public).
+- **Orders: `npm run e2e:order`** (start the `pickitupe-e2e` server first — the command is in the header of `scripts/order-e2e.mjs`). It runs a fake Stripe on 127.0.0.1:12111 and Chromium through these scenarios:
+  - junk via the slider + add-ons
+  - landlord tiered deposit
+  - gutters
+  - old furniture link
+  - true guest via /book
+  - signed webhook + replay
+  - bad phone
+  - cancel
+
+  Last run: 26/26. The Stripe test-API override in `stripe.server.ts` works only for `sk_test_`/`rk_test_` keys on a loopback host.
+- No `.env` locally (no Stripe / DB / Resend). Production has live keys — never run test orders against production or the deploy preview (the preview may share the production DB).
+- Junk sizes for the slider = `featuredSizesFor("junk-removal")` (bags, single, quarter, half, full, overflow). Add-ons = `addOnsFor(service)` minus bundle keys; "all" add-ons (long carry) count for junk.
+- **Phone:** owner (Nov 13) is retiring 701-213-3969 for a Twilio line + ElevenLabs voice agent. Not bought yet. Site keeps 3969 until the new line answers.
+  - Swap: `SITE_PHONE_DIGITS` + `NEW_LINE_DIGITS` in `src/lib/site-phone.ts`.
+  - `src/lib/og/site.json` also carries the number — it's JSON, so edit it by hand.
+  - Keep 3969 forwarding 6+ months.
+- **Print:** `node scripts/make-winter-print.mjs` → `print/winter/` (card `?s=bcg`, canvass `?s=dhc`, neighbor `?s=dhn`).
+  - Proof-stamped until `NEW_LINE_DIGITS` is set.
+  - Hangers wait on Grand Forks Finance (transient merchant license).
+  - Ice-melt offer through Dec 31, 2026 — owner to confirm and stock.
+  - Add-ons on print now include Long carry.
+- **Higgsfield:** connector attached (Plus), but it can't generate. The hero loop has to be made on higgsfield.ai or the CLI.
+  - `MEDIA.heroLoop` is still empty.
+  - Kling 3.0 is 16:9 only → use `media/higgsfield/hero-start-frame-16x9.png`, then `ingest-clip.mjs --slot hero-loop --aspect 4:3`.
+  - The hero video path and the 16:9 refs are committed (`1248056`).
+  - Brand animation only. The account's photoreal before/after and green-Toyota takes are off-limits.
+- Nav (winter): Junk removal · Estate cleanouts · Appliances · Landlords · Pricing · Book. `/call` service chips: Junk · Gutters · Leaves.
+- Every loop pauses via `html[data-motion="paused"]` and is off under prefers-reduced-motion. Scroll-driven motion = CSS scroll timelines only (`--road`, `--river`).
 - `npm test` glob doesn't expand on Windows; run `node --test scripts/*.test.mjs` from bash (166/167 pass, 0 fail).
+- `dist/assets` contains PGLite wasm/data (~16 MB) from the server build; no client chunk references it, so browsers never download it.
