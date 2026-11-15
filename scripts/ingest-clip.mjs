@@ -1,7 +1,11 @@
 /**
  * Turn a downloaded Higgsfield clip into web-ready files for one MEDIA slot.
  *
- *   node scripts/ingest-clip.mjs <clip.mp4> --slot hero-loop [--width 1440]
+ *   node scripts/ingest-clip.mjs <clip.mp4> --slot hero-loop [--aspect 4:3] [--width 1440]
+ *
+ * --aspect W:H centre-crops first. The hero is 4:3, but Kling 3.0 only renders
+ * 16:9, so its takes start from hero-start-frame-16x9.png (the 4:3 hero with
+ * green added at the sides) and come back to 4:3 here.
  *
  * Writes public/media/<slot>.mp4 (H.264, CRF 28, faststart — same recipe as
  * the haul videos), public/media/<slot>.webm (VP9) and
@@ -27,10 +31,15 @@ const flag = (name, fallback) => {
 const input = args.find((a, i) => !a.startsWith("--") && !args[i - 1]?.startsWith("--"));
 const slot = flag("slot", "");
 const width = Number(flag("width", "1440"));
+const aspect = flag("aspect", "");
 
-if (!input || !existsSync(input)) fail("usage: node scripts/ingest-clip.mjs <clip.mp4> --slot hero-loop [--width 1440]");
+if (!input || !existsSync(input)) fail("usage: node scripts/ingest-clip.mjs <clip.mp4> --slot hero-loop [--aspect 4:3] [--width 1440]");
 if (!/^[a-z0-9-]+$/.test(slot)) fail("--slot must be lowercase letters, digits and dashes, e.g. hero-loop");
 if (!Number.isInteger(width) || width < 480 || width > 2560) fail("--width must be 480–2560");
+const am = aspect ? /^(\d+):(\d+)$/.exec(aspect) : null;
+if (aspect && !am) fail("--aspect must look like 4:3");
+// Centre crop to W:H (no-op if the clip is already that shape). Commas are escaped for the filter graph.
+const crop = am ? `crop=min(iw\\,ih*${am[1]}/${am[2]}):min(ih\\,iw*${am[2]}/${am[1]}),` : "";
 
 const ffmpeg = process.env.FFMPEG || "ffmpeg";
 if (spawnSync(ffmpeg, ["-version"], { stdio: "ignore" }).status !== 0) {
@@ -40,12 +49,12 @@ if (spawnSync(ffmpeg, ["-version"], { stdio: "ignore" }).status !== 0) {
 const outDir = join(ROOT, "public", "media");
 mkdirSync(outDir, { recursive: true });
 const src = resolve(input);
-const scale = `scale=${width}:-2:flags=lanczos,fps=30`;
+const scale = `${crop}scale=${width}:-2:flags=lanczos,fps=30`;
 const out = (ext) => join(outDir, `${slot}${ext}`);
 
 run("mp4", ["-y", "-i", src, "-an", "-vf", scale, "-c:v", "libx264", "-crf", "28", "-preset", "slow", "-pix_fmt", "yuv420p", "-movflags", "+faststart", out(".mp4")]);
 run("webm", ["-y", "-i", src, "-an", "-vf", scale, "-c:v", "libvpx-vp9", "-crf", "36", "-b:v", "0", "-row-mt", "1", out(".webm")]);
-run("poster", ["-y", "-i", src, "-vf", `scale=${width}:-2:flags=lanczos`, "-frames:v", "1", "-q:v", "3", out("-poster.jpg")]);
+run("poster", ["-y", "-i", src, "-vf", `${crop}scale=${width}:-2:flags=lanczos`, "-frames:v", "1", "-q:v", "3", out("-poster.jpg")]);
 
 const kb = (p) => Math.round(statSync(p).size / 1024);
 console.log(`\n${slot}.mp4 ${kb(out(".mp4"))} KB · .webm ${kb(out(".webm"))} KB · poster ${kb(out("-poster.jpg"))} KB`);

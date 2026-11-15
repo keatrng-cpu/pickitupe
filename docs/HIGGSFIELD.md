@@ -1,7 +1,10 @@
 # Higgsfield → site: the video workflow
 
 Written 2026-11-13 from Higgsfield's own help center and pricing page (read that day; links at the bottom).
-Nothing here has been bought, connected or generated yet.
+
+**Status (2026-11-13, afternoon):** account is on **Plus, 163.75 credits**, and the connector is attached in Claude.
+**The connector cannot generate.** Its tools are balance, models, generation history, workspace and import only. It
+says so itself. Generate on higgsfield.ai or with the CLI (below), then ingest here. No hero-loop take exists yet.
 
 ## The one rule
 
@@ -21,6 +24,9 @@ or addresses to Higgsfield either: non-Enterprise content may be used for traini
    balance?" You may need to switch the connector on per chat.
 3. **Claude Code (optional):** Higgsfield documents its CLI here, not the connector URL:
    `npm i -g @higgsfield/cli` → `higgsfield auth login` → `npx skills add higgsfield-ai/skills`.
+   Installed on the owner's PC (v1.2.2, Nov 13); not signed in. Once signed in, `higgsfield generate cost …` prices a
+   take before `higgsfield generate create …` spends anything, and local files go straight in as
+   `--start-image` / `--end-image`.
 
 Files you attach in the Claude chat are **not** passed to Higgsfield. Upload references through Higgsfield's own
 upload window.
@@ -28,15 +34,24 @@ upload window.
 ## Reference stills (already made)
 
 `node scripts/make-higgsfield-refs.mjs` → `media/higgsfield/`
-- `hero-start-frame.png` (1440×1080, 4:3): the hero composition on the page green, drawn from `src/lib/truck-art.ts`.
+- `hero-start-frame-16x9.png` (1920×1080): **the Kling frame.** Same composition with green added at the sides; its
+  centre 1440×1080 matches the 4:3 frame, so ingest crops back to it.
+- `hero-start-frame.png` (1440×1080, 4:3): the hero composition on the page green, drawn from `src/lib/truck-art.ts`,
+  for models that take 4:3 directly.
 - `truck-sheet.png`: the truck alone on grey. Save it as an Element tagged "vehicle appearance only".
+
+Both hero frames fade to the green measured behind the hero on the page (`#065229` edge, `#055b2e` centre). The first
+version darkened to `--color-bg-deep` at the edges, and on the page that showed as a dark box around the video.
 
 Starting from our own art keeps the truck identical across the site, the print and every clip.
 
 ## Shot 1: hero loop → `MEDIA.heroLoop`
 
-- **Model:** Kling 3.0 image-to-video. **Start frame = end frame =** `hero-start-frame.png`. 1080p, 10 s (5 s is
-  fine too). About 16 credits a take; budget 4–6 takes.
+- **Model:** Kling 3.0 image-to-video. It renders **16:9, 9:16 or 1:1 only** (Higgsfield's model catalog, Nov 13),
+  so **start frame = end frame =** `hero-start-frame-16x9.png`, 16:9. 1080p, 10 s (5 s is fine too), sound off.
+  About 16 credits a take (published rate, not yet seen on this account); budget 4–6 takes.
+- **4:3 alternative:** Seedance 2.0 or Cinema Studio Video 3.0 take 4:3 plus start and end images. Use
+  `hero-start-frame.png` for both, 1080p, 10 s, audio off, and ingest without `--aspect`.
 - **Prompt:**
   > Locked-off tripod shot of this exact illustrated vintage cream pickup, parked at blue hour. Light snow falls low
   > and steady on a soft wind, never floating. A thin curl of exhaust vapor drifts from the tailpipe. The headlight
@@ -62,18 +77,26 @@ Starting from our own art keeps the truck identical across the site, the print a
 ## Ingest
 
 ```bash
-winget install Gyan.FFmpeg            # once
-node scripts/ingest-clip.mjs <download.mp4> --slot hero-loop
+node scripts/ingest-clip.mjs <download.mp4> --slot hero-loop --aspect 4:3   # Kling (16:9) take
+node scripts/ingest-clip.mjs <download.mp4> --slot hero-loop                # take already 4:3
 ```
+
+ffmpeg: not on PATH on the owner's PC, but a full ffmpeg 7.1 ships inside Python's `imageio-ffmpeg` package there.
+Point the script at it rather than installing anything:
+`FFMPEG="$LOCALAPPDATA/Python/pythoncore-3.14-64/Lib/site-packages/imageio_ffmpeg/binaries/ffmpeg-win-x86_64-v7.1.exe"`.
+(Elsewhere: `winget install Gyan.FFmpeg`.)
 
 That writes `public/media/hero-loop.{mp4,webm}` plus `hero-loop-poster.jpg` (frame 0, so there's no flash when it
 starts) and prints the line to paste into `MEDIA` in `src/lib/media.ts`. The hero swaps the illustration for the
-loop with no layout change.
+loop with no layout change. The video fills the stage with `object-fit: cover` (the stage is 4:3 on phones and about
+1.16:1 on desktop, so only side green is trimmed). It plays only while on screen. Under Pause snow or reduced motion
+no `<video>` is mounted at all, only the poster `<img>`.
 
 Before merging, check it on the page:
 - The edges melt into the green (`.claude/rules/visual.md`).
 - The mp4 stays under about 2.5 MB.
 - Pause and reduced motion still work (the poster shows).
+- The loop seam: compare the take's first and last frames (PSNR in ffmpeg); a visible pulse at the restart is a reject.
 
 ## Costs at a glance (Plus, list price ≈ $0.049/credit)
 

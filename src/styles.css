@@ -959,6 +959,17 @@
   cursor: grabbing;
 }
 
+/* Rendered hero loop (MEDIA.heroLoop): 4:3 clip fills the stage at any shape
+   (4:3 on phones, ~1.16:1 on desktop) by trimming only side green. */
+.truck-stage-media {
+  object-fit: cover;
+  cursor: default;
+}
+
+.truck-stage-media:active {
+  cursor: default;
+}
+
 .truck-stage[data-ready] .truck-stage-canvas,
 .truck-stage-canvas[data-shown] {
   opacity: 1;

@@ -4,8 +4,13 @@
  *   node scripts/make-higgsfield-refs.mjs
  *
  * Writes media/higgsfield/:
- *   hero-start-frame.png  1440×1080 (4:3) — the hero composition on the page
- *                         green. Use it as BOTH start and end frame for the loop.
+ *   hero-start-frame-16x9.png  1920×1080 — the frame for Kling 3.0, which only
+ *                         renders 16:9 / 9:16 / 1:1. Its centre 1440×1080 is
+ *                         pixel-for-pixel hero-start-frame.png, so
+ *                         `ingest-clip.mjs --aspect 4:3` crops back to the hero.
+ *                         Use it as BOTH start and end frame for the loop.
+ *   hero-start-frame.png  1440×1080 (4:3) — the same composition, for models
+ *                         that take 4:3 directly.
  *   truck-sheet.png       2048×1024 — the truck alone on neutral grey, for a
  *                         Higgsfield Element ("vehicle appearance only").
  * Upload them through Higgsfield's own upload window — files attached in the
@@ -24,19 +29,31 @@ const { truckArt } = await import(pathToFileURL(join(ROOT, "src/lib/truck-art.ts
 
 const FONTS = `<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&display=block" rel="stylesheet" />`;
 
-const frames = [
-  {
-    name: "hero-start-frame",
-    w: 1440,
-    h: 1080,
-    html: `<body style="margin:0;width:1440px;height:1080px;overflow:hidden;
-      background: radial-gradient(ellipse 70% 60% at 50% 55%, #0a5c32 0%, #064e2a 60%, #04351c 100%);">
-      <svg width="1440" height="1080" viewBox="0 0 1440 1080" xmlns="http://www.w3.org/2000/svg">
+/**
+ * The hero composition at any width ≥ 1440. Everything is sized in pixels from
+ * the centre (gradient included), so a wider frame only adds green at the
+ * sides and its centre 1440×1080 matches the 4:3 frame exactly.
+ *
+ * Colours are the page measured behind the hero stage (Nov 13, dev build):
+ * centre #055b2e; just outside the stage #05562c–#06562d on desktop (the
+ * hero's green glow sits there), #064e2a–#06532b at 375 px. The frame fades to
+ * #065229, between the two, so the clip's edge melts into the page at both
+ * widths. No dark vignette: it read as a dark box around the video.
+ */
+const heroFrame = (w) => {
+  const dx = (w - 1440) / 2;
+  return `<body style="margin:0;width:${w}px;height:1080px;overflow:hidden;
+      background: radial-gradient(ellipse 1008px 648px at 50% 55%, #055b2e 0%, #05552c 70%, #065229 100%);">
+      <svg width="${w}" height="1080" viewBox="0 0 ${w} 1080" xmlns="http://www.w3.org/2000/svg">
         <defs><radialGradient id="g" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#f4f6f2" stop-opacity="0.95"/><stop offset="1" stop-color="#f4f6f2" stop-opacity="0"/></radialGradient></defs>
-        <ellipse cx="720" cy="800" rx="640" ry="120" fill="url(#g)"/>
-        <g transform="translate(160 340) scale(3.5)">${truckArt({ glass: "#16362a" })}</g>
-      </svg></body>`,
-  },
+        <ellipse cx="${720 + dx}" cy="800" rx="640" ry="120" fill="url(#g)"/>
+        <g transform="translate(${160 + dx} 340) scale(3.5)">${truckArt({ glass: "#16362a" })}</g>
+      </svg></body>`;
+};
+
+const frames = [
+  { name: "hero-start-frame", w: 1440, h: 1080, html: heroFrame(1440) },
+  { name: "hero-start-frame-16x9", w: 1920, h: 1080, html: heroFrame(1920) },
   {
     name: "truck-sheet",
     w: 2048,

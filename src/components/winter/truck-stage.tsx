@@ -47,6 +47,8 @@ export function TruckStage({
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const posterImgRef = useRef<HTMLImageElement>(null);
   const [mode, setMode] = useState<"poster" | "3d" | "video">("poster");
   const [ready, setReady] = useState(false);
   const paused = useMotionPaused();
@@ -121,6 +123,26 @@ export function TruckStage({
     // Re-mount on pause change so "still" is honoured (one frame, no loop).
   }, [mode, paused]);
 
+  // Rendered loop: play only while on screen and motion is on. No autoPlay
+  // attribute: changing it after mount neither stops a playing video nor
+  // starts a paused one, so the Pause toggle would do nothing. Paused or
+  // reduced motion mounts no <video> at all, just the poster <img>.
+  useEffect(() => {
+    if (mode !== "video") return;
+    const v = videoRef.current;
+    const wrap = wrapRef.current;
+    if (paused || !v || !wrap) {
+      if (posterImgRef.current?.complete) setReady(true);
+      return;
+    }
+    const io = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) v.play().catch(() => {});
+      else v.pause();
+    });
+    io.observe(wrap);
+    return () => io.disconnect();
+  }, [mode, paused]);
+
   return (
     <div ref={wrapRef} className={`truck-stage ${className ?? ""}`} data-ready={ready ? "" : undefined}>
       <div className="truck-stage-poster" aria-hidden="true">
@@ -136,20 +158,33 @@ export function TruckStage({
         />
       ) : null}
       {mode === "video" && video ? (
-        <video
-          className="truck-stage-canvas"
-          data-shown=""
-          muted
-          loop
-          playsInline
-          autoPlay={!paused}
-          preload="metadata"
-          poster={video.poster}
-          aria-hidden="true"
-        >
-          {video.webm ? <source src={video.webm} type="video/webm" /> : null}
-          <source src={video.mp4} type="video/mp4" />
-        </video>
+        paused ? (
+          <img
+            ref={posterImgRef}
+            className="truck-stage-canvas truck-stage-media"
+            src={video.poster}
+            alt=""
+            aria-hidden="true"
+            decoding="async"
+            onLoad={() => setReady(true)}
+          />
+        ) : (
+          // Cross-fades in over the SVG poster once its first frame is decoded.
+          <video
+            ref={videoRef}
+            className="truck-stage-canvas truck-stage-media"
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            poster={video.poster}
+            aria-hidden="true"
+            onLoadedData={() => setReady(true)}
+          >
+            {video.webm ? <source src={video.webm} type="video/webm" /> : null}
+            <source src={video.mp4} type="video/mp4" />
+          </video>
+        )
       ) : null}
     </div>
   );
