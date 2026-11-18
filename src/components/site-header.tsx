@@ -7,6 +7,7 @@ import { SignedIn, SignedOut, UserButton } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { looksLikeOwner } from "@/lib/owner";
 import { Button } from "@/components/ui/button";
+import { BUSINESS } from "@/lib/seo";
 
 const PHONE = "701-213-3969";
 
@@ -200,7 +201,7 @@ export function SiteFooter() {
           />
           <div>
             <p className="font-display text-xl">Pick It Up E</p>
-            <p className="mt-1 text-sm text-muted">Grand Forks, ND · Mon–Sat 7am–8pm</p>
+            <p className="mt-1 text-sm text-muted">Grand Forks, ND · {BUSINESS.hoursLine}</p>
             <a className="mt-1 block text-sm text-fg hover:text-gold" href="tel:7012133969">
               701-213-3969
             </a>

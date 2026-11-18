@@ -10,7 +10,7 @@ import {
   type LandlordPack,
   type ServiceKey,
 } from "@/lib/pricebook";
-import { firstOpenDay, slotsFor } from "@/lib/schedule";
+import { firstOpenDay, needFor } from "@/lib/schedule";
 import { sessionEmail } from "@/lib/optional-session";
 import { isOwnerEmail } from "@/lib/owner";
 import { isUsPhone } from "@/lib/phone";
@@ -91,7 +91,7 @@ export const lockWithDeposit = createServerFn({ method: "POST" })
       stops: pack ? stops : 1,
     });
     const deposit = depositDollars(pack, stops);
-    const need = slotsFor(data.service as ServiceKey, data.jobSize || "single", addOns);
+    const need = needFor(data.service as ServiceKey, data.jobSize || "single", addOns);
     const fill = await loadFill();
     let preferredDate = data.preferredDate || null;
     if (data.asap || preferredDate === "asap") {

@@ -11,9 +11,10 @@ import {
   parseAddOns,
 } from "@/lib/pricebook";
 import {
-  DAILY_SLOTS,
+  fillFromRows,
   firstOpenDay,
-  slotsFor,
+  fitsDay,
+  needFor,
   todayISO,
   type DayFill,
 } from "@/lib/schedule";
@@ -126,18 +127,16 @@ export async function loadFill(): Promise<DayFill[]> {
         and preferred_date >= ${todayISO()}
         and status not in ('cancelled', 'done', 'hold')
     `;
-    const used = new Map<string, number>();
-    for (const r of rows) {
-      const day = (r.preferred_date || "").slice(0, 10);
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) continue;
-      const need = slotsFor(
-        (r.service as ServiceKey) || "junk-removal",
-        r.job_size || "single",
-        parseAddOns(r.add_ons),
-      );
-      used.set(day, (used.get(day) ?? 0) + need);
-    }
-    return [...used.entries()].map(([day, usedSlots]) => ({ day, used: usedSlots }));
+    return fillFromRows(
+      rows
+        .map((r) => ({
+          day: (r.preferred_date || "").slice(0, 10),
+          service: (r.service as ServiceKey) || "junk-removal",
+          size: r.job_size || "single",
+          addOns: parseAddOns(r.add_ons),
+        }))
+        .filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.day)),
+    );
   } catch {
     return [];
   }
@@ -171,7 +170,7 @@ export const submitBooking = createServerFn({ method: "POST" })
       urgency: data.urgency || undefined,
     });
 
-    const need = slotsFor(
+    const need = needFor(
       data.service as ServiceKey,
       data.jobSize || "single",
       (data.addOns ?? []) as AddOnKey[],
@@ -182,8 +181,8 @@ export const submitBooking = createServerFn({ method: "POST" })
       preferredDate = firstOpenDay(fill, need);
     }
     if (preferredDate && /^\d{4}-\d{2}-\d{2}$/.test(preferredDate)) {
-      const used = fill.find((f) => f.day === preferredDate)?.used ?? 0;
-      if (used + need > DAILY_SLOTS) {
+      const f = fill.find((x) => x.day === preferredDate);
+      if (!fitsDay(preferredDate, f?.used ?? 0, f?.landfill ?? 0, need)) {
         const next = firstOpenDay(fill, need);
         throw new Error(
           next

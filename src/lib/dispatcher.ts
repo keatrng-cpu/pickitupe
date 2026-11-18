@@ -17,7 +17,7 @@ import {
   type LandlordPack,
   type ServiceKey,
 } from "@/lib/pricebook";
-import { dayOptions, firstOpenDay, formatDayLong, parseSpokenDay, slotsFor } from "@/lib/schedule";
+import { dayOptions, firstOpenDay, formatDayLong, needFor, parseSpokenDay } from "@/lib/schedule";
 import { loadFill } from "@/lib/bookings";
 import { lockWithDeposit } from "@/lib/pay-actions";
 import { digitsPhone, isUsPhone } from "@/lib/phone";
@@ -86,7 +86,7 @@ const SYSTEM = `You are the Pick It Up E shop line in Grand Forks, ND / East Gra
 You book hauls. Warm, brief, local. No filler. Close the lead.
 
 You MUST use tools for prices and dates. Never invent a dollar amount or a day.
-Open days come from the crew calendar (four slots a day, Mon–Sat, closed Sunday).
+Open days come from the crew calendar (weekdays 9:30–5:30, four slots; Saturday 12–4, two slots, no landfill loads; closed Sunday).
 ASAP means the first day with room for that job's size. The customer can also tap the calendar on their screen.
 
 Services:
@@ -118,7 +118,7 @@ const LANDLORD_SYSTEM = `You are the Pick It Up E landlord desk in Grand Forks, 
 You book stacked owner jobs — tenant turns (move-out junk) and leaf routes at their buildings. Not one-off couches. Warm, brief. Close the stack.
 
 You MUST use tools for prices and dates. Never invent a dollar amount or a day.
-Crew calendar: four slots a day, Mon–Sat, closed Sunday. First open day holds the truck. Extra addresses stack on the next open days that week. One job number.
+Crew calendar: weekdays 9:30–5:30 (four slots, landfill loads by 2:30), Saturday 12–4 (two slots, single pieces and light work only), closed Sunday. First open day holds the truck. Extra addresses stack on the next open days that week. One job number.
 
 Packs:
 - turns: tenant cleanouts. Default size "three" (typical unit). "full" if trashed. "overflow" if a whole building (walk first).
@@ -372,12 +372,12 @@ async function runTool(name: string, raw: string, lead: ShopLead, email: string 
 
   if (name === "open_days") {
     const fill = await loadFill();
-    const need = slotsFor(service, size, addOns);
+    const need = needFor(service, size, addOns);
     const asap = firstOpenDay(fill, need);
     const days = dayOptions(fill, need)
       .filter((d) => d.open)
       .slice(0, 8)
-      .map((d) => ({ day: d.day, label: d.label, openSlots: 4 - d.used }));
+      .map((d) => ({ day: d.day, label: d.label, openSlots: d.capacity - d.used }));
     return JSON.stringify({
       asap,
       asapLabel: asap ? formatDayLong(asap) : null,
@@ -759,7 +759,7 @@ async function fallbackReply(
       earlyBird: isPromoActive(),
     });
     const fill = await loadFill();
-    const asap = firstOpenDay(fill, slotsFor(next.service, next.size, next.addOns ?? []));
+    const asap = firstOpenDay(fill, needFor(next.service, next.size, next.addOns ?? []));
     const range = q.range ? formatRange(q.range) : "we'll quote after a look";
     const ask = nextAsk(gap, next);
     if (!lead.service || !lead.size) {
