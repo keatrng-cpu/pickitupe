@@ -169,7 +169,11 @@ export function HaulStage({ after }: { after?: ReactNode }) {
     window.addEventListener("scroll", fromWindow, { passive: true });
     fromWindow();
     const fine = window.matchMedia("(pointer: fine)").matches;
-    if (fine) (async () => {
+    let idleId = 0;
+    let idleTimer = 0;
+    const startLenis = () => {
+      if (stop) return;
+      void (async () => {
       const [{ default: Lenis }, gsapMod] = await Promise.all([import("lenis"), import("gsap")]);
       if (stop) return;
       const gsap = gsapMod.gsap;
@@ -186,9 +190,16 @@ export function HaulStage({ after }: { after?: ReactNode }) {
       const tick = (t: number) => scroller.raf(t * 1000);
       gsap.ticker.add(tick);
       gsap.ticker.lagSmoothing(0);
-    })();
+      })();
+    };
+    if (fine) {
+      if (typeof window.requestIdleCallback === "function") idleId = window.requestIdleCallback(startLenis, { timeout: 2500 });
+      else idleTimer = window.setTimeout(startLenis, 900);
+    }
     return () => {
       stop = true;
+      if (idleId) window.cancelIdleCallback(idleId);
+      if (idleTimer) window.clearTimeout(idleTimer);
       lenis?.destroy();
       window.removeEventListener("scroll", fromWindow);
       root.classList.remove("js-stage");
