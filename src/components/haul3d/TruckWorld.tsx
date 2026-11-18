@@ -21,24 +21,25 @@ function bounce(t: number) {
   return n * (t -= 2.625 / d) * t + 0.984375;
 }
 
-/** What rides in the bed for each pricebook size (0 bags … 5 two trips). Real-scale photoscans. */
+/** What rides in the bed. With the body yawed -90°, the tailgate is toward +X, about 2.6 m ahead of the origin. */
 interface Load { m: ModelKey; pos: [number, number, number]; rot: [number, number, number]; sets: number[] }
+const FIT: Partial<Record<ModelKey, number>> = { sofa: 2.1 / 1.81, tv: 0.8 / 0.4 };
 const LOAD: Load[] = [
-  { m: 'sofa', pos: [-1.3, BED, 0.3], rot: [0, 0, 0], sets: [1, 3, 4, 5] },
-  { m: 'cabinet', pos: [-0.38, BED + 0.57, -0.4], rot: [0, 0, Math.PI / 2], sets: [4, 5] },
-  { m: 'bag', pos: [-1.95, BED, -0.36], rot: [0, 0.4, 0], sets: [0, 2, 3] },
-  { m: 'bag', pos: [-1.4, BED, -0.36], rot: [0, -0.8, 0], sets: [0, 3] },
-  { m: 'bag', pos: [-0.8, BED, 0.3], rot: [0, 1.2, 0], sets: [0] },
-  { m: 'box', pos: [-0.75, BED, -0.36], rot: [0, 0.2, 0], sets: [2, 3] },
-  { m: 'box', pos: [-1.9, BED, 0.3], rot: [0, -0.3, 0], sets: [2] },
-  { m: 'tv', pos: [-1.25, BED, 0.28], rot: [0, 0.15, 0], sets: [2] },
-  { m: 'bag', pos: [-1.75, BED + 0.42, 0.32], rot: [0, 0.6, 0], sets: [4, 5] },
-  { m: 'box', pos: [-0.85, BED + 0.42, 0.32], rot: [0, -0.2, 0], sets: [4, 5] },
-  { m: 'tv', pos: [-1.05, BED + 1.14, -0.4], rot: [0, 1.4, 0], sets: [4, 5] },
-  { m: 'tyre', pos: [-1.8, BED + 1.14 + 0.083, -0.4], rot: [Math.PI / 2, 0, 0], sets: [4, 5] },
-  { m: 'box', pos: [-0.85, BED + 0.42 + 0.335, 0.32], rot: [0, 0.5, 0], sets: [5] },
-  { m: 'bag', pos: [-1.75, BED + 0.92, 0.3], rot: [0, 2.1, 0], sets: [5] },
-  { m: 'box', pos: [-0.55, BED + 1.14, -0.42], rot: [0, -0.4, 0], sets: [5] },
+  { m: 'sofa', pos: [1.55, BED, 0.02], rot: [0, 0.15, 0], sets: [1, 3, 4, 5] },
+  { m: 'cabinet', pos: [1.15, BED, -0.28], rot: [0, 0.2, 0], sets: [4, 5] },
+  { m: 'bag', pos: [1.9, BED, -0.25], rot: [0, 0.4, 0], sets: [0, 2, 3] },
+  { m: 'bag', pos: [1.4, BED, -0.2], rot: [0, -0.8, 0], sets: [0, 3] },
+  { m: 'bag', pos: [2.05, BED, 0.22], rot: [0, 1.2, 0], sets: [0] },
+  { m: 'box', pos: [1.25, BED, 0.26], rot: [0, 0.2, 0], sets: [2, 3] },
+  { m: 'box', pos: [1.85, BED, 0.16], rot: [0, -0.3, 0], sets: [2] },
+  { m: 'tv', pos: [1.45, BED, 0], rot: [0, 0.5, 0], sets: [2] },
+  { m: 'box', pos: [1.2, BED, 0.24], rot: [0, -0.2, 0], sets: [4, 5] },
+  { m: 'bag', pos: [1.2, BED + 0.34, 0.24], rot: [0, 0.6, 0], sets: [4, 5] },
+  { m: 'tv', pos: [1.75, BED, -0.02], rot: [0, 1.1, 0], sets: [4, 5] },
+  { m: 'tyre', pos: [2.05, BED, 0], rot: [0, 0.3, 0], sets: [4, 5] },
+  { m: 'box', pos: [1.2, BED + 0.68, 0.24], rot: [0, 0.5, 0], sets: [5] },
+  { m: 'bag', pos: [1.85, BED, 0.18], rot: [0, 2.1, 0], sets: [5] },
+  { m: 'box', pos: [0.95, BED, -0.26], rot: [0, -0.4, 0], sets: [5] },
 ];
 
 function doorLetter() {
@@ -174,6 +175,7 @@ function Truck({ hd, onReady }: { hd: boolean; onReady: () => void }) {
   }, [truck]);
   const cargo = useMemo(() => LOAD.map((l) => {
     const o = gltfs[loadKeys.indexOf(l.m)].scene.clone(true);
+    o.scale.setScalar(FIT[l.m] ?? 1);
     o.rotation.set(...l.rot);
     o.position.set(...l.pos);
     seat(o, l.pos[1]);
@@ -197,9 +199,10 @@ function Truck({ hd, onReady }: { hd: boolean; onReady: () => void }) {
     // Roll in from off-screen left as the section enters; parked once it is mostly on screen.
     const drive = stage.reduced ? 0 : 1 - easeOutCubic(clamp01(scroll.enter / 0.8));
     const away = stage.reduced ? 0 : smooth(clamp01((scroll.through - 0.62) / 0.38));
-    root.current.position.x = -13 * drive + away * 18;
+    // Nose points -X, so the truck arrives from +X and leaves toward -X.
+    root.current.position.x = 13 * drive - away * 18;
     const spin = (Math.abs(drive - 1) + away) * dt * 7;
-    for (const w of wheels.current) w.rotateX(-spin);
+    for (const w of wheels.current) w.rotateX(spin);
     // Drag to turn it; it eases back to the hero angle a couple of seconds after you let go.
     if (!input.dragging) {
       input.yaw += input.vel * dt; input.vel *= Math.pow(0.04, dt);
