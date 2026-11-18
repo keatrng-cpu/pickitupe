@@ -57,9 +57,22 @@ export function getStripe(): Stripe {
       // request that the customer is watching a spinner for.
       timeout: 15_000,
       maxNetworkRetries: 2,
+      ...localTestApi(key),
     });
   }
   return cached;
+}
+
+/**
+ * The order end-to-end test (scripts/order-e2e.mjs) runs a fake Stripe on this
+ * machine. It's honoured only for a TEST key and only for a loopback host, so
+ * it can never redirect a live key or send anything off the machine.
+ */
+function localTestApi(key: string): Pick<Stripe.StripeConfig, "host" | "port" | "protocol"> {
+  const host = process.env.STRIPE_TEST_API_HOST;
+  if (!host || !(key.startsWith("sk_test_") || key.startsWith("rk_test_"))) return {};
+  if (host !== "127.0.0.1" && host !== "localhost") return {};
+  return { host, port: Number(process.env.STRIPE_TEST_API_PORT || 12111), protocol: "http" };
 }
 
 /** True when a real-money key is configured. Used to label the owner board. */

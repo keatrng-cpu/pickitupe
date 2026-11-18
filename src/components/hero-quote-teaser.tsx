@@ -11,6 +11,7 @@ import {
 } from "@/lib/pricebook";
 import type { PromoStatus } from "@/components/quote-form";
 import { askQuestion } from "@/lib/chat-actions";
+import { SITE_PHONE } from "@/lib/site-phone";
 
 const SERVICES = [
   { value: "leaf-cleanup", label: "Fall leaf & yard cleanup" },
@@ -56,7 +57,7 @@ export function HeroQuoteTeaser({ promo }: { promo: PromoStatus }) {
       const res = await askQuestion({ data: { question: q } });
       setAnswer(res.ok ? res.answer : res.error);
     } catch {
-      setAnswer("Couldn't reach us just now — text 701-213-3969 and we'll answer.");
+      setAnswer(`Couldn't reach us just now — text ${SITE_PHONE} and we'll answer.`);
     } finally {
       setAsking(false);
     }

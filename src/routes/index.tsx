@@ -12,18 +12,21 @@ import { BeforeAfter } from "@/components/winter/before-after";
 import { CountUp } from "@/components/winter/count-up";
 import { HowItWorksRoad } from "@/components/winter/how-it-works";
 import { MotionToggle } from "@/components/winter/motion-toggle";
+import { RiverCrossing } from "@/components/winter/river-crossing";
 import { Snowfall } from "@/components/winter/snowfall";
 import { TruckStage } from "@/components/winter/truck-stage";
 import { getOfferStatus } from "@/lib/bookings";
+import { MEDIA } from "@/lib/media";
 import { DEPOSIT, ESTATE_TIERS, listedSizesFor } from "@/lib/pricebook";
 import { firstName, readLastBooking, type SavedBooking } from "@/lib/returning";
 import { DAILY_SLOTS } from "@/lib/schedule";
 import { faqJsonLd, localBusinessJsonLd, SITE_URL } from "@/lib/seo";
+import { SITE_PHONE } from "@/lib/site-phone";
 
 const TITLE =
   "Junk Removal, Appliance Pickup & Estate Cleanouts in Grand Forks, ND | Pick It Up E";
 const DESCRIPTION =
-  "Junk, furniture and appliance removal plus whole-house and estate cleanouts in Grand Forks and East Grand Forks. Carried from the basement, price before you call, $50 holds the day. 701-213-3969.";
+  `Junk, furniture and appliance removal plus whole-house and estate cleanouts in Grand Forks and East Grand Forks. Carried from the basement, price before you call, $50 holds the day. ${SITE_PHONE}.`;
 
 /** From the pricebook, never typed: the "One piece" rung's low end. */
 const ONE_PIECE_FROM = listedSizesFor("junk-removal").find((s) => s.value === "single")?.range.low ?? 59;
@@ -44,7 +47,21 @@ export const Route = createFileRoute("/")({
       { name: "geo.region", content: "US-ND" },
       { name: "geo.placename", content: "Grand Forks" },
     ],
-    links: [{ rel: "canonical", href: SITE_URL }],
+    links: [
+      { rel: "canonical", href: SITE_URL },
+      {
+        rel: "preload",
+        as: "image",
+        href: "/anim/hero-9-16-poster.webp",
+        media: "(max-width: 767px)",
+      },
+      {
+        rel: "preload",
+        as: "image",
+        href: "/anim/hero-16-9-poster.webp",
+        media: "(min-width: 768px)",
+      },
+    ],
     scripts: [
       {
         type: "application/ld+json",
@@ -75,7 +92,7 @@ function Home() {
           <Snowfall />
           <div className="winter-hero-grid mx-auto max-w-6xl px-4">
             <div className="winter-hero-stage">
-              <TruckStage />
+              <TruckStage video={MEDIA.heroLoop} allow3D={MEDIA.hero3D} />
               <MotionToggle className="absolute bottom-3 right-3 z-20" />
             </div>
             <div className="winter-hero-copy hero-enter">
@@ -178,7 +195,11 @@ function Home() {
                 <ArrowRight className="size-4" />
               </Link>
             </div>
-            <BeforeAfter />
+            <BeforeAfter
+              before={{ src: "/anim/estate-before.webp", alt: "Room before the clear-out" }}
+              after={{ src: "/anim/estate-after.webp", alt: "The same room after the clear-out" }}
+              caption="Reference clear-out. The walkthrough sets the price, not this picture."
+            />
           </div>
         </Reveal>
 
@@ -193,6 +214,9 @@ function Home() {
             <h2 id="where-we-work" className="mt-3 font-display text-3xl leading-none sm:text-4xl">
               Grand Forks and East Grand Forks, one truck, all winter.
             </h2>
+            <div className="mt-6">
+              <RiverCrossing />
+            </div>
             <p className="mt-4 max-w-3xl text-sm leading-6 text-fg/90">
               Every neighborhood in Grand Forks, across the river into East Grand Forks, and out to Thompson, Manvel,
               Emerado and the base. Two jobs on the same street the same day get the neighbor credit. Anything farther
@@ -220,6 +244,16 @@ function Home() {
           <FinePrint />
         </Reveal>
       </main>
+      <figure className="finale-still" aria-hidden="true">
+        <img
+          src="/anim/finale-dropoff.webp"
+          alt=""
+          width={1920}
+          height={1085}
+          loading="lazy"
+          decoding="async"
+        />
+      </figure>
       <SiteFooter />
       <StickyDock />
     </div>

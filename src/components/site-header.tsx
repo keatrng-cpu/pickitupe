@@ -3,14 +3,16 @@ import { Menu, Phone, X } from "lucide-react";
 import { useState } from "react";
 import { HashScroll, scrollToHash } from "@/components/hash-scroll";
 import { HaulTicker } from "@/components/haul-ticker";
+import { BookMicro, MarkPuff } from "@/components/winter/nav-micro";
 import { ScrollRoad } from "@/components/winter/scroll-road";
 import { SignedIn, SignedOut, UserButton } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { looksLikeOwner } from "@/lib/owner";
 import { Button } from "@/components/ui/button";
 import { BUSINESS } from "@/lib/seo";
+import { SITE_PHONE, SITE_TEL } from "@/lib/site-phone";
 
-const PHONE = "701-213-3969";
+const PHONE = SITE_PHONE;
 
 type NavItem =
   | { to: "/"; hash?: "faq"; label: string }
@@ -57,7 +59,7 @@ const MOBILE_MORE: NavItem[] = [
 function Mark() {
   return (
     <img
-      src="/logo.png"
+      src="/logo-120.webp"
       alt=""
       width={40}
       height={40}
@@ -109,7 +111,9 @@ export function SiteHeader() {
       </a>
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
         <Link to="/" className="flex items-center gap-2.5 text-fg">
-          <Mark />
+          <MarkPuff>
+            <Mark />
+          </MarkPuff>
           <span className="font-display text-lg tracking-wide">Pick It Up E</span>
         </Link>
 
@@ -143,9 +147,11 @@ export function SiteHeader() {
             <Phone className="size-4" />
             {PHONE}
           </a>
-          <Button asChild size="md" variant="cream">
-            <Link to="/call">{pathname === "/call" ? "On the line" : "Book"}</Link>
-          </Button>
+          <BookMicro>
+            <Button asChild size="md" variant="cream">
+              <Link to="/call">{pathname === "/call" ? "On the line" : "Book"}</Link>
+            </Button>
+          </BookMicro>
           {isPending ? (
             <div className="size-8 animate-pulse rounded-full bg-fg/10" aria-hidden="true" />
           ) : (
@@ -226,7 +232,7 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-[1.2fr_1fr]">
         <div className="flex items-center gap-3">
           <img
-            src="/logo.png"
+            src="/logo-120.webp"
             alt=""
             width={40}
             height={40}
@@ -235,8 +241,8 @@ export function SiteFooter() {
           <div>
             <p className="font-display text-xl">Pick It Up E</p>
             <p className="mt-1 text-sm text-muted">Grand Forks, ND · {BUSINESS.hoursLine}</p>
-            <a className="mt-1 block text-sm text-fg hover:text-gold" href="tel:7012133969">
-              701-213-3969
+            <a className="mt-1 block text-sm text-fg hover:text-gold" href={SITE_TEL}>
+              {PHONE}
             </a>
           </div>
         </div>
@@ -289,8 +295,8 @@ export function SiteFooter() {
           <Link to="/" hash="faq" className="text-muted hover:text-gold">
             FAQ
           </Link>
-          <a className="text-fg hover:text-gold" href="tel:7012133969">
-            701-213-3969
+          <a className="text-fg hover:text-gold" href={SITE_TEL}>
+            {PHONE}
           </a>
         </nav>
       </div>

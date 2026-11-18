@@ -258,15 +258,32 @@ export const confirmDeposit = createServerFn({ method: "POST" })
       return { ok: false as const, pending: true as const, error: "The card is still processing." };
     }
     const { finalizePaidDeposit } = await import("@/lib/pay-finalize.server");
-    const done = await finalizePaidDeposit(id, session.id, session.amount_total);
+    const done = await finalizePaidDeposit(id, session.id, session.amount_total, {
+      email: session.customer_details?.email,
+    });
     if (!done) return { ok: false as const, error: "Couldn't find the job." };
     const { careSql } = await import("@/lib/care.server");
     const sql = await careSql();
     const rows = await sql.query<Row>(`select ${ROW_SELECT} from bookings where id = $1`, [id]);
     const row = rows[0];
     if (!row) return { ok: false as const, error: "Couldn't find the job." };
-    return { ok: true as const, token: done.token, moved: done.moved, job: publicView(row) };
+    // Masked, so the customer can see where the confirmation and reminder go
+    // (for a guest, that's the email they typed on Stripe's page).
+    const mail = await sql.query<{ email: string | null }>(`select email from bookings where id = $1`, [id]);
+    return {
+      ok: true as const,
+      token: done.token,
+      moved: done.moved,
+      job: publicView(row),
+      emailedTo: maskEmail(mail[0]?.email),
+    };
   });
+
+function maskEmail(email: string | null | undefined): string | null {
+  const m = /^([^@\s]+)@([^@\s]+)$/.exec((email ?? "").trim());
+  if (!m) return null;
+  return `${m[1].slice(0, 1)}•••@${m[2]}`;
+}
 
 /**
  * "Send me my link" — the replacement for the phone lookup. It never says

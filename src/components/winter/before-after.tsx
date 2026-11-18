@@ -90,6 +90,55 @@ export function BeforeAfter({
   );
 }
 
+/** Play-once clear-out. Stills only when motion is reduced. Not a customer photo. */
+export function ClearoutClip() {
+  const box = useRef<HTMLElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [play, setPlay] = useState(false);
+
+  useEffect(() => {
+    const el = box.current;
+    if (!el || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setPlay(true);
+        io.disconnect();
+      },
+      { threshold: 0.45 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!play || !video) return;
+    video.muted = true;
+    video.play().catch(() => {});
+  }, [play]);
+
+  return (
+    <figure ref={box} className="clearout-clip" aria-hidden="true">
+      <img src="/anim/estate-before.webp" alt="" width={1920} height={1085} loading="lazy" decoding="async" />
+      {play ? (
+        <video
+          ref={videoRef}
+          poster="/anim/estate-before.webp"
+          width={1920}
+          height={1080}
+          muted
+          playsInline
+          preload="none"
+        >
+          <source src="/anim/estate-transform.webm" type="video/webm" />
+          <source src="/anim/estate-transform.mp4" type="video/mp4" />
+        </video>
+      ) : null}
+    </figure>
+  );
+}
+
 /** The illustrated garage. `full` = the before shot. */
 function GarageArt({ full }: { full: boolean }) {
   return (

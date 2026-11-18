@@ -8,6 +8,7 @@ import { getPlanStatus, openBillingPortal, startPlanCheckout } from "@/lib/plan-
 import { startSpringHold, stripeReady } from "@/lib/pay-actions";
 import { PLAN_EXCLUSIONS, SERVICE_WINDOW, type PlanTier } from "@/lib/plan";
 import { formatRange, PLAN_FALL_GUTTERS } from "@/lib/pricebook";
+import { SITE_PHONE, SITE_SMS } from "@/lib/site-phone";
 
 const TITLE = "Seasonal Cleanup Plan — Spring + Fall | Pick It Up E";
 const DESCRIPTION =
@@ -69,7 +70,7 @@ function PlanPage() {
       if (res.ok) window.location.href = res.url;
       else toast.error(res.error);
     } catch {
-      toast.error("Could not start checkout. Call or text 701-213-3969.");
+      toast.error(`Could not start checkout. Call or text ${SITE_PHONE}.`);
     } finally {
       setBusy(null);
     }
@@ -83,7 +84,7 @@ function PlanPage() {
       if (res.ok) window.location.href = res.url;
       else toast.error(res.error);
     } catch {
-      toast.error("Could not open billing. Call or text 701-213-3969.");
+      toast.error(`Could not open billing. Call or text ${SITE_PHONE}.`);
     } finally {
       setPortalBusy(false);
     }
@@ -267,8 +268,8 @@ function PlanPage() {
                 ) : (
                   <p className="mt-4 text-sm">
                     Text{" "}
-                    <a className="underline decoration-gold/50 underline-offset-4" href="sms:7012133969">
-                      701-213-3969
+                    <a className="underline decoration-gold/50 underline-offset-4" href={SITE_SMS}>
+                      {SITE_PHONE}
                     </a>{" "}
                     and we'll hold the slot.
                   </p>

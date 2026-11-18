@@ -787,12 +787,16 @@
     mask-image: none;
   }
 
+  /* One still line, clipped — wrapping it turned the sticky header into a
+     four-row block covering a quarter of a phone screen. */
   .ticker-track {
-    flex-wrap: wrap;
-    width: 100%;
-    justify-content: center;
-    row-gap: 0.4rem;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
     column-gap: 1.25rem;
+  }
+
+  .ticker-clip {
+    overflow: hidden;
   }
 
   .ticker-pause {
@@ -959,6 +963,17 @@
   cursor: grabbing;
 }
 
+/* Rendered hero loop (MEDIA.heroLoop): 4:3 clip fills the stage at any shape
+   (4:3 on phones, ~1.16:1 on desktop) by trimming only side green. */
+.truck-stage-media {
+  object-fit: cover;
+  cursor: default;
+}
+
+.truck-stage-media:active {
+  cursor: default;
+}
+
 .truck-stage[data-ready] .truck-stage-canvas,
 .truck-stage-canvas[data-shown] {
   opacity: 1;
@@ -1079,6 +1094,10 @@
   position: relative;
   height: 6.5rem;
   --truck-w: 10rem;
+  /* The driver box slides a full track-width right as it drives; clip it so
+     the page never gets wider than the screen (iOS honours this, body
+     overflow-x alone it sometimes doesn't). clip, not hidden: no scroll box. */
+  overflow-x: clip;
 }
 
 @media (min-width: 1024px) {
@@ -1284,6 +1303,405 @@
   outline-offset: 3px;
 }
 
+/* --- Bed load + load slider (quick quote, /call) ---------------------
+ * Pieces are always mounted and switched with data-on, so a drag up drops
+ * new ones in (a little bounce) and a drag down lifts them out. Transitions,
+ * not keyframes: a fast scrub interrupts cleanly instead of restarting.
+ * Off under prefers-reduced-motion. */
+
+.load-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.load-item {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  transition:
+    opacity 260ms ease,
+    transform 520ms cubic-bezier(0.34, 1.45, 0.64, 1);
+}
+.load-item[data-on="true"] {
+  opacity: 1;
+  transform: none;
+  transition-delay: calc(var(--i, 0) * 55ms);
+}
+.load-item[data-on="false"] {
+  opacity: 0;
+  transform: translateY(-44px) rotate(-4deg);
+  transition-duration: 200ms, 260ms;
+}
+.load-body {
+  transition: transform 480ms cubic-bezier(0.34, 1.6, 0.64, 1);
+}
+.load-strap {
+  stroke-dasharray: 1;
+  transition: stroke-dashoffset 420ms var(--ease-out-soft);
+}
+.load-strap[data-on="true"] {
+  stroke-dashoffset: 0;
+  transition-delay: 380ms;
+}
+.load-strap[data-on="false"] {
+  stroke-dashoffset: 1;
+}
+.load-gauge-fill {
+  transform-box: fill-box;
+  transform-origin: right center;
+  transition: transform 600ms var(--ease-out-soft);
+}
+.load-trips {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity 240ms ease,
+    transform 380ms cubic-bezier(0.34, 1.6, 0.64, 1);
+}
+.load-trips[data-on="true"] {
+  opacity: 1;
+  transform: none;
+  transition-delay: 420ms;
+}
+.load-trips[data-on="false"] {
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+/* The slider: cream track, gold fill up to the thumb, a truck on the knob. */
+.load-range {
+  --p: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 2.75rem; /* 44px tap row; the visible track is thinner */
+  background: transparent;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+.load-range::-webkit-slider-runnable-track {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--color-gold) 0 calc(var(--p) * 100%),
+    color-mix(in srgb, var(--color-fg) 22%, transparent) calc(var(--p) * 100%) 100%
+  );
+}
+.load-range::-moz-range-track {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-fg) 22%, transparent);
+}
+.load-range::-moz-range-progress {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--color-gold);
+}
+.load-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-top: -1rem;
+  border: 0;
+  border-radius: 50%;
+  background: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2040%2040'%3E%3Ccircle%20cx%3D'20'%20cy%3D'20'%20r%3D'19'%20fill%3D'%23f3ead6'%2F%3E%3Cpath%20d%3D'M8%2025%20V19%20H18%20V14%20Q18%2012%2020%2012%20H25%20Q27%2012%2028%2014%20L31%2019%20Q33%2020%2033%2022%20V25%20Z'%20fill%3D'%234a2418'%2F%3E%3Cpath%20d%3D'M21%2014.5%20H25%20L27%2018.5%20H21%20Z'%20fill%3D'%23f3ead6'%2F%3E%3Ccircle%20cx%3D'13'%20cy%3D'26'%20r%3D'3.2'%20fill%3D'%231b1612'%2F%3E%3Ccircle%20cx%3D'13'%20cy%3D'26'%20r%3D'1.3'%20fill%3D'%23f3ead6'%2F%3E%3Ccircle%20cx%3D'27'%20cy%3D'26'%20r%3D'3.2'%20fill%3D'%231b1612'%2F%3E%3Ccircle%20cx%3D'27'%20cy%3D'26'%20r%3D'1.3'%20fill%3D'%23f3ead6'%2F%3E%3C%2Fsvg%3E") center / contain no-repeat;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.35);
+  transition: transform 160ms var(--ease-out-soft);
+}
+.load-range::-moz-range-thumb {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 0;
+  border-radius: 50%;
+  background: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2040%2040'%3E%3Ccircle%20cx%3D'20'%20cy%3D'20'%20r%3D'19'%20fill%3D'%23f3ead6'%2F%3E%3Cpath%20d%3D'M8%2025%20V19%20H18%20V14%20Q18%2012%2020%2012%20H25%20Q27%2012%2028%2014%20L31%2019%20Q33%2020%2033%2022%20V25%20Z'%20fill%3D'%234a2418'%2F%3E%3Cpath%20d%3D'M21%2014.5%20H25%20L27%2018.5%20H21%20Z'%20fill%3D'%23f3ead6'%2F%3E%3Ccircle%20cx%3D'13'%20cy%3D'26'%20r%3D'3.2'%20fill%3D'%231b1612'%2F%3E%3Ccircle%20cx%3D'13'%20cy%3D'26'%20r%3D'1.3'%20fill%3D'%23f3ead6'%2F%3E%3Ccircle%20cx%3D'27'%20cy%3D'26'%20r%3D'3.2'%20fill%3D'%231b1612'%2F%3E%3Ccircle%20cx%3D'27'%20cy%3D'26'%20r%3D'1.3'%20fill%3D'%23f3ead6'%2F%3E%3C%2Fsvg%3E") center / contain no-repeat;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.35);
+}
+.load-range:active::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+.load-range:focus-visible {
+  outline: none;
+}
+.load-range:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+}
+.load-range:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+}
+.load-tick {
+  color: var(--color-muted);
+  transition:
+    color 160ms ease,
+    background-color 160ms ease;
+}
+.load-tick:hover {
+  color: var(--color-fg);
+}
+.load-tick[aria-pressed="true"] {
+  color: var(--color-ink);
+  background: var(--color-gold);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .load-item,
+  .load-body,
+  .load-strap,
+  .load-gauge-fill,
+  .load-trips,
+  .load-range::-webkit-slider-thumb {
+    transition: none !important;
+  }
+}
+
+/* --- River crossing ("Where we work") ----------------------------------
+ * The pickup crosses the Sorlie Bridge from Grand Forks to East Grand Forks
+ * on a CSS scroll timeline (--river). No listeners, no pinning. Without
+ * scroll timelines an IntersectionObserver rolls it across once. Phones crop
+ * to the bridge instead of shrinking the whole skyline. */
+
+.river-section {
+  view-timeline-name: --river;
+  view-timeline-axis: block;
+}
+.river-frame {
+  overflow: hidden;
+  border-radius: 1rem;
+}
+.river-svg {
+  display: block;
+  width: max(100%, 860px);
+  height: auto;
+  margin-left: calc((100% - max(100%, 860px)) / 2);
+}
+.river-truck {
+  transform: translateX(880px);
+  transition: transform 2.6s var(--ease-out-soft);
+}
+.river-section:not([data-arrived]) .river-truck {
+  transform: translateX(0);
+}
+.river-floes {
+  animation: floe-drift 26s ease-in-out infinite alternate;
+}
+
+@supports (animation-timeline: view()) {
+  .river-section .river-truck {
+    transition: none;
+    transform: translateX(0);
+    animation: river-drive linear both;
+    animation-timeline: --river;
+    animation-range: entry 25% cover 65%;
+  }
+  .river-section .truck-wheel {
+    animation-play-state: running;
+    animation-timeline: --river;
+    animation-range: entry 25% cover 65%;
+    animation-duration: auto;
+    animation-iteration-count: 14;
+  }
+}
+
+@keyframes river-drive {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(880px);
+  }
+}
+@keyframes floe-drift {
+  from {
+    transform: translateX(-18px);
+  }
+  to {
+    transform: translateX(22px);
+  }
+}
+
+html[data-motion="paused"] .river-floes {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .river-floes,
+  .river-section .river-truck,
+  .river-section .truck-wheel {
+    animation: none !important;
+    transition: none !important;
+  }
+  .river-section .river-truck {
+    transform: translateX(440px) !important;
+  }
+}
+
+/* --- Design pass (Nov 14): receipt, numbered road, FAQ, segmented ---------
+ * Hairlines over boxes, one printed surface (the receipt), GPU-only motion.
+ * Hover effects only where hover exists. */
+
+/* The rate receipt: paper with punched top/bottom edges. The shadow lives on
+   the wrapper because a mask would clip the receipt's own shadow. */
+.receipt-wrap {
+  filter: drop-shadow(0 22px 34px rgb(0 0 0 / 0.42)) drop-shadow(0 2px 3px rgb(0 0 0 / 0.25));
+}
+.receipt {
+  border-radius: 6px;
+  box-shadow: none;
+  -webkit-mask:
+    radial-gradient(circle 7px at 50% 0, #0000 97%, #000) top / 20px 51% repeat-x,
+    radial-gradient(circle 7px at 50% 100%, #0000 97%, #000) bottom / 20px 51% repeat-x;
+  mask:
+    radial-gradient(circle 7px at 50% 0, #0000 97%, #000) top / 20px 51% repeat-x,
+    radial-gradient(circle 7px at 50% 100%, #0000 97%, #000) bottom / 20px 51% repeat-x;
+}
+.receipt-rule {
+  height: 0;
+  border-top: 1.5px dashed color-mix(in srgb, var(--color-mahogany) 32%, transparent);
+}
+.receipt-row {
+  transition: background-color 160ms ease;
+}
+.receipt-row:hover,
+.receipt-row:focus-visible {
+  background: color-mix(in srgb, var(--color-mahogany) 6%, transparent);
+}
+.receipt-row:focus-visible {
+  outline: 2px solid var(--color-mahogany);
+  outline-offset: 1px;
+}
+
+/* Pointer-follow glow (design director §5): two custom properties, the glow
+   is a pseudo-element whose opacity is the only thing that transitions. */
+.spotlight {
+  position: relative;
+}
+.spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 300ms ease;
+  background: radial-gradient(
+    420px circle at var(--x, 50%) var(--y, 30%),
+    color-mix(in srgb, var(--color-gold) 30%, transparent),
+    transparent 62%
+  );
+}
+@media (hover: hover) {
+  .spotlight:hover::before {
+    opacity: 1;
+  }
+}
+
+/* How it works: a hairline per step that fills gold as the truck reaches it. */
+.road-rule {
+  position: relative;
+  display: block;
+  height: 2px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+.road-rule::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--color-gold);
+  transform-origin: left center;
+  transform: scaleX(1);
+  transition: transform 900ms var(--ease-out-soft);
+}
+.road-numeral {
+  opacity: 1;
+  transition: opacity 600ms var(--ease-out-soft);
+}
+.road-section:not([data-arrived]) .road-rule::after {
+  transform: scaleX(0);
+}
+.road-section:not([data-arrived]) .road-numeral {
+  opacity: 0.35;
+}
+@supports (animation-timeline: view()) {
+  .road-section .road-rule::after {
+    transition: none;
+    transform: scaleX(0);
+    animation: rule-fill linear both;
+    animation-timeline: --road;
+    animation-range: entry calc(30% + var(--i) * 9%) entry calc(38% + var(--i) * 9%);
+  }
+  .road-section .road-numeral {
+    transition: none;
+    animation: numeral-light linear both;
+    animation-timeline: --road;
+    animation-range: entry calc(30% + var(--i) * 9%) entry calc(38% + var(--i) * 9%);
+  }
+}
+@keyframes rule-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes numeral-light {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* FAQ: hairline list, native <details>. */
+.faq-list {
+  border-top: 1px solid var(--color-border);
+}
+.faq-item {
+  border-bottom: 1px solid var(--color-border);
+}
+.faq-item > summary::-webkit-details-marker {
+  display: none;
+}
+.faq-item > summary:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+@media (hover: hover) {
+  .faq-item > summary:hover > span:first-child {
+    color: var(--color-gold);
+  }
+}
+
+/* Segmented service switch. */
+.segmented {
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-bg-deep) 55%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .road-section .road-rule::after,
+  .road-section .road-numeral {
+    animation: none !important;
+    transition: none !important;
+    transform: scaleX(1) !important;
+    opacity: 1 !important;
+  }
+  .road-section .road-numeral {
+    transform: none !important;
+  }
+  .spotlight::before {
+    transition: none;
+  }
+}
+
 /* --- Motion off ------------------------------------------------------ */
 
 html[data-motion="paused"] .snowfall span,
@@ -1317,4 +1735,107 @@ html[data-motion="paused"] .truck-stage-svg {
   .truck-stage-canvas {
     transition: none;
   }
+  .snow-loop,
+  .book-drive {
+    display: none !important;
+  }
+}
+
+.truck-stage-poster picture {
+  position: absolute;
+  inset: 0;
+}
+
+.truck-stage-still {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 767px) {
+  /* 9:16 source, cropped into a card that still leaves the headline above the dock. */
+  .winter-hero-stage:has(.truck-stage-loop) {
+    aspect-ratio: 4 / 5;
+  }
+}
+
+.snow-loop {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.62;
+}
+
+.snow-loop video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.road-truck {
+  height: auto;
+}
+
+.finale-still {
+  margin: 0 auto;
+  max-width: 72rem;
+  padding: 0 1rem 2.5rem;
+  pointer-events: none;
+}
+
+.finale-still img,
+.clearout-clip img,
+.clearout-clip video {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1920 / 1085;
+  object-fit: cover;
+  border-radius: 1rem;
+}
+
+.clearout-clip {
+  position: relative;
+  margin-top: 0.75rem;
+  pointer-events: none;
+}
+
+.clearout-clip video {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}
+
+.mark-slot,
+.book-micro {
+  position: relative;
+  display: inline-flex;
+}
+
+.mark-puff,
+.book-lights,
+.book-drive {
+  position: absolute;
+  z-index: 2;
+  width: 4.5rem;
+  height: 4.5rem;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.mark-puff {
+  left: 60%;
+  top: 30%;
+  transform: translate(-50%, -70%);
+}
+
+.book-lights {
+  left: 10%;
+  top: 40%;
+  transform: translate(-30%, -80%);
+}
+
+.book-drive {
+  right: 0;
+  bottom: 100%;
 }

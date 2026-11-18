@@ -6,6 +6,8 @@ import { DateField } from "@/components/date-field";
 import { LotSizeField } from "@/components/lot-size-field";
 import { PhotoQuote } from "@/components/photo-quote";
 import { SameStop } from "@/components/same-stop";
+import { AddOnPicker } from "@/components/add-on-picker";
+import { LoadSlider } from "@/components/winter/load-slider";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { StickyDock } from "@/components/sticky-dock";
 import { speakShop, talkShop, type ChatTurn, type ShopLead } from "@/lib/dispatcher";
@@ -18,6 +20,7 @@ import {
   canonicalService,
   canonicalSize,
   clampStops,
+  DEPOSIT,
   estimate,
   featuredSizesFor,
   formatRange,
@@ -130,10 +133,11 @@ function landlordGreeting(pack?: LandlordPack, stops?: number) {
   return "Landlord desk. Tenant turns, a leaf route, or both this week? I'll stack the days on one code.";
 }
 
+// Winter order: junk first, leaves last (spring).
 const SERVICES: { value: ServiceKey; short: string }[] = [
-  { value: "leaf-cleanup", short: "Leaves" },
   { value: "junk-removal", short: "Junk" },
   { value: "gutter-cleaning", short: "Gutters" },
+  { value: "leaf-cleanup", short: "Leaves" },
 ];
 
 function isService(v: string | undefined): v is ServiceKey {
@@ -559,6 +563,19 @@ function CallPage() {
             </fieldset>
             )}
 
+            {!landlord && canonicalService(service) === "junk-removal" ? (
+              <div className="mt-5">
+                <LoadSlider
+                  sizes={featuredSizesFor("junk-removal")}
+                  value={currentSize}
+                  id="call-load-range"
+                  onChange={(next) => {
+                    setSize(next);
+                    setLotSqFt(0);
+                  }}
+                />
+              </div>
+            ) : (
             <fieldset className="mt-4">
               <legend className="text-xs font-medium text-muted">{landlord ? "First stop" : "Size"}</legend>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -591,6 +608,16 @@ function CallPage() {
                 </button>
               ) : null}
             </fieldset>
+            )}
+
+            {!landlord && canonicalService(service) === "junk-removal" ? (
+              <AddOnPicker
+                service="junk-removal"
+                value={addOns}
+                onChange={setAddOns}
+                heading="Anything that makes it harder?"
+              />
+            ) : null}
 
             {!landlord && service === "leaf-cleanup" ? (
               <SameStop addOns={addOns} onChange={(next) => setAddOns(next as AddOnKey[])} />
@@ -696,7 +723,7 @@ function CallPage() {
             >
               {busy
                 ? "Opening card…"
-                : `Pay $${landlord ? landlordDeposit(stops, pack ?? "turns") : 50} to hold`}
+                : `Pay $${landlord ? landlordDeposit(stops, pack ?? "turns") : DEPOSIT} to hold`}
             </button>
             <p className="mt-3 text-center text-xs text-muted">
               Prefer a form?{" "}

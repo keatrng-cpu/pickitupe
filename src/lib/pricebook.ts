@@ -1,3 +1,4 @@
+import { SITE_PHONE } from "@/lib/site-phone";
 /**
  * Pick It Up E — flat-rate pricebook and instant estimator.
  *
@@ -981,7 +982,7 @@ export function estimate(input: EstimateInput): Estimate {
       deposit: DEPOSIT,
       lines: [],
       notes: [
-        "Tell us what it is and we'll price it the same day — call or text 701-213-3969.",
+        `Tell us what it is and we'll price it the same day — call or text ${SITE_PHONE}.`,
       ],
       refused: refusedItemsIn(input.notes ?? ""),
       needsWalkthrough: true,
@@ -1161,6 +1162,26 @@ export function estimate(input: EstimateInput): Estimate {
 export function formatRange(r: Range): string {
   return `$${r.low}–$${r.high}`;
 }
+
+/** A heaped pickup bed (PRICEBOOK.md "Haul work"). Not money — the honest unit
+ *  every haul size is measured in, shown so nobody compares our "full truck"
+ *  with a 13–18 yard box truck's. */
+export const BED_CUBIC_YARDS = 2.5;
+
+/**
+ * The one like-for-like public comparison the site makes: a single bulky
+ * item. Box-truck "half/full load" prices are a different volume (see the
+ * truck-size caveat in PRICEBOOK.md), so they are never compared on the page.
+ * Re-check the source before the `checked` month is a season old; the claim
+ * only renders while our low end is actually under theirs.
+ */
+export const LOCAL_COMPARABLE = {
+  who: "LoadUp",
+  what: "a single bulky item in Grand Forks",
+  from: 70,
+  url: "https://goloadup.com/grand-forks-nd/",
+  checked: "Nov 2026",
+} as const;
 
 /**
  * Estate and whole-house cleanouts (winter 2026). Published ranges from the

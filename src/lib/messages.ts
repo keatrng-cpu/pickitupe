@@ -8,9 +8,10 @@
  */
 
 import { BLOCK_TIERS, PROMO_CAP, PROMO_PERCENT } from "@/lib/pricebook";
+import { SITE_PHONE, SITE_TEL } from "@/lib/site-phone";
 
-export const PHONE = "701-213-3969";
-export const TEL = "tel:7012133969";
+export const PHONE = SITE_PHONE;
+export const TEL = SITE_TEL;
 /** The GBP "Get more reviews" link — opens the write-a-review box directly (copied from the profile 2026-09-18). */
 export const REVIEW_URL = "https://g.page/r/CfPEjbVSA_SoEBM/review";
 

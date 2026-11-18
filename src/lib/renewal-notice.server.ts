@@ -4,6 +4,7 @@ import {
   type SubscriptionRow,
 } from "@/lib/subscriptions.server";
 import { SERVICE_WINDOW } from "@/lib/plan";
+import { SITE_PHONE } from "@/lib/site-phone";
 
 /**
  * The NDCC ch. 51-37 pre-renewal notice.
@@ -82,7 +83,7 @@ function noticeBody(sub: SubscriptionRow, renewsOn: string): string {
     `Don't want to renew? Cancel in one click here — no phone call, no reason needed:`,
     `https://pickitupe.com/plan`,
     ``,
-    `Cancel before ${renewsOn} and you won't be charged again. Questions: call or text 701-213-3969.`,
+    `Cancel before ${renewsOn} and you won't be charged again. Questions: call or text ${SITE_PHONE}.`,
     ``,
     `— Pick It Up E, Grand Forks ND`,
   ].join("\n");

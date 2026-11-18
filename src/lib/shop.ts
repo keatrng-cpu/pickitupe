@@ -1,3 +1,4 @@
+import { SITE_PHONE, SITE_PHONE_DIGITS } from "@/lib/site-phone";
 export const TOWNS = [
   "Grand Forks",
   "East Grand Forks",
@@ -10,5 +11,5 @@ export const HOURS_NOTE = "Closed Sunday. One truck. Big loads run weekday morni
 export const AFTER_HOURS = "After hours and Sunday, the shop line still books a real open day.";
 export const YARD_LINE = "No storefront. The truck is the yard — we come to you.";
 export const FALL_START = "2026-09-01";
-export const LIVE_PHONE = "701-213-3969";
-export const LIVE_PHONE_TEL = "7012133969";
+export const LIVE_PHONE = SITE_PHONE;
+export const LIVE_PHONE_TEL = SITE_PHONE_DIGITS;
