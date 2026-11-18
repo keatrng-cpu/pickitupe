@@ -1,25 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Home as HomeIcon } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { FinePrint } from "@/components/fine-print";
+import { HaulStage } from "@/components/haul3d/HaulStage";
 import { QuickQuote } from "@/components/quick-quote";
 import { Reveal } from "@/components/reveal";
 import { ReviewStrip } from "@/components/review-strip";
 import { RateReel } from "@/components/rate-reel";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { StickyDock } from "@/components/sticky-dock";
-import { BeforeAfter } from "@/components/winter/before-after";
-import { CountUp } from "@/components/winter/count-up";
-import { HowItWorksRoad } from "@/components/winter/how-it-works";
-import { MotionToggle } from "@/components/winter/motion-toggle";
 import { RiverCrossing } from "@/components/winter/river-crossing";
-import { Snowfall } from "@/components/winter/snowfall";
-import { TruckStage } from "@/components/winter/truck-stage";
 import { getOfferStatus } from "@/lib/bookings";
-import { MEDIA } from "@/lib/media";
-import { DEPOSIT, ESTATE_TIERS, listedSizesFor } from "@/lib/pricebook";
+import { ESTATE_TIERS } from "@/lib/pricebook";
 import { firstName, readLastBooking, type SavedBooking } from "@/lib/returning";
-import { DAILY_SLOTS } from "@/lib/schedule";
 import { faqJsonLd, localBusinessJsonLd, SITE_URL } from "@/lib/seo";
 import { SITE_PHONE } from "@/lib/site-phone";
 
@@ -28,8 +21,6 @@ const TITLE =
 const DESCRIPTION =
   `Junk, furniture and appliance removal plus whole-house and estate cleanouts in Grand Forks and East Grand Forks. Carried from the basement, price before you call, $50 holds the day. ${SITE_PHONE}.`;
 
-/** From the pricebook, never typed: the "One piece" rung's low end. */
-const ONE_PIECE_FROM = listedSizesFor("junk-removal").find((s) => s.value === "single")?.range.low ?? 59;
 const money = (n: number) => `$${n.toLocaleString("en-US")}`;
 
 export const Route = createFileRoute("/")({
@@ -49,18 +40,8 @@ export const Route = createFileRoute("/")({
     ],
     links: [
       { rel: "canonical", href: SITE_URL },
-      {
-        rel: "preload",
-        as: "image",
-        href: "/anim/hero-9-16-poster.webp",
-        media: "(max-width: 767px)",
-      },
-      {
-        rel: "preload",
-        as: "image",
-        href: "/anim/hero-16-9-poster.webp",
-        media: "(min-width: 768px)",
-      },
+      { rel: "preload", as: "image", href: "/haul3d/poster-sm.webp", media: "(max-width: 767px)" },
+      { rel: "preload", as: "image", href: "/haul3d/poster.webp", media: "(min-width: 768px)" },
     ],
     scripts: [
       {
@@ -88,83 +69,25 @@ function Home() {
     <div className="page-home relative z-10 min-h-screen bg-bg text-fg">
       <SiteHeader />
       <main id="main">
-        <section className="winter-hero">
-          <Snowfall />
-          <div className="winter-hero-grid mx-auto max-w-6xl px-4">
-            <div className="winter-hero-stage">
-              <TruckStage video={MEDIA.heroLoop} allow3D={MEDIA.hero3D} />
-              <MotionToggle className="absolute bottom-3 right-3 z-20" />
-            </div>
-            <div className="winter-hero-copy hero-enter">
-              {last ? (
-                <Link
-                  to="/call"
-                  search={{ service: last.service, size: last.size }}
-                  className="card-paper mb-6 inline-flex max-w-full items-center gap-3 rounded-full px-4 py-2 text-sm text-print"
-                >
-                  Welcome back, {firstName(last.name)}. Rebook?
-                  <ArrowRight className="size-4 shrink-0" />
-                </Link>
-              ) : null}
-              <h1 className="font-display text-5xl leading-[0.92] tracking-[-0.03em] sm:text-7xl lg:text-[5.25rem]">
-                <span className="kicker mb-4 block font-sans tracking-[0.14em]">
-                  Junk, appliances &amp; cleanouts in Grand Forks
-                </span>
-                We haul it.
-                <span className="mt-1 block italic text-gold">You don&apos;t.</span>
-              </h1>
-              <p className="mt-6 max-w-md text-base leading-7 text-fg/90">
-                Out of your house, not on the curb for the city truck. Carried from the basement. {money(DEPOSIT)} holds
-                the day.
-              </p>
-              <div className="mt-7 flex flex-wrap items-center gap-3">
-                <a
-                  href="#haul"
-                  className="btn-press inline-flex h-12 items-center gap-2 rounded-full bg-fg px-7 text-base font-medium text-ink hover:bg-gold"
-                >
-                  Price my junk
-                  <ArrowRight className="size-4" />
-                </a>
-                <Link
-                  to="/estate-cleanout-grand-forks"
-                  className="btn-press inline-flex h-12 items-center gap-2 rounded-full border border-border px-5 text-sm text-fg hover:bg-fg/8"
-                >
-                  <HomeIcon className="size-4 text-gold" />
-                  Estate cleanout
-                </Link>
-              </div>
-              {offer.active ? (
-                <p className="mt-4 text-xs text-fg/80">
-                  {Math.round(offer.percent * 100)}% off through {offer.deadlineLabel}, up to ${offer.cap}
-                </p>
-              ) : null}
-              <dl className="hero-stats mt-8 grid max-w-md grid-cols-3 gap-3">
-                <div>
-                  <dt className="text-[0.68rem] uppercase tracking-widest text-muted">One piece from</dt>
-                  <dd className="mt-1 font-display text-3xl leading-none">
-                    <CountUp value={ONE_PIECE_FROM} prefix="$" />
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-[0.68rem] uppercase tracking-widest text-muted">Holds the day</dt>
-                  <dd className="mt-1 font-display text-3xl leading-none">
-                    <CountUp value={DEPOSIT} prefix="$" />
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-[0.68rem] uppercase tracking-widest text-muted">Hauls a weekday</dt>
-                  <dd className="mt-1 font-display text-3xl leading-none">
-                    <CountUp value={DAILY_SLOTS} />
-                  </dd>
-                </div>
-              </dl>
-            </div>
+        {last ? (
+          <div className="mx-auto max-w-6xl px-4 pt-4">
+            <Link
+              to="/call"
+              search={{ service: last.service, size: last.size }}
+              className="card-paper inline-flex items-center gap-3 rounded-full px-4 py-2 text-sm text-print"
+            >
+              Welcome back, {firstName(last.name)}. Rebook?
+              <ArrowRight className="size-4 shrink-0" />
+            </Link>
           </div>
-        </section>
-
+        ) : null}
+        {offer.active ? (
+          <p className="mx-auto max-w-6xl px-4 pt-3 text-xs text-fg/80">
+            {Math.round(offer.percent * 100)}% off through {offer.deadlineLabel}, up to ${offer.cap}
+          </p>
+        ) : null}
+        <HaulStage />
         <QuickQuote />
-
-        <HowItWorksRoad />
 
         <Reveal as="section" className="section-y mx-auto max-w-6xl px-4">
           <div aria-labelledby="estate-strip" className="grid items-start gap-8 lg:grid-cols-[1.05fr_1fr]">
@@ -195,11 +118,6 @@ function Home() {
                 <ArrowRight className="size-4" />
               </Link>
             </div>
-            <BeforeAfter
-              before={{ src: "/anim/estate-before.webp", alt: "Room before the clear-out" }}
-              after={{ src: "/anim/estate-after.webp", alt: "The same room after the clear-out" }}
-              caption="Reference clear-out. The walkthrough sets the price, not this picture."
-            />
           </div>
         </Reveal>
 
@@ -226,8 +144,7 @@ function Home() {
         </Reveal>
 
         <Reveal as="section" className="mx-auto max-w-6xl px-4 py-8">
-          <Link to="/landlords" className="landlord-strip winter-strip card-green block overflow-hidden rounded-2xl">
-            <Snowfall className="snowfall-soft" />
+          <Link to="/landlords" className="landlord-strip card-green block overflow-hidden rounded-2xl">
             <div className="relative z-10 flex items-end justify-between gap-4 p-5 sm:p-8">
               <div>
                 <p className="kicker">Landlords · managers · investors</p>
@@ -244,16 +161,6 @@ function Home() {
           <FinePrint />
         </Reveal>
       </main>
-      <figure className="finale-still" aria-hidden="true">
-        <img
-          src="/anim/finale-dropoff.webp"
-          alt=""
-          width={1920}
-          height={1085}
-          loading="lazy"
-          decoding="async"
-        />
-      </figure>
       <SiteFooter />
       <StickyDock />
     </div>
