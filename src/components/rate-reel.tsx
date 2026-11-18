@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import type { CSSProperties, PointerEvent } from "react";
+import { stage } from "@/components/haul3d/stage";
 import {
   addOnsFor,
   BED_CUBIC_YARDS,
@@ -113,7 +114,7 @@ export function RateReel() {
             <div className="receipt-rule mt-4" aria-hidden="true" />
 
             <ol className="mt-2">
-              {sizes.map((s) => (
+              {sizes.map((s, i) => (
                 <li key={s.value}>
                   <Link
                     to="/call"
@@ -130,6 +131,20 @@ export function RateReel() {
                       <ArrowRight className="size-4 -translate-x-1 opacity-0 transition-[opacity,transform] duration-200 group-hover:translate-x-0 group-hover:opacity-60 group-focus-visible:opacity-60" aria-hidden="true" />
                     </span>
                   </Link>
+                  <button
+                    type="button"
+                    className="-mt-1 mb-1 px-2 text-xs font-semibold tracking-wide text-mahogany underline decoration-mahogany/40 underline-offset-2"
+                    onClick={() => {
+                      stage.size = i;
+                      window.dispatchEvent(new CustomEvent("haul-size", { detail: i }));
+                      const el = document.getElementById("haul-stage");
+                      const lenis = (window as unknown as { __lenis?: { scrollTo: (t: unknown, o?: object) => void } }).__lenis;
+                      if (lenis && el) lenis.scrollTo(el, { force: true });
+                      else el?.scrollIntoView();
+                    }}
+                  >
+                    See it in 3D
+                  </button>
                 </li>
               ))}
             </ol>

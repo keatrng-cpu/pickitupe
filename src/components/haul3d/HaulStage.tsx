@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { featuredSizesFor, formatRange, DEPOSIT } from "@/lib/pricebook";
 import { BUSINESS } from "@/lib/seo";
 import { SITE_PHONE, SITE_TEL } from "@/lib/site-phone";
@@ -53,12 +53,13 @@ function useMoney(low: number, high: number, reduced: boolean) {
   return shown;
 }
 
-export function HaulStage() {
+export function HaulStage({ after }: { after?: ReactNode }) {
   const sizes = featuredSizesFor("junk-removal");
   const [index, setIndex] = useState(4);
   const [reduced, setReduced] = useState(false);
   const [webgl, setWebgl] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [allow3d, setAllow3d] = useState(false);
   const [carried, setCarried] = useState("0 / 0");
   const [day, setDay] = useState(0);
   const size = sizes[index] ?? sizes[0];
@@ -85,8 +86,30 @@ export function HaulStage() {
   }, []);
 
   useEffect(() => {
+    if (!mounted) return;
+    const phone = window.matchMedia("(max-width: 767px)").matches;
+    if (!phone) {
+      setAllow3d(true);
+      return;
+    }
+    const go = () => setAllow3d(true);
+    window.addEventListener("scroll", go, { once: true, passive: true });
+    window.addEventListener("pointerdown", go, { once: true });
+    return () => {
+      window.removeEventListener("scroll", go);
+      window.removeEventListener("pointerdown", go);
+    };
+  }, [mounted]);
+
+  useEffect(() => {
     stage.size = index;
   }, [index]);
+
+  useEffect(() => {
+    const onSize = (e: Event) => setIndex((e as CustomEvent<number>).detail);
+    window.addEventListener("haul-size", onSize);
+    return () => window.removeEventListener("haul-size", onSize);
+  }, []);
 
   useEffect(() => {
     if (reduced) return;
@@ -98,27 +121,40 @@ export function HaulStage() {
     const steps = [...document.querySelectorAll<HTMLElement>(".stage-step")];
     const at = [0.12, 0.34, 0.54, 0.74];
     const apply = (progress: number) => {
-      stage.progress = progress;
-      stage.gone = Math.min(1, Math.max(0, (progress - 0.74) / 0.22));
+      const p = Math.min(1, Math.max(0, progress));
+      stage.progress = p;
+      // Claude's ramp, started at 0.35 so the room is swept before the quote.
+      stage.gone = Math.min(1, Math.max(0, (p - 0.35) / 0.5));
       let active = -1;
       at.forEach((mark, i) => {
-        if (progress >= mark) active = i;
+        if (p >= mark) active = i;
       });
       steps.forEach((el, i) => {
-        el.dataset.active = String(i === active);
+        el.dataset.active = String(i === active && p < 0.82);
       });
-      if (active === 3) setCarried(`${stage.carried} / ${stage.total}`);
+      const done = stage.total > 0 && stage.carried >= stage.total;
+      const label = done ? "carried out. Broom-swept." : `${stage.carried} / ${stage.total} items carried out`;
+      setCarried((prev) => (prev === label ? prev : label));
+      const hero = document.querySelector<HTMLElement>(".hero-copy");
+      if (hero) {
+        const h = Math.min(1, Math.max(0, (p - 0.16) / 0.22));
+        hero.style.opacity = String(1 - h);
+        hero.style.pointerEvents = h > 0.85 ? "none" : "";
+      }
     };
     const fromWindow = () => {
       const el = document.getElementById("haul-stage");
+      const quote = document.getElementById("haul");
       if (!el) return;
-      const total = el.offsetHeight - window.innerHeight;
-      const p = Math.min(1, Math.max(0, (window.scrollY - el.offsetTop) / Math.max(total, 1)));
+      const start = el.offsetTop;
+      const end = quote ? quote.offsetTop - window.innerHeight * 0.2 : start + el.offsetHeight - window.innerHeight;
+      const p = Math.min(1, Math.max(0, (window.scrollY - start) / Math.max(end - start, 1)));
       apply(p);
     };
     window.addEventListener("scroll", fromWindow, { passive: true });
     fromWindow();
-    (async () => {
+    const fine = window.matchMedia("(pointer: fine)").matches;
+    if (fine) (async () => {
       const [{ default: Lenis }, gsapMod] = await Promise.all([import("lenis"), import("gsap"), import("gsap/ScrollTrigger")]);
       if (stop) return;
       const gsap = gsapMod.gsap;
@@ -141,7 +177,7 @@ export function HaulStage() {
         trigger: "#haul-stage",
         start: "top top",
         end: "bottom bottom",
-        onUpdate: ({ progress }) => apply(progress),
+        onUpdate: () => fromWindow(),
       });
     })();
     return () => {
@@ -153,7 +189,7 @@ export function HaulStage() {
     };
   }, [reduced]);
 
-  const show3d = mounted && webgl && !reduced;
+  const show3d = mounted && webgl && !reduced && allow3d;
   const price = size?.range ? `$${money.low.toLocaleString("en-US")}–$${money.high.toLocaleString("en-US")}` : "";
   const book = useMemo(() => ({ service: "junk-removal" as const, size: size?.value }), [size?.value]);
 
@@ -259,15 +295,19 @@ export function HaulStage() {
                     </ol>
                   ) : null}
                   {i === 3 ? (
-                    <p className="mt-4 font-display text-3xl tabular-nums" aria-live="polite">
-                      {carried} <span className="text-sm text-[#EDE3D0]/70">items carried out</span>
-                    </p>
+                    <p className="mt-4 font-display text-3xl tabular-nums" aria-live="polite">{carried}</p>
                   ) : null}
                 </div>
               </li>
             ))}
           </ol>
         </div>
+        {after ? (
+          <div className="stage-follow">
+            <div className="stage-scroll-room" aria-hidden="true" />
+            {after}
+          </div>
+        ) : null}
       </section>
 
       <section id="truck" className="relative h-[88svh] min-h-[560px] overflow-hidden bg-[#07140e] md:h-[100svh]" aria-labelledby="truck-h">

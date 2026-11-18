@@ -1846,12 +1846,19 @@ html[data-motion="paused"] .truck-stage-svg {
   bottom: 100%;
 }
 
-.js-stage #haul-stage { height: 520svh; }
-.js-stage .stage-viewport {
+.stage-viewport {
   position: sticky;
   top: 4rem;
+  z-index: 0;
   height: calc(100svh - 4rem);
   min-height: 0;
+  margin-bottom: calc(-100svh + 4rem);
+}
+.stage-scroll-room { height: 210svh; }
+.stage-follow {
+  position: relative;
+  z-index: 2;
+  background: linear-gradient(to bottom, transparent 0, transparent 4rem, color-mix(in srgb, var(--color-bg) 62%, transparent) 14rem);
 }
 .js-stage .stage-steps {
   position: absolute;
@@ -1895,7 +1902,9 @@ html[data-motion="paused"] .truck-stage-svg {
   to { opacity: 1; transform: none; filter: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .stage-viewport { height: auto; min-height: 0; overflow: visible; }
+  .stage-viewport { position: relative; top: auto; height: auto; min-height: 0; margin-bottom: 0; overflow: visible; }
+  .stage-scroll-room { display: none; }
+  .stage-follow { background: none; }
   .stage-viewport > picture { position: relative; display: block; height: 52svh; }
   .stage-viewport > picture img { position: relative; height: 52svh; }
   .haul-stage .hero-copy { position: relative; background: none; padding-top: 1rem; }
