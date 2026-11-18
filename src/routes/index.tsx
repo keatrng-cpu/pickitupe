@@ -40,7 +40,7 @@ export const Route = createFileRoute("/")({
     ],
     links: [
       { rel: "canonical", href: SITE_URL },
-      { rel: "preload", as: "image", href: "/haul3d/poster-sm.webp", media: "(max-width: 767px)" },
+      { rel: "preload", as: "image", href: "/haul3d/still-full.webp", media: "(max-width: 767px)" },
       { rel: "preload", as: "image", href: "/haul3d/poster.webp", media: "(min-width: 768px)" },
     ],
     scripts: [

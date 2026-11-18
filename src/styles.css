@@ -1853,12 +1853,14 @@ html[data-motion="paused"] .truck-stage-svg {
   height: calc(100svh - 4rem);
   min-height: 0;
   margin-bottom: calc(-100svh + 4rem);
+  /* overflow:hidden on a sticky box makes iOS treat it as a scroll container and the page stops moving. */
+  overflow: clip;
 }
 .stage-scroll-room { height: 210svh; }
 .stage-follow {
   position: relative;
   z-index: 2;
-  background: linear-gradient(to bottom, transparent 0, transparent 4rem, color-mix(in srgb, var(--color-bg) 62%, transparent) 14rem);
+  background: none;
 }
 .js-stage .stage-steps {
   position: absolute;

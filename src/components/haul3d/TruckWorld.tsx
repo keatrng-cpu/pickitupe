@@ -333,7 +333,7 @@ export default function TruckWorld() {
           <Canvas
             shadows={{ type: THREE.PCFSoftShadowMap }}
             frameloop={visible ? 'always' : 'never'}
-            dpr={[1, hd ? 1.5 : 1.15]}
+            dpr={hd ? [1, 1.5] : 1}
             gl={{ alpha: false, antialias: !hd, powerPreference: 'high-performance', toneMapping: THREE.AgXToneMapping, toneMappingExposure: 1.16 }}
             camera={{ fov: 32, near: 0.1, far: 80, position: [6, 2, 6] }}
           >

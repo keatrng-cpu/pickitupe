@@ -60,6 +60,7 @@ export function HaulStage({ after }: { after?: ReactNode }) {
   const [webgl, setWebgl] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [allow3d, setAllow3d] = useState(false);
+  const [lite, setLite] = useState(false);
   const [carried, setCarried] = useState("0 / 0");
   const [day, setDay] = useState(0);
   const size = sizes[index] ?? sizes[0];
@@ -87,18 +88,10 @@ export function HaulStage({ after }: { after?: ReactNode }) {
 
   useEffect(() => {
     if (!mounted) return;
-    const phone = window.matchMedia("(max-width: 767px)").matches;
-    if (!phone) {
-      setAllow3d(true);
-      return;
-    }
-    const go = () => setAllow3d(true);
-    window.addEventListener("scroll", go, { once: true, passive: true });
-    window.addEventListener("pointerdown", go, { once: true });
-    return () => {
-      window.removeEventListener("scroll", go);
-      window.removeEventListener("pointerdown", go);
-    };
+    // iOS Safari kills the tab when this scene creates a WebGL context. Phones get stills instead.
+    const phone = window.matchMedia("(max-width: 1024px) and (pointer: coarse), (max-width: 767px)").matches;
+    setLite(phone);
+    if (!phone) setAllow3d(true);
   }, [mounted]);
 
   useEffect(() => {
@@ -132,6 +125,19 @@ export function HaulStage({ after }: { after?: ReactNode }) {
       steps.forEach((el, i) => {
         el.dataset.active = String(i === active && p < 0.82);
       });
+      if (!document.querySelector("#haul-stage canvas")) {
+        const total = 11;
+        stage.carried = Math.round(stage.gone * total);
+        stage.total = total;
+        const still = p < 0.34 ? "/haul3d/still-full.webp" : p < 0.72 ? "/haul3d/still-mid.webp" : "/haul3d/still-clean.webp";
+        const img = document.querySelector<HTMLImageElement>(".stage-still");
+        const source = document.querySelector<HTMLSourceElement>(".stage-viewport source");
+        if (img && img.dataset.still !== still) {
+          img.dataset.still = still;
+          img.src = still;
+          if (source) source.srcset = still;
+        }
+      }
       const done = stage.total > 0 && stage.carried >= stage.total;
       const label = done ? "carried out. Broom-swept." : `${stage.carried} / ${stage.total} items carried out`;
       setCarried((prev) => (prev === label ? prev : label));
@@ -189,24 +195,24 @@ export function HaulStage({ after }: { after?: ReactNode }) {
     };
   }, [reduced]);
 
-  const show3d = mounted && webgl && !reduced && allow3d;
+  const show3d = mounted && webgl && !reduced && allow3d && !lite;
   const price = size?.range ? `$${money.low.toLocaleString("en-US")}–$${money.high.toLocaleString("en-US")}` : "";
   const book = useMemo(() => ({ service: "junk-removal" as const, size: size?.value }), [size?.value]);
 
   return (
     <div className="haul-stage bg-[#07140e] text-[#EDE3D0]">
       <section id="haul-stage" className="relative" aria-label="Your pile, priced and hauled">
-        <div className="stage-viewport relative h-[100svh] min-h-[640px] overflow-hidden">
-          <picture className="pointer-events-none absolute inset-0">
-            <source media="(max-width: 767px)" srcSet="/haul3d/poster-sm.webp" />
+        <div className="stage-viewport relative">
+          <picture className="pointer-events-none absolute inset-0 block h-full w-full">
+            <source media="(max-width: 767px)" srcSet="/haul3d/still-full.webp" />
             <img
+              className="stage-still h-full w-full object-cover"
               src="/haul3d/poster.webp"
               alt=""
               width={1280}
               height={1108}
               fetchPriority="high"
               decoding="async"
-              className="h-full w-full object-cover"
             />
           </picture>
           {show3d ? (
@@ -310,7 +316,7 @@ export function HaulStage({ after }: { after?: ReactNode }) {
         ) : null}
       </section>
 
-      <section id="truck" className="relative h-[88svh] min-h-[560px] overflow-hidden bg-[#07140e] md:h-[100svh]" aria-labelledby="truck-h">
+      <section id="truck" className="relative h-[88svh] overflow-clip bg-[#07140e] md:h-[100svh]" aria-labelledby="truck-h">
         {show3d ? (
           <Suspense fallback={null}>
             <TruckScene />
