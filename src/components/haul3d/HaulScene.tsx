@@ -302,6 +302,11 @@ export default function HaulScene() {
 
   useEffect(() => {
     const el = wrap.current!;
+    // A full-screen canvas that captures the pointer stops iOS Safari from scrolling.
+    if (window.matchMedia('(pointer: coarse)').matches) {
+      el.style.pointerEvents = 'none';
+      return;
+    }
     let lastX = 0, lastT = 0;
     const down = (e: PointerEvent) => { input.dragging = true; lastX = e.clientX; lastT = performance.now(); input.vel = 0; input.lastInteract = lastT; el.setPointerCapture(e.pointerId); el.dataset.dragging = 'true'; };
     const move = (e: PointerEvent) => {
@@ -326,7 +331,7 @@ export default function HaulScene() {
             <Canvas
               shadows={{ type: THREE.PCFSoftShadowMap }}
               frameloop={visible ? (hd ? 'always' : loop) : 'never'}
-              dpr={[1, hd ? 1.5 : 1.15]}
+              dpr={hd ? [1, 1.5] : 1}
               gl={{ alpha: false, antialias: !hd, powerPreference: 'high-performance', toneMapping: THREE.AgXToneMapping, toneMappingExposure: hd ? 1.28 : 1.18 }}
               camera={{ fov: 44, near: 0.1, far: 80, position: [6, 3.4, 6] }}
             >
