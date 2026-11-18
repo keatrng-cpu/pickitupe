@@ -254,8 +254,8 @@ function Rig() {
   useFrame(() => {
     const portrait = size.width < size.height;
     const ang = THREE.MathUtils.lerp(1.0, 0.42, smooth(clamp01(scroll.through)));
-    const r = portrait ? 13.5 : 10.4, h = portrait ? 3.0 : 2.4;
-    cam.fov = portrait ? 46 : 32;
+    const r = portrait ? 18 : 14.5, h = portrait ? 4.0 : 3.3;
+    cam.fov = portrait ? 59 : 44;
     cam.position.set(target.x + Math.sin(ang) * r, h, target.z + Math.cos(ang) * r);
     cam.lookAt(target);
     const w = size.width, hh = size.height;

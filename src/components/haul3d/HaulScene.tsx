@@ -43,12 +43,12 @@ const lerp = THREE.MathUtils.lerp;
 
 /* Camera keys (story progress p): orbit angle around the pile, radius, height (metres). */
 const KEYS = [
-  { p: 0.0, ang: 0.62, r: 5.6, h: 2.5 },
-  { p: 0.22, ang: 0.08, r: 4.0, h: 1.45 },
-  { p: 0.42, ang: -0.55, r: 5.2, h: 2.9 },
-  { p: 0.62, ang: -1.05, r: 5.7, h: 2.1 },
-  { p: 0.8, ang: 0.35, r: 6.0, h: 3.9 },
-  { p: 1.0, ang: 0.5, r: 5.4, h: 3.6 },
+  { p: 0.0, ang: 0.62, r: 8.6, h: 3.4 },
+  { p: 0.22, ang: 0.08, r: 6.8, h: 2.5 },
+  { p: 0.42, ang: -0.55, r: 7.8, h: 3.6 },
+  { p: 0.62, ang: -1.05, r: 8.2, h: 3.2 },
+  { p: 0.8, ang: 0.35, r: 9.0, h: 4.6 },
+  { p: 1.0, ang: 0.5, r: 8.2, h: 4.2 },
 ];
 
 function Floor({ hd }: { hd: boolean }) {
@@ -161,7 +161,7 @@ function Pile({ onReady, hd }: { onReady: () => void; hd: boolean }) {
   const st = useRef({ sp: 0, yaw: 0, target: new THREE.Vector3(0, 0.45, 0) });
   const tmp = useMemo(() => ({ c: new THREE.Vector3(), look: new THREE.Vector3() }), []);
 
-  useFrame(({ camera, size }, dt) => {
+  useFrame(({ camera, size, gl }, dt) => {
     const s = st.current;
     const cam = camera as THREE.PerspectiveCamera;
     const reduced = stage.reduced;
@@ -181,12 +181,10 @@ function Pile({ onReady, hd }: { onReady: () => void; hd: boolean }) {
       node.a += (want - node.a) * (1 - Math.exp(-dt * (reduced ? 30 : leaving ? 9 : 6.5)));
       const a = node.a, out = 1 - a;
       obj.visible = a > 0.02;
-      const glide = leaving ? smooth(out) : 0;
-      obj.position.x = it.pos[0] + glide * 3.4;
-      obj.position.z = it.pos[2] + glide * 0.35;
-      obj.position.y = node.baseY + (leaving ? Math.sin(Math.min(out, 1) * Math.PI) * 0.62 : out * 0.35);
-      obj.rotation.z = it.rot[2] + glide * 0.55;
-      obj.rotation.x = it.rot[0] - glide * 0.28;
+      obj.position.x = it.pos[0] + (leaving ? smooth(out) * 2.8 : 0);
+      obj.position.z = it.pos[2];
+      obj.position.y = node.baseY + (leaving ? Math.sin(Math.min(out, 1) * Math.PI) * 0.35 : out * 0.9);
+      obj.rotation.set(it.rot[0], it.rot[1], it.rot[2]);
       obj.scale.setScalar(leaving ? smooth(a) : lerp(0.82, 1, smooth(a)));
       // Frame the pile; once it's nearly gone, frame what's left (the tools on the swept floor).
       const w = it.tool ? (stage.gone > 0.7 ? 1.2 : 0.05) * a : a;
@@ -204,10 +202,10 @@ function Pile({ onReady, hd }: { onReady: () => void; hd: boolean }) {
     const A = KEYS[k], B = KEYS[k + 1];
     const t = smooth(clamp01((s.sp - A.p) / (B.p - A.p)));
     const aspect = size.width / size.height;
-    const fov = aspect < 1 ? 50 : 32;
+    const fov = aspect < 1 ? 59 : 44;
     if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); }
-    // Portrait: a wider lens instead of pulling far back keeps the pile big in frame.
-    const fit = aspect < 1 ? 1.22 : 1;
+    gl.toneMappingExposure = (hd ? 1.22 : 1.12) + stage.gone * 0.32;
+    const fit = 1;
     const ang = lerp(A.ang, B.ang, t), r = lerp(A.r, B.r, t) * fit, h = lerp(A.h, B.h, t) * (aspect < 1 ? 1.12 : 1);
     cam.position.set(s.target.x + Math.sin(ang) * r, h, s.target.z + Math.cos(ang) * r);
     cam.lookAt(tmp.look.copy(s.target));
@@ -263,9 +261,23 @@ function Lights({ hd }: { hd: boolean }) {
   );
 }
 
+/** Phones park the loop once the hero is sitting still, and wake it on scroll. */
+function PhoneIdle({ hd, idle, onPark }: { hd: boolean; idle: { current: number }; onPark: () => void }) {
+  useFrame((_, dt) => {
+    if (hd) return;
+    const calm = stage.progress < 0.002 && !input.dragging;
+    idle.current = calm ? idle.current + dt : 0;
+    if (calm && idle.current > 0.8) onPark();
+  });
+  return null;
+}
+
 export default function HaulScene() {
   const wrap = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(true);
+  const [loop, setLoop] = useState<'always' | 'demand'>('always');
+  const idle = useRef(0);
+  const park = useCallback(() => setLoop((cur) => (cur === 'demand' ? cur : 'demand')), []);
   const [ready, setReady] = useState(false);
   const [sun, setSun] = useState<THREE.Mesh | null>(null);
   const markReady = useCallback(() => setReady(true), []);
@@ -273,6 +285,13 @@ export default function HaulScene() {
   const [supported] = useState(webgl2);
   const hd = useMemo(detectHD, []);
   const bg = useMemo(() => cssColor('--bg-stage'), []);
+
+  useEffect(() => {
+    if (hd) return;
+    const wake = () => { idle.current = 0; setLoop('always'); };
+    window.addEventListener('scroll', wake, { passive: true });
+    return () => window.removeEventListener('scroll', wake);
+  }, [hd]);
 
   useEffect(() => {
     const el = document.getElementById('stage') ?? wrap.current!;
@@ -306,11 +325,12 @@ export default function HaulScene() {
           <div className="absolute inset-0 transition-opacity duration-1000 ease-out" style={{ opacity: ready ? 1 : 0 }}>
             <Canvas
               shadows={{ type: THREE.PCFSoftShadowMap }}
-              frameloop={visible ? 'always' : 'never'}
+              frameloop={visible ? (hd ? 'always' : loop) : 'never'}
               dpr={[1, hd ? 1.5 : 1.15]}
               gl={{ alpha: false, antialias: !hd, powerPreference: 'high-performance', toneMapping: THREE.AgXToneMapping, toneMappingExposure: hd ? 1.28 : 1.18 }}
-              camera={{ fov: 32, near: 0.1, far: 60, position: [4, 2.5, 4] }}
+              camera={{ fov: 44, near: 0.1, far: 80, position: [6, 3.4, 6] }}
             >
+              <PhoneIdle hd={hd} idle={idle} onPark={park} />
               <color attach="background" args={[bg]} />
               <fog attach="fog" args={[bg, 11, 22]} />
               <Suspense fallback={null}>

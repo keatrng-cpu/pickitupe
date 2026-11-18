@@ -86,8 +86,7 @@ function Home() {
             {Math.round(offer.percent * 100)}% off through {offer.deadlineLabel}, up to ${offer.cap}
           </p>
         ) : null}
-        <HaulStage />
-        <QuickQuote />
+        <HaulStage after={<QuickQuote />} />
 
         <Reveal as="section" className="section-y mx-auto max-w-6xl px-4">
           <div aria-labelledby="estate-strip" className="grid items-start gap-8 lg:grid-cols-[1.05fr_1fr]">
