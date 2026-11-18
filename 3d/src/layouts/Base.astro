@@ -1,0 +1,33 @@
+---
+import '@fontsource-variable/geist';
+import '@fontsource-variable/source-serif-4';
+import '@fontsource-variable/source-serif-4/wght-italic.css';
+import 'lenis/dist/lenis.css';
+import '../styles/global.css';
+
+interface Props { title: string; description: string }
+const { title, description } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#064E2A" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preload" href="/models/sofa_02.glb" as="fetch" crossorigin="anonymous" fetchpriority="low" />
+    <!-- Decide the stage layout before first paint: no layout shift when JS takes over. -->
+    <script is:inline>
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('js-stage');
+    </script>
+  </head>
+  <body class="min-h-svh bg-bg-primary text-ink">
+    <slot />
+  </body>
+</html>

@@ -1,0 +1,158 @@
+@import "tailwindcss";
+
+/* ───────── Tokens (agency-design-director) ─────────
+   Studio-dark by design: paint reflections read best on a near-black stage.
+   90% canvas · 8% surface + hairline · 2% accent (CTA + one active state only). */
+:root {
+  /* Pick It Up E brand: forest green + cream (theme-color #064E2A on the live site). */
+  --bg-primary: oklch(31% 0.075 156);
+  --bg-stage: oklch(16% 0.03 158);
+  --surface-elevated: oklch(35% 0.08 156);
+  --border-hairline: oklch(44% 0.06 156);
+  --ink: oklch(95% 0.025 85);
+  --ink-muted: oklch(84% 0.03 85);
+  --tan: oklch(80% 0.06 75);
+  --accent-primary: oklch(93% 0.035 85); /* cream button */
+  --accent-ink: oklch(30% 0.075 156);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg-primary: var(--bg-primary);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-border-hairline: var(--border-hairline);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-ink: var(--accent-ink);
+  --color-tan: var(--tan);
+  --color-bg-stage: var(--bg-stage);
+  --font-display: "Source Serif 4 Variable", Georgia, "Times New Roman", serif;
+  --font-sans: "Geist Variable", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+@theme {
+  --text-display: clamp(2.75rem, 1.6rem + 4.6vw, 6rem);
+  --text-h2: clamp(2rem, 1.4rem + 2.6vw, 3.75rem);
+  --text-h3: clamp(1.5rem, 1.25rem + 1vw, 2.125rem);
+  --text-lead: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+}
+
+@layer base {
+  html {
+    background: var(--bg-primary);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection { background: var(--accent-primary); color: var(--accent-ink); }
+  :focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 3px; border-radius: 2px; }
+  h1, h2, h3 { text-wrap: balance; }
+  p { text-wrap: pretty; }
+}
+
+/* Lenis */
+html.lenis, html.lenis body { height: auto; }
+.lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
+.lenis [data-lenis-prevent] { overscroll-behavior: contain; }
+
+/* ───────── Stage: no-JS / reduced-motion = normal document flow ───────── */
+.stage-steps { display: grid; gap: 2.5rem; }
+
+/* With motion: the stage becomes a tall scroll track with a sticky viewport. */
+.js-stage #stage { height: 620svh; }
+.js-stage .stage-viewport { position: sticky; top: 0; height: 100svh; }
+.js-stage .stage-steps { position: absolute; inset: 0; display: block; pointer-events: none; }
+.js-stage .stage-step {
+  position: absolute;
+  left: var(--gutter);
+  bottom: clamp(1.5rem, 6vh, 4rem);
+  max-width: 26rem;
+  opacity: 0;
+  transform: translate3d(0, 1.5rem, 0);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.js-stage .stage-step[data-active="true"] { opacity: 1; transform: translate3d(0, 0, 0); }
+.js-stage .hero-copy { will-change: opacity, transform; }
+
+@media (min-width: 768px) {
+  .js-stage .stage-step { left: auto; right: var(--gutter); bottom: auto; top: 50%; translate: 0 -50%; }
+}
+
+:root { --gutter: 1rem; }
+@media (min-width: 768px) { :root { --gutter: 2rem; } }
+
+/* ───────── Hero entrance: CSS-only so the LCP headline paints on frame one ───────── */
+@keyframes rise { from { transform: translate3d(0, 0.32em, 0); } to { transform: none; } }
+@keyframes fade-up { from { opacity: 0; transform: translate3d(0, 14px, 0); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  .hero-title { animation: rise 1.1s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .hero-sub { animation: fade-up 0.9s 0.25s cubic-bezier(0.16, 1, 0.3, 1) both; }
+}
+
+/* ───────── Spotlight cell: pointer moves two vars; only opacity transitions ───────── */
+[data-spotlight] { position: relative; isolation: isolate; }
+[data-spotlight]::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: 0;
+  transition: opacity 0.35s ease;
+  background: radial-gradient(460px circle at var(--x, 50%) var(--y, 50%),
+    color-mix(in oklch, var(--accent-primary) 9%, transparent), transparent 62%);
+}
+@media (hover: hover) { [data-spotlight]:hover::before { opacity: 1; } }
+
+/* SplitText line masks clip descenders at tight leading: give each mask room, net zero layout. */
+[data-reveal] > * { padding-bottom: 0.12em; margin-bottom: -0.12em; }
+
+/* ───────── Stop 01: phone viewfinder over the pile ───────── */
+.viewfinder { opacity: 0; transition: opacity 0.5s ease; }
+.vf-c { position: absolute; width: 28px; height: 28px; border-color: var(--ink); }
+.vf-flash { opacity: 0; }
+.vf-chip { opacity: 0; transform: translate(-50%, 10px); transition: opacity 0.4s 0.9s ease, transform 0.5s 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
+[data-stop="0"] .viewfinder { opacity: 1; }
+[data-stop="0"] .vf-flash { animation: vf-flash 0.55s 0.45s ease-out both; }
+[data-stop="0"] .vf-chip { opacity: 1; transform: translate(-50%, 0); }
+@keyframes vf-flash { 0% { opacity: 0; } 15% { opacity: 0.85; } 100% { opacity: 0; } }
+
+/* ───────── Stop 03: the next open day lights up ───────── */
+.day { transition: border-color 0.4s ease, background-color 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+[data-stop="2"] .day[data-on="true"] { border-color: var(--accent-primary); background: color-mix(in oklch, var(--accent-primary) 16%, transparent); transform: translateY(-3px); }
+
+/* ───────── Marquee ───────── */
+.marquee-track { animation: marquee 48s linear infinite; }
+.marquee:hover .marquee-track { animation-play-state: paused; }
+@keyframes marquee { to { transform: translate3d(-50%, 0, 0); } }
+
+/* ───────── Mobile menu ───────── */
+dialog.menu[open] { animation: menu-in 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+dialog.menu[open] .menu-item { animation: fade-up 0.5s calc(0.08s + var(--i) * 0.05s) cubic-bezier(0.16, 1, 0.3, 1) both; }
+@keyframes menu-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ───────── Mobile action bar: hidden until past the hero (JS), always shown without motion/JS ───────── */
+.actionbar { transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+.js-stage .actionbar:not([data-show="true"]) { transform: translate3d(0, 110%, 0); }
+
+/* ───────── Map pins ───────── */
+.pin-pulse { transform-box: fill-box; transform-origin: center; animation: pin 2.4s ease-out infinite; }
+@keyframes pin { from { transform: scale(1); opacity: 0.9; } to { transform: scale(3.2); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track, .pin-pulse, dialog.menu[open], dialog.menu[open] .menu-item { animation: none; }
+  .marquee-track { flex-wrap: wrap; width: auto; white-space: normal; }
+}
+
+/* Mobile: step cards sit above the fixed action bar. */
+@media (max-width: 767px) { .js-stage .stage-step { bottom: calc(5.75rem + env(safe-area-inset-bottom)); } }
+
+/* Loaded (truck) section: scrim keeps the copy legible over the 3D night scene. */
+.truck-scrim {
+  background: linear-gradient(to top, var(--bg-stage) 0%, color-mix(in oklch, var(--bg-stage) 70%, transparent) 34%, transparent 62%);
+}
+@media (min-width: 768px) {
+  .truck-scrim {
+    background:
+      linear-gradient(to right, color-mix(in oklch, var(--bg-stage) 88%, transparent) 0%, color-mix(in oklch, var(--bg-stage) 40%, transparent) 36%, transparent 58%),
+      linear-gradient(to top, var(--bg-stage) 0%, transparent 18%);
+  }
+}

@@ -1,0 +1,343 @@
+---
+import Base from '../layouts/Base.astro';
+import HaulScene from '../components/three/HaulScene.tsx';
+import TruckScene from '../components/three/TruckScene.tsx';
+import { sizes, addOns, estates, range, bookUrl, usd, PHONE, PHONE_TEL, SMS_PHOTO, HOURS, DEPOSIT } from '../data/pricebook';
+
+const start = 4; // the pile opens on "Full truck"
+const nav: [string, string][] = [['#rates', 'Pricing'], ['#estates', 'Estate cleanouts'], ['#area', 'Where we work'], ['#faq', 'FAQ']];
+const hauls = ['Junk', 'Furniture', 'Mattress', 'Fridge', 'Washer', 'Stove', 'Garage', 'Estates', 'Bags', 'Turns', 'Gutters', 'Hauled'];
+const week = [['Mon', '9:30–5:30'], ['Tue', '9:30–5:30'], ['Wed', '9:30–5:30'], ['Thu', '9:30–5:30'], ['Fri', '9:30–5:30'], ['Sat', '12–4']]; // canon HOURS
+const stops = [
+  { n: '01', t: 'Text a photo', d: 'Or slide to the size of the pile. No account.' },
+  { n: '02', t: 'See the price', d: 'A range up front, from the same pricebook every time.' },
+  { n: '03', t: 'Pick a day', d: `${usd(DEPOSIT)} on a card holds it and comes off the bill.` },
+  { n: '04', t: 'Gone', d: 'We carry it out, load it and haul it. You don’t lift a thing.' },
+];
+const faqs = [
+  { q: 'What does junk removal cost in Grand Forks?', a: `Priced by the truck bed, not the hour. One piece is ${range(sizes[1])}. Half the bed is ${range(sizes[3])}. A full strapped load is ${range(sizes[4])}. You see the range before you book and we confirm it when we see the pile.` },
+  { q: 'Does it have to be at the curb?', a: `No. We carry it out of the basement, the garage or the back bedroom. Stairs add ${range(addOns[0])}. That’s the difference from the city’s curbside pickup.` },
+  { q: 'Do you do estate or whole-house cleanouts?', a: `Yes. Free walkthrough, then one fixed written price. Most land between ${usd(estates[0].min)} and ${usd(estates[2].max)}. Usable things go to donation, metal to scrap.` },
+  { q: 'What can’t you take?', a: 'Paint, chemicals, oil, propane, concrete, dirt, roofing, or asbestos. Everything else in a normal house, garage or basement pile is fine.' },
+  { q: 'How do I hold a day?', a: `${usd(DEPOSIT)} on the card locks it and comes off the invoice.` },
+];
+---
+<Base
+  title="Pick It Up E — Junk removal & estate cleanouts in Grand Forks (3D preview)"
+  description="Junk, appliances and whole-house cleanouts in Grand Forks. Carried from the basement. Slide to the size of your pile, see the price, $50 holds the day."
+>
+  <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:bg-bg-primary focus:px-4 focus:py-2">Skip to content</a>
+
+  <header class="fixed inset-x-0 top-0 z-40 border-b border-border-hairline/60 bg-bg-stage/75 backdrop-blur-sm">
+    <nav class="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-4 px-[var(--gutter)]" aria-label="Primary">
+      <a href="#stage" class="-my-2.5 py-2.5 font-display text-xl leading-none">Pick It Up E</a>
+      <ul class="hidden items-center gap-8 text-sm text-ink-muted md:flex">
+        {nav.map(([href, label]) => (
+          <li><a data-nav href={href} class="relative py-2 transition-colors hover:text-ink aria-[current=true]:text-ink after:absolute after:inset-x-0 after:-bottom-0.5 after:h-px after:origin-left after:scale-x-0 after:bg-tan after:transition-transform aria-[current=true]:after:scale-x-100">{label}</a></li>
+        ))}
+      </ul>
+      <div class="flex items-center gap-2">
+        <a href={PHONE_TEL} class="hidden min-h-11 items-center rounded-full border border-border-hairline px-4 text-sm sm:inline-flex">{PHONE}</a>
+        <a href="https://pickitupe.com/call" class="inline-flex min-h-11 items-center rounded-full bg-accent-primary px-5 text-sm font-medium text-accent-ink">Book</a>
+        <button type="button" data-menu-open aria-haspopup="dialog" aria-controls="menu" aria-label="Open menu"
+          class="inline-flex size-11 items-center justify-center rounded-full border border-border-hairline md:hidden">
+          <span class="grid gap-1.5" aria-hidden="true"><span class="block h-px w-5 bg-ink"></span><span class="block h-px w-5 bg-ink"></span></span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Mobile menu: native <dialog> = focus trap, Esc to close, inert background for free. -->
+  <dialog id="menu" class="menu m-0 h-dvh max-h-none w-full max-w-none bg-bg-stage p-0 text-ink backdrop:bg-black/60">
+    <div class="flex h-full flex-col px-[var(--gutter)] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      <div class="flex h-16 items-center justify-between">
+        <span class="font-display text-xl">Pick It Up E</span>
+        <button type="button" data-menu-close aria-label="Close menu" class="inline-flex size-11 items-center justify-center rounded-full border border-border-hairline text-2xl leading-none">×</button>
+      </div>
+      <nav aria-label="Mobile" class="mt-6">
+        <ul class="grid border-t border-border-hairline">
+          {[['#stage', 'Price my junk'], ...nav].map(([href, label], i) => (
+            <li class="menu-item border-b border-border-hairline" style={`--i:${i}`}>
+              <a data-nav data-menu-link href={href} class="flex min-h-16 items-center justify-between font-display text-3xl aria-[current=true]:text-tan">{label}<span class="text-base text-ink-muted" aria-hidden="true">→</span></a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <div class="mt-auto grid gap-3">
+        <a href={SMS_PHOTO} class="inline-flex min-h-12 items-center justify-center rounded-full border border-border-hairline">Text a photo</a>
+        <a href={PHONE_TEL} class="inline-flex min-h-12 items-center justify-center rounded-full border border-border-hairline">Call {PHONE}</a>
+        <a href="https://pickitupe.com/call" class="inline-flex min-h-12 items-center justify-center rounded-full bg-accent-primary font-medium text-accent-ink">Book a pickup</a>
+        <p class="pt-2 text-center text-xs text-ink-muted">{HOURS}</p>
+      </div>
+    </div>
+  </dialog>
+
+  <main id="main">
+    <!-- ───────── Stage: 3D pile + live estimator, then the four stops ───────── -->
+    <section id="stage" class="relative bg-bg-stage" aria-label="Your pile, priced and hauled">
+      <div class="stage-viewport relative h-svh min-h-[640px] overflow-hidden">
+        <HaulScene client:only="react" />
+
+        <div class="hero-copy pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-bg-stage via-bg-stage/80 to-transparent px-[var(--gutter)] pb-[clamp(1.5rem,5vh,3.5rem)] pt-32 md:bg-gradient-to-r md:from-bg-stage md:via-bg-stage/70 md:to-transparent md:top-0 md:flex md:items-end md:pt-0">
+          <div class="mx-auto w-full max-w-[1440px]">
+            <div class="max-w-xl">
+              <p class="hero-sub mb-4 font-mono text-[11px] uppercase tracking-[0.2em] text-tan">Junk, appliances &amp; cleanouts in Grand Forks</p>
+              <h1 class="hero-title font-display text-[length:var(--text-display)] font-semibold leading-[0.95] tracking-[-0.02em]">
+                We haul it.<br /><em class="font-normal text-tan">You don’t.</em>
+              </h1>
+              <p class="hero-sub mt-5 hidden max-w-md leading-relaxed text-ink-muted sm:block">Out of your house, not on the curb for the city truck. Carried from the basement. {usd(DEPOSIT)} holds the day.</p>
+
+              <!-- Live estimator: the slider builds the pile you see -->
+              <div class="hero-sub pointer-events-auto mt-7 border border-border-hairline bg-bg-stage/85 p-5 md:p-6">
+                <div class="flex items-baseline justify-between gap-4">
+                  <label for="haul-size" class="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-muted">How much is there?</label>
+                  <span class="font-display text-lg" data-size-name>{sizes[start].name}</span>
+                </div>
+                <input id="haul-size" type="range" min="0" max={sizes.length - 1} step="1" value={start}
+                  class="mt-4 h-11 w-full cursor-pointer accent-[var(--accent-primary)]" aria-describedby="size-detail" />
+                <div class="-mt-1 grid grid-cols-6 text-center font-mono text-[10px] uppercase tracking-[0.08em] text-ink-muted">
+                  {sizes.map((s, i) => (
+                    <button type="button" data-tick={i} data-on={String(i === start)} class="min-h-11 px-0.5 leading-tight data-[on=true]:text-ink">{s.name}</button>
+                  ))}
+                </div>
+                <p id="size-detail" class="mt-2 text-sm text-ink-muted" data-size-detail>{sizes[start].detail}</p>
+                <div class="mt-4 flex flex-wrap items-end justify-between gap-4 border-t border-border-hairline pt-4">
+                  <div>
+                    <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-muted">Your range</p>
+                    <p class="font-display text-4xl leading-none tabular-nums" data-size-price aria-live="polite">{range(sizes[start])}</p>
+                  </div>
+                  <div class="flex flex-wrap gap-2">
+                    <a data-size-book href={bookUrl(sizes[start].id)} class="inline-flex min-h-11 items-center rounded-full bg-accent-primary px-6 font-medium text-accent-ink transition-transform active:scale-[0.97]">Lock this →</a>
+                    <a href={SMS_PHOTO} class="inline-flex min-h-11 items-center rounded-full border border-border-hairline px-5 text-sm">Text a photo</a>
+                  </div>
+                </div>
+                <p class="mt-3 text-xs text-ink-muted">Confirmed when we see it. {usd(DEPOSIT)} on a card holds the day and comes off the bill.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pointer-events-none absolute left-[var(--gutter)] top-1/2 z-10 hidden h-40 w-px -translate-y-1/2 bg-border-hairline md:block" aria-hidden="true">
+          <div data-rail-fill class="h-full w-px origin-top scale-y-0 bg-ink"></div>
+        </div>
+
+        <!-- Stop 01 overlay: a phone viewfinder framing the pile -->
+        <div class="viewfinder pointer-events-none absolute inset-0 z-[5]" aria-hidden="true">
+          <div class="vf-frame absolute left-1/2 top-[33%] aspect-[3/4] w-[min(46vw,320px)] md:top-[44%] -translate-x-1/2 -translate-y-1/2 md:left-[42%] md:w-[min(26vw,340px)]">
+            <span class="vf-c left-0 top-0 border-l-2 border-t-2"></span><span class="vf-c right-0 top-0 border-r-2 border-t-2"></span>
+            <span class="vf-c bottom-0 left-0 border-b-2 border-l-2"></span><span class="vf-c bottom-0 right-0 border-b-2 border-r-2"></span>
+            <span class="vf-flash absolute inset-0 bg-ink"></span>
+            <span class="vf-chip absolute -top-14 left-1/2 whitespace-nowrap md:-top-auto md:-bottom-12 rounded-full bg-accent-primary px-4 py-2 text-sm font-medium text-accent-ink">Photo sent ✓ · {PHONE}</span>
+          </div>
+        </div>
+
+        <ol class="stage-steps z-10 px-[var(--gutter)] py-16 md:py-24" aria-label="How it works">
+          {stops.map((s, i) => (
+            <li class="stage-step">
+              <div class="border border-border-hairline bg-bg-stage/90 p-6 md:p-8">
+                <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-tan">{s.n} — How it works</p>
+                <h2 class="mt-3 font-display text-[length:var(--text-h3)] leading-[1.05]">{s.t}</h2>
+                <p class="mt-3 leading-relaxed text-ink-muted">{s.d}</p>
+                {i === 0 && (
+                  <a href={SMS_PHOTO} class="pointer-events-auto mt-5 inline-flex min-h-11 items-center rounded-full border border-border-hairline px-5 text-sm">Text a photo →</a>
+                )}
+                {i === 1 && (
+                  <div class="mt-5 flex items-baseline justify-between gap-4 border-t border-border-hairline pt-4" aria-live="polite">
+                    <span class="text-sm text-ink-muted" data-live-name>{sizes[start].name}</span>
+                    <span class="font-display text-3xl tabular-nums" data-live-price>{range(sizes[start])}</span>
+                  </div>
+                )}
+                {i === 2 && (
+                  <ol class="mt-5 grid grid-cols-6 gap-1.5" aria-label="Open days and hours">
+                    {week.map(([d, h], k) => (
+                      <li class="day grid gap-1 border border-border-hairline px-1 py-2 text-center" data-day={k}>
+                        <span class="text-xs font-medium">{d}</span>
+                        <span class="text-[10px] leading-tight text-ink-muted">{h}</span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+                {i === 3 && (
+                  <p class="mt-5 flex items-baseline gap-3 border-t border-border-hairline pt-4" aria-live="polite">
+                    <span class="font-display text-3xl tabular-nums" data-carried>0 / 0</span>
+                    <span class="text-sm text-ink-muted" data-carried-label>items carried out</span>
+                  </p>
+                )}
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    <!-- ───────── Loaded: the brand truck in 3D, carrying the size picked on the slider ───────── -->
+    <section id="truck" class="relative h-[88svh] min-h-[560px] overflow-hidden bg-bg-stage md:h-[100svh] md:min-h-[640px]" aria-labelledby="truck-h">
+      <TruckScene client:only="react" />
+      <div class="truck-scrim pointer-events-none absolute inset-0" aria-hidden="true"></div>
+      <div class="pointer-events-none relative z-10 flex h-full flex-col justify-end px-[var(--gutter)] pb-[calc(6.5rem+env(safe-area-inset-bottom))] md:justify-center md:pb-0">
+        <div class="mx-auto w-full max-w-[1280px]">
+          <div class="max-w-md">
+            <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-tan">Loaded</p>
+            <h2 id="truck-h" data-reveal class="mt-3 font-display text-[length:var(--text-h2)] leading-[1.02] tracking-[-0.015em]">Out of your house.<br /><em class="text-tan">Into the bed.</em></h2>
+            <p data-fade class="mt-4 hidden leading-relaxed text-ink-muted sm:block">Not on the curb for the city truck. Carried from the basement and strapped in the bed. Priced by the truck bed, not the hour.</p>
+            <p data-fade class="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-border-hairline pt-4" aria-live="polite">
+              <span class="text-sm text-ink-muted">In the bed:</span>
+              <span class="font-display text-2xl" data-live-name>{sizes[4].name}</span>
+              <span class="font-display text-2xl tabular-nums text-tan" data-live-price>{range(sizes[4])}</span>
+            </p>
+            <div data-fade class="pointer-events-auto mt-5 flex flex-wrap gap-3">
+              <a data-size-book href={bookUrl(sizes[4].id)} class="inline-flex min-h-11 items-center rounded-full bg-accent-primary px-5 text-sm font-medium text-accent-ink">Book this load →</a>
+              <button type="button" data-snow-toggle aria-pressed="false" class="inline-flex min-h-11 items-center gap-2 rounded-full border border-border-hairline px-4 text-sm">
+                <span aria-hidden="true">❄</span><span data-snow-label>Pause snow</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── What we haul: marquee (pauses on hover, static under reduced motion) ───────── -->
+    <div class="marquee overflow-hidden border-y border-border-hairline bg-bg-stage py-5" aria-label="What we haul">
+      <ul class="marquee-track flex w-max gap-12 whitespace-nowrap font-display text-2xl text-ink-muted md:text-3xl">
+        {[...hauls, ...hauls].map((h, i) => (
+          <li class="flex items-center gap-12" aria-hidden={i >= hauls.length ? 'true' : undefined}>{h}<span class="size-1.5 rounded-full bg-tan" aria-hidden="true"></span></li>
+        ))}
+      </ul>
+    </div>
+
+    <!-- ───────── Haul rates ───────── -->
+    <section id="rates" class="px-[var(--gutter)] py-24 md:py-32">
+      <div class="mx-auto max-w-[1280px]">
+        <div class="mb-12 grid gap-6 md:grid-cols-12 md:items-end">
+          <h2 data-reveal class="font-display text-[length:var(--text-h2)] leading-[1.02] tracking-[-0.015em] md:col-span-7">Priced by the truck bed.</h2>
+          <p data-fade class="max-w-md leading-relaxed text-ink-muted md:col-span-5">Six sizes, one price list — the same one the slider and the booking page read. We confirm it when we see the pile. A heaped bed is about 2.5 cubic yards.</p>
+        </div>
+        <ol class="grid grid-cols-2 gap-px border border-border-hairline bg-border-hairline lg:grid-cols-3">
+          {sizes.map((s, i) => (
+            <li data-spotlight class="flex flex-col gap-2 bg-bg-primary p-4 sm:p-7 md:p-8">
+              <span class="font-mono text-[11px] uppercase tracking-[0.2em] text-tan">0{i + 1}</span>
+              <span class="font-display text-xl leading-tight sm:text-[length:var(--text-h3)]">{s.name}</span>
+              <span class="hidden text-sm text-ink-muted sm:block">{s.detail}</span>
+              <span class="mt-auto pt-2 font-display text-2xl tabular-nums sm:pt-4 sm:text-3xl">{range(s)}</span>
+              <span class="mt-2 flex flex-wrap gap-2">
+                <button type="button" data-see={i} class="inline-flex min-h-11 items-center rounded-full border border-border-hairline px-3 text-xs sm:px-4 sm:text-sm">See it in 3D ↑</button>
+                <a href={bookUrl(s.id)} class="inline-flex min-h-11 items-center rounded-full bg-accent-primary px-3 text-xs font-medium text-accent-ink sm:px-4 sm:text-sm" aria-label={`Book ${s.name}, ${range(s)}`}>Book</a>
+              </span>
+            </li>
+          ))}
+        </ol>
+        <div data-fade class="mt-10 grid gap-6 md:grid-cols-12">
+          <h3 class="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-muted md:col-span-3">Add-ons</h3>
+          <ul class="grid gap-px border-y border-border-hairline md:col-span-9">
+            {addOns.map((a) => (
+              <li class="flex justify-between gap-6 border-b border-border-hairline py-4 last:border-b-0"><span>{a.name}</span><span class="tabular-nums text-ink-muted">+{range(a)}</span></li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── Estates ───────── -->
+    <section id="estates" class="border-t border-border-hairline bg-surface-elevated px-[var(--gutter)] py-24 md:py-32">
+      <div class="mx-auto grid max-w-[1280px] gap-12 md:grid-cols-12">
+        <div class="md:col-span-5">
+          <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-tan">Estate &amp; whole-house cleanouts</p>
+          <h2 data-reveal class="mt-4 font-display text-[length:var(--text-h2)] leading-[1.02] tracking-[-0.015em]">After the estate sale, we clear the rest.</h2>
+          <p data-fade class="mt-6 max-w-md leading-relaxed text-ink-muted">Furniture, beds, appliances, boxes, the basement and the garage. Usable things go to donation, metal to scrap, and the house is left broom-swept. Free walkthrough, then one fixed written price.</p>
+          <a href="https://pickitupe.com/estate-cleanout-grand-forks" class="mt-8 inline-flex min-h-11 items-center rounded-full bg-accent-primary px-6 font-medium text-accent-ink">Book a free walkthrough</a>
+        </div>
+        <ul class="grid content-start gap-px border-y border-border-hairline md:col-span-7">
+          {estates.map((e) => (
+            <li data-fade class="grid gap-2 border-b border-border-hairline py-7 last:border-b-0 sm:grid-cols-[1fr_auto] sm:items-baseline">
+              <span class="font-display text-2xl">{e.name}</span>
+              <span class="font-display text-3xl tabular-nums text-tan">{range(e)}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    <!-- ───────── Where we work ───────── -->
+    <section id="area" class="border-t border-border-hairline px-[var(--gutter)] py-24 md:py-32">
+      <div class="mx-auto grid max-w-[1280px] gap-12 md:grid-cols-12">
+        <div class="md:col-span-6">
+          <h2 data-reveal class="font-display text-[length:var(--text-h2)] leading-[1.02] tracking-[-0.015em]">Grand Forks and East Grand Forks, one truck, all winter.</h2>
+          <!-- Schematic (not to scale): the Red River draws itself in on scroll; GF on the west bank, EGF on the east. -->
+          <figure class="mt-10">
+            <svg viewBox="0 0 520 340" class="river-map w-full" role="img" aria-labelledby="map-title">
+              <title id="map-title">Schematic map: Grand Forks, North Dakota on the west bank of the Red River and East Grand Forks, Minnesota on the east bank, joined by the Sorlie Bridge.</title>
+              <defs><pattern id="grid" width="26" height="26" patternUnits="userSpaceOnUse"><path d="M26 0H0V26" fill="none" stroke="var(--border-hairline)" stroke-width="0.6" /></pattern></defs>
+              <rect width="520" height="340" fill="url(#grid)" opacity="0.6" />
+              <path data-river d="M268 340 C 236 300, 300 268, 262 232 S 214 176, 262 140 S 318 82, 276 46 S 244 12, 262 0" fill="none" stroke="var(--tan)" stroke-width="9" stroke-linecap="round" opacity="0.85" />
+              <line data-bridge x1="214" y1="170" x2="318" y2="170" stroke="var(--ink)" stroke-width="3" stroke-dasharray="2 5" />
+              <text x="266" y="160" text-anchor="middle" font-size="10" letter-spacing="2" fill="var(--ink-muted)" font-family="ui-monospace, monospace">SORLIE BRIDGE · 1929</text>
+              <g data-pin><circle cx="140" cy="182" r="7" fill="var(--accent-primary)" /><circle class="pin-pulse" cx="140" cy="182" r="7" fill="none" stroke="var(--accent-primary)" /></g>
+              <text x="140" y="214" text-anchor="middle" font-size="13" letter-spacing="2" fill="var(--ink)" font-family="ui-monospace, monospace">GRAND FORKS, ND</text>
+              <g data-pin><circle cx="396" cy="160" r="7" fill="var(--accent-primary)" /><circle class="pin-pulse" cx="396" cy="160" r="7" fill="none" stroke="var(--accent-primary)" /></g>
+              <text x="396" y="192" text-anchor="middle" font-size="13" letter-spacing="2" fill="var(--ink)" font-family="ui-monospace, monospace">EAST GRAND FORKS, MN</text>
+              <text x="276" y="326" text-anchor="middle" font-size="10" letter-spacing="3" fill="var(--tan)" font-family="ui-monospace, monospace">RED RIVER ↑ N</text>
+            </svg>
+            <figcaption class="mt-2 text-xs text-ink-muted">Schematic, not to scale.</figcaption>
+          </figure>
+        </div>
+        <div data-fade class="md:col-span-6">
+          <p class="leading-relaxed text-ink-muted">Every neighborhood in Grand Forks, across the river into East Grand Forks, and out to Thompson, Manvel, Emerado and the base. Two jobs on the same street the same day get the neighbor credit. Anything farther out, ask and we’ll tell you straight.</p>
+          <ul class="mt-8 flex flex-wrap gap-2 text-sm">
+            {['Grand Forks, ND', 'East Grand Forks, MN', 'Thompson', 'Manvel', 'Emerado', 'Grand Forks AFB'].map((t) => (
+              <li class="rounded-full border border-border-hairline px-4 py-2">{t}</li>
+            ))}
+          </ul>
+          <a href="https://pickitupe.com/landlords" class="mt-8 block border border-border-hairline p-6 transition-colors hover:border-ink-muted">
+            <span class="font-mono text-[11px] uppercase tracking-[0.2em] text-tan">Landlords · managers · investors</span>
+            <span class="mt-2 block">Trash-outs between tenants, and extra units the same week cost less. →</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── FAQ ───────── -->
+    <section id="faq" class="border-t border-border-hairline px-[var(--gutter)] py-24 md:py-32">
+      <div class="mx-auto grid max-w-[1280px] gap-12 md:grid-cols-12">
+        <h2 data-reveal class="font-display text-[length:var(--text-h2)] leading-[1.02] tracking-[-0.015em] md:col-span-4">Fine print, in plain words.</h2>
+        <div class="border-t border-border-hairline md:col-span-8">
+          {faqs.map((f) => (
+            <details class="group border-b border-border-hairline">
+              <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-6 py-6 text-lg [&::-webkit-details-marker]:hidden">
+                {f.q}<span class="text-2xl leading-none text-ink-muted transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+              </summary>
+              <p class="max-w-2xl pb-6 leading-relaxed text-ink-muted">{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="border-t border-border-hairline bg-bg-stage px-[var(--gutter)] py-28 text-center md:py-40">
+      <h2 data-reveal class="mx-auto max-w-3xl font-display text-[length:var(--text-h2)] leading-[1.02] tracking-[-0.015em]">Point at the pile. <em class="text-tan">We’ll do the rest.</em></h2>
+      <div class="mt-10 flex flex-wrap justify-center gap-3">
+        <a href="https://pickitupe.com/call" class="inline-flex min-h-11 items-center rounded-full bg-accent-primary px-7 font-medium text-accent-ink">Book a pickup</a>
+        <a href={SMS_PHOTO} class="inline-flex min-h-11 items-center rounded-full border border-border-hairline px-6">Text a photo to {PHONE}</a>
+      </div>
+    </section>
+  </main>
+
+  <!-- Mobile action bar: slides in after the hero estimator, out of the way of it. -->
+  <div data-actionbar class="actionbar fixed inset-x-0 bottom-0 z-30 border-t border-border-hairline bg-bg-stage/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-sm md:hidden">
+    <div class="grid grid-cols-3 gap-2 text-sm">
+      <a href={PHONE_TEL} class="inline-flex min-h-12 items-center justify-center rounded-full border border-border-hairline">Call</a>
+      <a href={SMS_PHOTO} class="inline-flex min-h-12 items-center justify-center rounded-full border border-border-hairline">Text a photo</a>
+      <a data-size-book href={bookUrl(sizes[start].id)} class="inline-flex min-h-12 items-center justify-center rounded-full bg-accent-primary font-medium text-accent-ink">Book</a>
+    </div>
+  </div>
+
+  <footer class="border-t border-border-hairline bg-bg-stage px-[var(--gutter)] pb-28 pt-10 text-xs leading-relaxed text-ink-muted md:pb-10">
+    <div class="mx-auto grid max-w-[1280px] gap-4 md:grid-cols-2">
+      <p>Pick It Up E · Grand Forks, ND · {HOURS} · <a class="underline underline-offset-2 hover:text-ink" href={PHONE_TEL}>{PHONE}</a><br />3D preview build — booking links go to the live site.</p>
+      <p class="md:text-right">3D models, floor and HDRI: <a class="underline underline-offset-2 hover:text-ink" href="https://polyhaven.com">Poly Haven</a> (CC0).</p>
+    </div>
+  </footer>
+
+  <script>
+    import '../scripts/stage.ts';
+  </script>
+</Base>
