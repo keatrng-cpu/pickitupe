@@ -3,7 +3,7 @@
 Seasonal leaf cleanup and junk removal site for **Grand Forks, ND**.
 
 - Phone: [701-213-3969](tel:7012133969)
-- Offer: book by **September 20** for **20% off, up to $75**, on any job
+- Offer: the fall promo (book by October 10, 20% off up to $75) has ended. Winter focus is junk, appliances and estate cleanouts.
 - Rig: 2020 Sierra 1500. Marketing art is a vintage cream letterpress pickup.
 
 Live: [pickitupe.com](https://pickitupe.com)

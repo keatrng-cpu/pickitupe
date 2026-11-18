@@ -84,8 +84,10 @@ Do not add a second package manager. Do not rewrite the stack (TanStack Start + 
 - Motion: honor `prefers-reduced-motion`. Leaves freeze; haul scene parks mid-load.
 - Motion vocabulary (styles.css, one ease `--ease-out-soft`): PRINT (ticket feeds out), STAMP (HELD/DONE lands),
   REVEAL (`<Reveal>` sections rise once), ROLL (truck drives off the booked screen), plus a 220 ms router
-  cross-fade (`defaultViewTransition`) and a one-time hero entrance. All off under reduced motion. Don't add
-  scroll-position-driven motion.
+  cross-fade (`defaultViewTransition`) and a one-time hero entrance. All off under reduced motion.
+  Winter (owner, 2026-11-13): 3D truck hero, snow, a scroll road and a truck that drives "how it works".
+  Scroll-driven motion is CSS scroll timelines only — no JS scroll listeners, no pinning, no video scrubbing.
+  Loops obey the Pause snow toggle. See `src/components/CLAUDE.md` → Winter.
 - No emoji-as-icon, no Inter/Roboto, no purple gradients, no generic “AI startup” look
 - Copy: short, local, Grand Forks-specific. Don't restack the phone / 20% / $50 deposit on every block.
 

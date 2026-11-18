@@ -1,23 +1,33 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Home as HomeIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { FinePrint } from "@/components/fine-print";
-import { HaulVideo } from "@/components/haul-video";
-import { HousePacks } from "@/components/house-packs";
 import { QuickQuote } from "@/components/quick-quote";
 import { Reveal } from "@/components/reveal";
 import { ReviewStrip } from "@/components/review-strip";
 import { RateReel } from "@/components/rate-reel";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { StickyDock } from "@/components/sticky-dock";
+import { BeforeAfter } from "@/components/winter/before-after";
+import { CountUp } from "@/components/winter/count-up";
+import { HowItWorksRoad } from "@/components/winter/how-it-works";
+import { MotionToggle } from "@/components/winter/motion-toggle";
+import { Snowfall } from "@/components/winter/snowfall";
+import { TruckStage } from "@/components/winter/truck-stage";
 import { getOfferStatus } from "@/lib/bookings";
+import { DEPOSIT, ESTATE_TIERS, listedSizesFor } from "@/lib/pricebook";
 import { firstName, readLastBooking, type SavedBooking } from "@/lib/returning";
-import { faqJsonLd, localBusinessJsonLd, NEIGHBORHOODS, SITE_URL } from "@/lib/seo";
+import { DAILY_SLOTS } from "@/lib/schedule";
+import { faqJsonLd, localBusinessJsonLd, SITE_URL } from "@/lib/seo";
 
 const TITLE =
-  "Leaf Cleanup, Gutters & Junk Removal in Grand Forks, ND | Pick It Up E";
+  "Junk Removal, Appliance Pickup & Estate Cleanouts in Grand Forks, ND | Pick It Up E";
 const DESCRIPTION =
-  "Fall leaf & yard cleanup, gutter cleaning and junk hauling in Grand Forks and East Grand Forks. We rake, blow, and haul it — you never touch a bag. $50 on the card holds the day. 701-213-3969.";
+  "Junk, furniture and appliance removal plus whole-house and estate cleanouts in Grand Forks and East Grand Forks. Carried from the basement, price before you call, $50 holds the day. 701-213-3969.";
+
+/** From the pricebook, never typed: the "One piece" rung's low end. */
+const ONE_PIECE_FROM = listedSizesFor("junk-removal").find((s) => s.value === "single")?.range.low ?? 59;
+const money = (n: number) => `$${n.toLocaleString("en-US")}`;
 
 export const Route = createFileRoute("/")({
   loader: () => getOfferStatus(),
@@ -61,10 +71,14 @@ function Home() {
     <div className="page-home relative z-10 min-h-screen bg-bg text-fg">
       <SiteHeader />
       <main id="main">
-        <section className="hero-frame">
-          <HaulVideo />
-          <div className="hero-copy">
-            <div className="hero-enter mx-auto w-full max-w-6xl">
+        <section className="winter-hero">
+          <Snowfall />
+          <div className="winter-hero-grid mx-auto max-w-6xl px-4">
+            <div className="winter-hero-stage">
+              <TruckStage />
+              <MotionToggle className="absolute bottom-3 right-3 z-20" />
+            </div>
+            <div className="winter-hero-copy hero-enter">
               {last ? (
                 <Link
                   to="/call"
@@ -75,41 +89,99 @@ function Home() {
                   <ArrowRight className="size-4 shrink-0" />
                 </Link>
               ) : null}
-              <h1 className="mt-3 max-w-xl font-display text-5xl leading-[0.92] tracking-[-0.03em] sm:text-7xl lg:text-8xl">
-                <span className="kicker mb-3 block font-sans tracking-[0.14em]">Leaf cleanup &amp; junk hauling in Grand Forks</span>
+              <h1 className="font-display text-5xl leading-[0.92] tracking-[-0.03em] sm:text-7xl lg:text-[5.25rem]">
+                <span className="kicker mb-4 block font-sans tracking-[0.14em]">
+                  Junk, appliances &amp; cleanouts in Grand Forks
+                </span>
                 We haul it.
-                <span className="mt-1 block italic text-gold">You don't.</span>
+                <span className="mt-1 block italic text-gold">You don&apos;t.</span>
               </h1>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
+              <p className="mt-6 max-w-md text-base leading-7 text-fg/90">
+                Out of your house, not on the curb for the city truck. Carried from the basement. {money(DEPOSIT)} holds
+                the day.
+              </p>
+              <div className="mt-7 flex flex-wrap items-center gap-3">
                 <a
                   href="#haul"
                   className="btn-press inline-flex h-12 items-center gap-2 rounded-full bg-fg px-7 text-base font-medium text-ink hover:bg-gold"
                 >
-                  Get a number
+                  Price my junk
                   <ArrowRight className="size-4" />
                 </a>
-                <Link to="/call" className="text-sm text-fg/80 underline-offset-4 hover:text-gold hover:underline">
-                  Skip to booking
+                <Link
+                  to="/estate-cleanout-grand-forks"
+                  className="btn-press inline-flex h-12 items-center gap-2 rounded-full border border-border px-5 text-sm text-fg hover:bg-fg/8"
+                >
+                  <HomeIcon className="size-4 text-gold" />
+                  Estate cleanout
                 </Link>
               </div>
               {offer.active ? (
                 <p className="mt-4 text-xs text-fg/80">
-                  {Math.round(offer.percent * 100)}% off through {offer.deadlineLabel}, up to $
-                  {offer.cap}
+                  {Math.round(offer.percent * 100)}% off through {offer.deadlineLabel}, up to ${offer.cap}
                 </p>
-              ) : (
-                <p className="mt-4 text-xs text-fg/80">
-                  Book before the city vacuum. Same block, same day — neighbor credit. Floor holds.
-                </p>
-              )}
+              ) : null}
+              <dl className="hero-stats mt-8 grid max-w-md grid-cols-3 gap-3">
+                <div>
+                  <dt className="text-[0.68rem] uppercase tracking-widest text-muted">One piece from</dt>
+                  <dd className="mt-1 font-display text-3xl leading-none">
+                    <CountUp value={ONE_PIECE_FROM} prefix="$" />
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[0.68rem] uppercase tracking-widest text-muted">Holds the day</dt>
+                  <dd className="mt-1 font-display text-3xl leading-none">
+                    <CountUp value={DEPOSIT} prefix="$" />
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[0.68rem] uppercase tracking-widest text-muted">Hauls a weekday</dt>
+                  <dd className="mt-1 font-display text-3xl leading-none">
+                    <CountUp value={DAILY_SLOTS} />
+                  </dd>
+                </div>
+              </dl>
             </div>
           </div>
         </section>
 
         <QuickQuote />
-        <Reveal>
-          <HousePacks />
+
+        <HowItWorksRoad />
+
+        <Reveal as="section" className="section-y mx-auto max-w-6xl px-4">
+          <div aria-labelledby="estate-strip" className="grid items-start gap-8 lg:grid-cols-[1.05fr_1fr]">
+            <div>
+              <p className="kicker">Estate &amp; whole-house cleanouts</p>
+              <h2 id="estate-strip" className="mt-3 font-display text-3xl leading-none sm:text-4xl lg:text-5xl">
+                After the estate sale, we clear the rest.
+              </h2>
+              <p className="mt-4 max-w-xl text-base leading-7 text-fg/90">
+                Furniture, beds, appliances, boxes, the basement and the garage. Usable things go to donation, metal to
+                scrap, and the house is left broom-swept. Free walkthrough, then one fixed written price.
+              </p>
+              <ul className="mt-6 grid gap-2">
+                {ESTATE_TIERS.map((t) => (
+                  <li key={t.key} className="flex items-baseline justify-between gap-4 border-b border-border pb-2">
+                    <span className="text-sm text-fg/90">{t.label}</span>
+                    <span className="font-display text-xl tabular-nums text-gold">
+                      {money(t.range.low)}–{money(t.range.high)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                to="/estate-cleanout-grand-forks"
+                className="btn-press mt-6 inline-flex h-12 items-center gap-2 rounded-full bg-fg px-6 text-sm font-medium text-ink hover:bg-gold"
+              >
+                Book a free walkthrough
+                <ArrowRight className="size-4" />
+              </Link>
+            </div>
+            <BeforeAfter />
+          </div>
         </Reveal>
+
         <Reveal>
           <RateReel />
         </Reveal>
@@ -117,33 +189,26 @@ function Home() {
 
         <Reveal as="section" className="mx-auto max-w-6xl px-4 py-8">
           <div aria-labelledby="where-we-work">
-          <p className="kicker">Where we work</p>
-          <h2 id="where-we-work" className="mt-3 font-display text-3xl leading-none sm:text-4xl">
-            Grand Forks and East Grand Forks, one truck, on your street.
-          </h2>
-          <p className="mt-4 max-w-3xl text-sm leading-6 text-fg/90">
-            The fall route runs the older canopy first — {NEIGHBORHOODS.slice(0, -1).join(", ")} and {NEIGHBORHOODS[NEIGHBORHOODS.length - 1]} — then
-            south of 32nd Avenue and across the river into East Grand Forks. Same street, same day gets the neighbor credit. Thompson, Manvel,
-            Emerado and the base are in the service area; anything farther out, ask and we&apos;ll tell you straight.
-          </p>
+            <p className="kicker">Where we work</p>
+            <h2 id="where-we-work" className="mt-3 font-display text-3xl leading-none sm:text-4xl">
+              Grand Forks and East Grand Forks, one truck, all winter.
+            </h2>
+            <p className="mt-4 max-w-3xl text-sm leading-6 text-fg/90">
+              Every neighborhood in Grand Forks, across the river into East Grand Forks, and out to Thompson, Manvel,
+              Emerado and the base. Two jobs on the same street the same day get the neighbor credit. Anything farther
+              out, ask and we&apos;ll tell you straight.
+            </p>
           </div>
         </Reveal>
 
         <Reveal as="section" className="mx-auto max-w-6xl px-4 py-8">
-          <Link
-            to="/landlords"
-            className="landlord-strip card-green block overflow-hidden rounded-2xl"
-          >
-            <HaulVideo
-              src="/haul-complex.mp4?v=5"
-              poster="/haul-complex-poster.jpg?v=5"
-              fillClass="hero-fill-complex"
-            />
+          <Link to="/landlords" className="landlord-strip winter-strip card-green block overflow-hidden rounded-2xl">
+            <Snowfall className="snowfall-soft" />
             <div className="relative z-10 flex items-end justify-between gap-4 p-5 sm:p-8">
               <div>
                 <p className="kicker">Landlords · managers · investors</p>
                 <p className="mt-2 max-w-xl font-display text-2xl sm:text-3xl">
-                  Turn the unit, keep the rent coming. Extra addresses the same week cost less.
+                  December semester turns. Trash-outs between tenants, and extra units the same week cost less.
                 </p>
               </div>
               <ArrowRight className="size-5 shrink-0 text-gold" />

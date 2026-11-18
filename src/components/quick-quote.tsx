@@ -18,14 +18,15 @@ const JOBS: {
   label: string;
   icon: ReactNode;
 }[] = [
-  { value: "leaf-cleanup", label: "Leaves", icon: <Leaf className="size-6" /> },
+  // Winter order: junk first, leaves last (spring).
   { value: "junk-removal", label: "Junk", icon: <Trash2 className="size-6" /> },
   { value: "gutter-cleaning", label: "Gutters", icon: <Droplets className="size-6" /> },
+  { value: "leaf-cleanup", label: "Leaves", icon: <Leaf className="size-6" /> },
 ];
 
 export function QuickQuote() {
-  const [service, setService] = useState<ServiceKey>("leaf-cleanup");
-  const [size, setSize] = useState("medium");
+  const [service, setService] = useState<ServiceKey>("junk-removal");
+  const [size, setSize] = useState("single");
   const [allSizes, setAllSizes] = useState(false);
   const [addOns, setAddOns] = useState<AddOnKey[]>([]);
   const sizes = allSizes ? listedSizesFor(service) : featuredSizesFor(service);
@@ -91,6 +92,14 @@ export function QuickQuote() {
           );
         })}
       </div>
+
+      <Link
+        to="/estate-cleanout-grand-forks"
+        className="mt-3 inline-flex items-center gap-1.5 text-sm text-fg/85 underline-offset-4 hover:text-gold hover:underline"
+      >
+        Whole house or an estate? Free walkthrough
+        <ArrowRight className="size-3.5" />
+      </Link>
 
       <p className="mt-8 text-xs font-medium uppercase tracking-widest text-gold">
         {sizeHeading}

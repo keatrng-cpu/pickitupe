@@ -11,10 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as ApplianceRemovalGrandForksRouteImport } from './routes/appliance-removal-grand-forks'
 import { Route as BookRouteImport } from './routes/book'
 import { Route as CallRouteImport } from './routes/call'
 import { Route as CrewRouteImport } from './routes/crew'
 import { Route as EastGrandForksRouteImport } from './routes/east-grand-forks'
+import { Route as EstateCleanoutGrandForksRouteImport } from './routes/estate-cleanout-grand-forks'
 import { Route as GutterCleaningGrandForksRouteImport } from './routes/gutter-cleaning-grand-forks'
 import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as JunkRemovalGrandForksRouteImport } from './routes/junk-removal-grand-forks'
@@ -22,6 +24,7 @@ import { Route as LandlordsRouteImport } from './routes/landlords'
 import { Route as LeafCleanupGrandForksRouteImport } from './routes/leaf-cleanup-grand-forks'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PlanRouteImport } from './routes/plan'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as ReviewsRouteImport } from './routes/reviews'
 import { Route as StatusRouteImport } from './routes/status'
 import { Route as JobsIdRouteImport } from './routes/jobs_.$id'
@@ -51,6 +54,12 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApplianceRemovalGrandForksRoute =
+  ApplianceRemovalGrandForksRouteImport.update({
+    id: '/appliance-removal-grand-forks',
+    path: '/appliance-removal-grand-forks',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const BookRoute = BookRouteImport.update({
   id: '/book',
   path: '/book',
@@ -71,6 +80,12 @@ const EastGrandForksRoute = EastGrandForksRouteImport.update({
   path: '/east-grand-forks',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EstateCleanoutGrandForksRoute =
+  EstateCleanoutGrandForksRouteImport.update({
+    id: '/estate-cleanout-grand-forks',
+    path: '/estate-cleanout-grand-forks',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const GutterCleaningGrandForksRoute =
   GutterCleaningGrandForksRouteImport.update({
     id: '/gutter-cleaning-grand-forks',
@@ -105,6 +120,11 @@ const LoginRoute = LoginRouteImport.update({
 const PlanRoute = PlanRouteImport.update({
   id: '/plan',
   path: '/plan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReviewsRoute = ReviewsRouteImport.update({
@@ -201,10 +221,12 @@ const ApiVoiceVoicemailRoute = ApiVoiceVoicemailRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/appliance-removal-grand-forks': typeof ApplianceRemovalGrandForksRoute
   '/book': typeof BookRoute
   '/call': typeof CallRoute
   '/crew': typeof CrewRoute
   '/east-grand-forks': typeof EastGrandForksRoute
+  '/estate-cleanout-grand-forks': typeof EstateCleanoutGrandForksRoute
   '/gutter-cleaning-grand-forks': typeof GutterCleaningGrandForksRoute
   '/jobs': typeof JobsRoute
   '/junk-removal-grand-forks': typeof JunkRemovalGrandForksRoute
@@ -212,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/leaf-cleanup-grand-forks': typeof LeafCleanupGrandForksRoute
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
+  '/pricing': typeof PricingRoute
   '/reviews': typeof ReviewsRoute
   '/status': typeof StatusRoute
   '/jobs/$id': typeof JobsIdRoute
@@ -234,10 +257,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/appliance-removal-grand-forks': typeof ApplianceRemovalGrandForksRoute
   '/book': typeof BookRoute
   '/call': typeof CallRoute
   '/crew': typeof CrewRoute
   '/east-grand-forks': typeof EastGrandForksRoute
+  '/estate-cleanout-grand-forks': typeof EstateCleanoutGrandForksRoute
   '/gutter-cleaning-grand-forks': typeof GutterCleaningGrandForksRoute
   '/jobs': typeof JobsRoute
   '/junk-removal-grand-forks': typeof JunkRemovalGrandForksRoute
@@ -245,6 +270,7 @@ export interface FileRoutesByTo {
   '/leaf-cleanup-grand-forks': typeof LeafCleanupGrandForksRoute
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
+  '/pricing': typeof PricingRoute
   '/reviews': typeof ReviewsRoute
   '/status': typeof StatusRoute
   '/jobs/$id': typeof JobsIdRoute
@@ -268,10 +294,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/appliance-removal-grand-forks': typeof ApplianceRemovalGrandForksRoute
   '/book': typeof BookRoute
   '/call': typeof CallRoute
   '/crew': typeof CrewRoute
   '/east-grand-forks': typeof EastGrandForksRoute
+  '/estate-cleanout-grand-forks': typeof EstateCleanoutGrandForksRoute
   '/gutter-cleaning-grand-forks': typeof GutterCleaningGrandForksRoute
   '/jobs': typeof JobsRoute
   '/junk-removal-grand-forks': typeof JunkRemovalGrandForksRoute
@@ -279,6 +307,7 @@ export interface FileRoutesById {
   '/leaf-cleanup-grand-forks': typeof LeafCleanupGrandForksRoute
   '/login': typeof LoginRoute
   '/plan': typeof PlanRoute
+  '/pricing': typeof PricingRoute
   '/reviews': typeof ReviewsRoute
   '/status': typeof StatusRoute
   '/jobs_/$id': typeof JobsIdRoute
@@ -303,10 +332,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/appliance-removal-grand-forks'
     | '/book'
     | '/call'
     | '/crew'
     | '/east-grand-forks'
+    | '/estate-cleanout-grand-forks'
     | '/gutter-cleaning-grand-forks'
     | '/jobs'
     | '/junk-removal-grand-forks'
@@ -314,6 +345,7 @@ export interface FileRouteTypes {
     | '/leaf-cleanup-grand-forks'
     | '/login'
     | '/plan'
+    | '/pricing'
     | '/reviews'
     | '/status'
     | '/jobs/$id'
@@ -336,10 +368,12 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/appliance-removal-grand-forks'
     | '/book'
     | '/call'
     | '/crew'
     | '/east-grand-forks'
+    | '/estate-cleanout-grand-forks'
     | '/gutter-cleaning-grand-forks'
     | '/jobs'
     | '/junk-removal-grand-forks'
@@ -347,6 +381,7 @@ export interface FileRouteTypes {
     | '/leaf-cleanup-grand-forks'
     | '/login'
     | '/plan'
+    | '/pricing'
     | '/reviews'
     | '/status'
     | '/jobs/$id'
@@ -369,10 +404,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/appliance-removal-grand-forks'
     | '/book'
     | '/call'
     | '/crew'
     | '/east-grand-forks'
+    | '/estate-cleanout-grand-forks'
     | '/gutter-cleaning-grand-forks'
     | '/jobs'
     | '/junk-removal-grand-forks'
@@ -380,6 +417,7 @@ export interface FileRouteTypes {
     | '/leaf-cleanup-grand-forks'
     | '/login'
     | '/plan'
+    | '/pricing'
     | '/reviews'
     | '/status'
     | '/jobs_/$id'
@@ -403,10 +441,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  ApplianceRemovalGrandForksRoute: typeof ApplianceRemovalGrandForksRoute
   BookRoute: typeof BookRoute
   CallRoute: typeof CallRoute
   CrewRoute: typeof CrewRoute
   EastGrandForksRoute: typeof EastGrandForksRoute
+  EstateCleanoutGrandForksRoute: typeof EstateCleanoutGrandForksRoute
   GutterCleaningGrandForksRoute: typeof GutterCleaningGrandForksRoute
   JobsRoute: typeof JobsRoute
   JunkRemovalGrandForksRoute: typeof JunkRemovalGrandForksRoute
@@ -414,6 +454,7 @@ export interface RootRouteChildren {
   LeafCleanupGrandForksRoute: typeof LeafCleanupGrandForksRoute
   LoginRoute: typeof LoginRoute
   PlanRoute: typeof PlanRoute
+  PricingRoute: typeof PricingRoute
   ReviewsRoute: typeof ReviewsRoute
   StatusRoute: typeof StatusRoute
   JobsIdRoute: typeof JobsIdRoute
@@ -450,6 +491,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/appliance-removal-grand-forks': {
+      id: '/appliance-removal-grand-forks'
+      path: '/appliance-removal-grand-forks'
+      fullPath: '/appliance-removal-grand-forks'
+      preLoaderRoute: typeof ApplianceRemovalGrandForksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/book': {
       id: '/book'
       path: '/book'
@@ -476,6 +524,13 @@ declare module '@tanstack/react-router' {
       path: '/east-grand-forks'
       fullPath: '/east-grand-forks'
       preLoaderRoute: typeof EastGrandForksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/estate-cleanout-grand-forks': {
+      id: '/estate-cleanout-grand-forks'
+      path: '/estate-cleanout-grand-forks'
+      fullPath: '/estate-cleanout-grand-forks'
+      preLoaderRoute: typeof EstateCleanoutGrandForksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/gutter-cleaning-grand-forks': {
@@ -525,6 +580,13 @@ declare module '@tanstack/react-router' {
       path: '/plan'
       fullPath: '/plan'
       preLoaderRoute: typeof PlanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reviews': {
@@ -659,10 +721,12 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  ApplianceRemovalGrandForksRoute: ApplianceRemovalGrandForksRoute,
   BookRoute: BookRoute,
   CallRoute: CallRoute,
   CrewRoute: CrewRoute,
   EastGrandForksRoute: EastGrandForksRoute,
+  EstateCleanoutGrandForksRoute: EstateCleanoutGrandForksRoute,
   GutterCleaningGrandForksRoute: GutterCleaningGrandForksRoute,
   JobsRoute: JobsRoute,
   JunkRemovalGrandForksRoute: JunkRemovalGrandForksRoute,
@@ -670,6 +734,7 @@ const rootRouteChildren: RootRouteChildren = {
   LeafCleanupGrandForksRoute: LeafCleanupGrandForksRoute,
   LoginRoute: LoginRoute,
   PlanRoute: PlanRoute,
+  PricingRoute: PricingRoute,
   ReviewsRoute: ReviewsRoute,
   StatusRoute: StatusRoute,
   JobsIdRoute: JobsIdRoute,
