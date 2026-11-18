@@ -19,17 +19,25 @@ const ITEMS: Item[] = [
   { m: 'bag', pos: [0.5, 0, 1.08], rot: [0, 1.7, 0], sets: [0, 4, 5] },
   { m: 'box', pos: [-0.25, 0, 1.02], rot: [0, 0.25, 0], sets: [0, 3, 4, 5] },
   { m: 'box', pos: [-0.27, 0.34, 1.0], rot: [0, 0.62, 0], sets: [3, 4, 5] },
-  { m: 'tyre', pos: [1.32, 0.3, -0.72], rot: [0, 0.4, 0], sets: [4, 5] },
-  { m: 'tyre', pos: [1.95, 0.08, -0.15], rot: [Math.PI / 2, 0, 0.3], sets: [4, 5] },
+  { m: 'tyre', pos: [1.32, 0, -0.72], rot: [0, 0.4, 0], sets: [4, 5] },
+  { m: 'tyre', pos: [1.95, 0, -0.15], rot: [0, 1.1, 0], sets: [4, 5] },
   { m: 'box', pos: [-1.3, 0, 0.2], rot: [0, -0.35, 0], sets: [4, 5] },
   { m: 'box', pos: [-1.28, 0.34, 0.22], rot: [0, 0.1, 0], sets: [5] },
   { m: 'sofa', pos: [0.35, 0, -1.5], rot: [0, -0.25, 0], sets: [5] },
   { m: 'cabinet', pos: [-2.55, 0, 0.45], rot: [0, 1.3, 0], sets: [5] },
   { m: 'bag', pos: [-1.95, 0, 1.05], rot: [0, 2.4, 0], sets: [5] },
   { m: 'dolly', pos: [2.45, 0, 0.95], rot: [0, -0.85, 0], tool: 'always' },
-  { m: 'broom', pos: [1.85, 0.12, 1.35], rot: [0, -0.6, 0.22], tool: 'gone' },
+  { m: 'broom', pos: [1.85, 0, 1.35], rot: [0, -0.6, 0.12], tool: 'gone' },
 ];
 const PILE_COUNT = (size: number) => ITEMS.filter((i) => i.sets?.includes(size)).length;
+/** Photoscans are close to life. The sofa is 1.81 m; a full sofa is 2.1 m. The TV scan is a 40 cm set. */
+const FIT: Partial<Record<ModelKey, number>> = { sofa: 2.1 / 1.81, tv: 0.8 / 0.4 };
+/** Open side of the room is +X. Carried pieces travel out that way instead of shrinking in place. */
+function bedSlot(i: number): [number, number, number] {
+  const col = i % 3;
+  const row = Math.floor(i / 3) % 3;
+  return [3.4 + col * 0.45, 0, -0.4 + row * 0.55];
+}
 
 /* The room: back wall at z = -3.4 with a high basement window; one bare-bulb shop lamp over the pile. */
 const WALL_Z = -3.4;
@@ -144,10 +152,12 @@ function Pile({ onReady, hd }: { onReady: () => void; hd: boolean }) {
         const m = mesh.material as THREE.MeshStandardMaterial;
         if (m.map) { m.map.colorSpace = THREE.SRGBColorSpace; m.map.anisotropy = hd ? 8 : 4; }
       });
+      const fit = FIT[it.m] ?? 1;
+      obj.scale.setScalar(fit);
       obj.rotation.set(...it.rot);
       obj.position.set(it.pos[0], it.pos[1], it.pos[2]);
       seat(obj, it.pos[1]);
-      return { it, obj, a: 0, i, baseY: obj.position.y };
+      return { it, obj, a: 0, i, baseY: obj.position.y, fit };
     });
   }, [gltfs, hd]);
 
@@ -180,12 +190,14 @@ function Pile({ onReady, hd }: { onReady: () => void; hd: boolean }) {
       const leaving = want === 0 && stage.gone > 0.02 && !it.tool;
       node.a += (want - node.a) * (1 - Math.exp(-dt * (reduced ? 30 : leaving ? 9 : 6.5)));
       const a = node.a, out = 1 - a;
-      obj.visible = a > 0.02;
-      obj.position.x = it.pos[0] + (leaving ? smooth(out) * 2.8 : 0);
-      obj.position.z = it.pos[2];
-      obj.position.y = node.baseY + (leaving ? Math.sin(Math.min(out, 1) * Math.PI) * 0.35 : out * 0.9);
-      obj.rotation.set(it.rot[0], it.rot[1], it.rot[2]);
-      obj.scale.setScalar(leaving ? smooth(a) : lerp(0.82, 1, smooth(a)));
+      const ride = leaving ? smooth(Math.min(out, 1)) : 0;
+      const slot = bedSlot(node.i);
+      obj.visible = (inPile && ride < 0.98) || (!inPile && a > 0.02);
+      obj.position.x = it.pos[0] + (slot[0] - it.pos[0]) * ride;
+      obj.position.z = it.pos[2] + (slot[2] - it.pos[2]) * ride;
+      obj.position.y = node.baseY + (leaving ? Math.sin(ride * Math.PI) * 0.45 : out * 0.15);
+      obj.rotation.set(it.rot[0], it.rot[1] + ride * 0.6, it.rot[2]);
+      obj.scale.setScalar((inPile ? 1 : smooth(a)) * node.fit);
       // Frame the pile; once it's nearly gone, frame what's left (the tools on the swept floor).
       const w = it.tool ? (stage.gone > 0.7 ? 1.2 : 0.05) * a : a;
       if (w > 0.02) { tmp.c.x += it.pos[0] * w; tmp.c.z += it.pos[2] * w; wsum += w; }

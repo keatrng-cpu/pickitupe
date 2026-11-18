@@ -65,6 +65,7 @@ export function appNameFromHost(hostHeader) {
     .trim()
     .split(":")[0]
     .toLowerCase();
+  if (host === "pickitupe.com" || host === "www.pickitupe.com") return "Pick It Up E";
   if (!host.endsWith(".grok.me")) {
     return DEFAULT_APP_NAME;
   }
@@ -141,7 +142,9 @@ export function renderInstallPageHtml(template, { host, url } = {}) {
 }
 
 export function renderWebManifest(hostHeader) {
+  const host = String(hostHeader ?? "").split(",")[0].trim().split(":")[0].toLowerCase();
   const name = appNameFromHost(hostHeader);
+  const branded = host === "pickitupe.com" || host === "www.pickitupe.com";
   return JSON.stringify(
     {
       name,
@@ -150,14 +153,12 @@ export function renderWebManifest(hostHeader) {
       start_url: "/",
       scope: "/",
       display: "standalone",
-      background_color: "#000000",
-      theme_color: "#000000",
+      background_color: branded ? "#064e2a" : "#000000",
+      theme_color: branded ? "#064e2a" : "#000000",
       icons: [
-        {
-          src: "/__grok/icon-180.png",
-          sizes: "180x180",
-          type: "image/png",
-        },
+        branded
+          ? { src: "/logo.png", sizes: "any", type: "image/png", purpose: "any" }
+          : { src: "/__grok/icon-180.png", sizes: "180x180", type: "image/png" },
       ],
     },
     null,
