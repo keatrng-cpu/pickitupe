@@ -1,21 +1,17 @@
 # NOW — pickitupe current truth
 
-**As of:** 2026-11-18 · winter stack reviewed and a scroll integration is on `cursor/winter-scroll-a1d6`.
-
-> Keep under 150 lines. Current truth only; history goes in `ai/DECISIONS.md`.
+**As of:** 2026-11-18 · 3D garage hero is the homepage on `cursor/haul-3d-a1d6`.
 
 ## Goal
-Winter site is junk-first, with landfill-aware hours, and one green work truck (the Higgsfield loop and cutouts). The cream mark stays the logo only.
+Winter site stays junk-first. The homepage hero is the 3D basement and a forest-green CC0 crew-cab, not the Higgsfield loop.
 
 ## In flight
-- PR 9 hours, PR 10 winter pages, PR 11 phone/print/slider, PR 12 count-up fix: reviewed GO. Merge 9 → 10 → 11 → 12, then the scroll integration.
-- Integration: hero loop in `MEDIA.heroLoop` (poster is LCP, video attaches after first paint, 9:16 source on phones), snow/confetti overlay, estate before/after stills plus a play-once clip, green cutout on the how-it-works road, nav micros. 3D hero stays off so it does not load beside the loop.
+- Backup of the previous main: `backup/pre-3d-20261118` at `8a7f9866`.
+- Home: poster is LCP, canvas is lazy, Lenis does not capture touch, prices and phone come from the pricebook and `site-phone.ts`.
 
-## Known facts / constraints
-- Backup of pre-winter main: `backup/pre-scroll-anim-20261113` at `27b6d381`.
-- Site phone is still `701-213-3969` via `src/lib/site-phone.ts`. Print stays unready until `NEW_LINE_DIGITS` is set.
-- Estate ranges live in `ESTATE_TIERS` (winter plan). Existing haul rates are unchanged.
-- Hero counters read pricebook/schedule values only (`$59`, `$50`, `4`). Count-up cannot go negative.
-- Do not present the estate stills as a customer's job. Caption says the walkthrough sets the price.
-- `prefers-reduced-motion` and the Pause snow toggle keep stills. No video seeking.
-- Lighthouse mobile on the production preview: perf 96, LCP 2.3s, CLS ~0.001. Live baseline before this work was perf 89, LCP 3.3s, CLS 0.
+## Known facts
+- Site phone remains `701-213-3969`. Hours remain Mon–Fri 9:30–5:30, Sat 12–4. Deposit remains $50.
+- Full truck is still `$175–$265`. Estate tiers are unchanged.
+- Truck file and license: `public/models/TRUCK.md`.
+- Other routes, `/call`, Stripe, and the webhook are untouched.
+- Live Lighthouse before this change: perf 96, LCP 2.4s, CLS 0.001.

@@ -29,14 +29,4 @@ export const MEDIA: {
   hero3D: boolean;
 } = {
   hero3D: false,
-  heroLoop: {
-    mp4: "/anim/hero-16-9.mp4",
-    webm: "/anim/hero-16-9.webm",
-    poster: "/anim/hero-16-9-poster.webp",
-    narrow: {
-      mp4: "/anim/hero-9-16.mp4",
-      webm: "/anim/hero-9-16.webm",
-      poster: "/anim/hero-9-16-poster.webp",
-    },
-  },
 };

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ElementType, type ReactNode } from "react";
+import { createElement, useEffect, useRef, type ElementType, type ReactNode } from "react";
 
 /**
  * Rise-into-view for a section, once.
@@ -48,9 +48,5 @@ export function Reveal({
     return () => io.disconnect();
   }, [delay]);
 
-  return (
-    <Tag ref={ref} className={className}>
-      {children}
-    </Tag>
-  );
+  return createElement(Tag, { ref, className }, children);
 }
