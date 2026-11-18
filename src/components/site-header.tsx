@@ -3,6 +3,7 @@ import { Menu, Phone, X } from "lucide-react";
 import { useState } from "react";
 import { HashScroll, scrollToHash } from "@/components/hash-scroll";
 import { HaulTicker } from "@/components/haul-ticker";
+import { BookMicro, MarkPuff } from "@/components/winter/nav-micro";
 import { ScrollRoad } from "@/components/winter/scroll-road";
 import { SignedIn, SignedOut, UserButton } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -110,7 +111,9 @@ export function SiteHeader() {
       </a>
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
         <Link to="/" className="flex items-center gap-2.5 text-fg">
-          <Mark />
+          <MarkPuff>
+            <Mark />
+          </MarkPuff>
           <span className="font-display text-lg tracking-wide">Pick It Up E</span>
         </Link>
 
@@ -144,9 +147,11 @@ export function SiteHeader() {
             <Phone className="size-4" />
             {PHONE}
           </a>
-          <Button asChild size="md" variant="cream">
-            <Link to="/call">{pathname === "/call" ? "On the line" : "Book"}</Link>
-          </Button>
+          <BookMicro>
+            <Button asChild size="md" variant="cream">
+              <Link to="/call">{pathname === "/call" ? "On the line" : "Book"}</Link>
+            </Button>
+          </BookMicro>
           {isPending ? (
             <div className="size-8 animate-pulse rounded-full bg-fg/10" aria-hidden="true" />
           ) : (

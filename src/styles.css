@@ -1735,4 +1735,107 @@ html[data-motion="paused"] .truck-stage-svg {
   .truck-stage-canvas {
     transition: none;
   }
+  .snow-loop,
+  .book-drive {
+    display: none !important;
+  }
+}
+
+.truck-stage-poster picture {
+  position: absolute;
+  inset: 0;
+}
+
+.truck-stage-still {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 767px) {
+  /* 9:16 source, cropped into a card that still leaves the headline above the dock. */
+  .winter-hero-stage:has(.truck-stage-loop) {
+    aspect-ratio: 4 / 5;
+  }
+}
+
+.snow-loop {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.62;
+}
+
+.snow-loop video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.road-truck {
+  height: auto;
+}
+
+.finale-still {
+  margin: 0 auto;
+  max-width: 72rem;
+  padding: 0 1rem 2.5rem;
+  pointer-events: none;
+}
+
+.finale-still img,
+.clearout-clip img,
+.clearout-clip video {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1920 / 1085;
+  object-fit: cover;
+  border-radius: 1rem;
+}
+
+.clearout-clip {
+  position: relative;
+  margin-top: 0.75rem;
+  pointer-events: none;
+}
+
+.clearout-clip video {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}
+
+.mark-slot,
+.book-micro {
+  position: relative;
+  display: inline-flex;
+}
+
+.mark-puff,
+.book-lights,
+.book-drive {
+  position: absolute;
+  z-index: 2;
+  width: 4.5rem;
+  height: 4.5rem;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.mark-puff {
+  left: 60%;
+  top: 30%;
+  transform: translate(-50%, -70%);
+}
+
+.book-lights {
+  left: 10%;
+  top: 40%;
+  transform: translate(-30%, -80%);
+}
+
+.book-drive {
+  right: 0;
+  bottom: 100%;
 }

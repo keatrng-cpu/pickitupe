@@ -47,7 +47,21 @@ export const Route = createFileRoute("/")({
       { name: "geo.region", content: "US-ND" },
       { name: "geo.placename", content: "Grand Forks" },
     ],
-    links: [{ rel: "canonical", href: SITE_URL }],
+    links: [
+      { rel: "canonical", href: SITE_URL },
+      {
+        rel: "preload",
+        as: "image",
+        href: "/anim/hero-9-16-poster.webp",
+        media: "(max-width: 767px)",
+      },
+      {
+        rel: "preload",
+        as: "image",
+        href: "/anim/hero-16-9-poster.webp",
+        media: "(min-width: 768px)",
+      },
+    ],
     scripts: [
       {
         type: "application/ld+json",
@@ -181,7 +195,11 @@ function Home() {
                 <ArrowRight className="size-4" />
               </Link>
             </div>
-            <BeforeAfter />
+            <BeforeAfter
+              before={{ src: "/anim/estate-before.webp", alt: "Room before the clear-out" }}
+              after={{ src: "/anim/estate-after.webp", alt: "The same room after the clear-out" }}
+              caption="Reference clear-out. The walkthrough sets the price, not this picture."
+            />
           </div>
         </Reveal>
 
@@ -226,6 +244,16 @@ function Home() {
           <FinePrint />
         </Reveal>
       </main>
+      <figure className="finale-still" aria-hidden="true">
+        <img
+          src="/anim/finale-dropoff.webp"
+          alt=""
+          width={1920}
+          height={1085}
+          loading="lazy"
+          decoding="async"
+        />
+      </figure>
       <SiteFooter />
       <StickyDock />
     </div>

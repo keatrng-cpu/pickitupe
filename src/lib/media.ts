@@ -10,16 +10,33 @@
  * Brand loops only. Never put AI footage in a slot that reads as proof of a
  * real job (before/after, "our crew", customer homes) — those are real photos.
  */
-export type VideoSlot = { mp4: string; webm?: string; poster: string };
+export type VideoSlot = {
+  mp4: string;
+  webm?: string;
+  poster: string;
+  /** Phone crop. Used under `(max-width: 767px)` so a 16:9 loop is not letterboxed onto a tall stage. */
+  narrow?: { mp4: string; webm?: string; poster: string };
+};
 
 export const MEDIA: {
-  /** Home hero: a rendered loop. 4:3, 5–10 s, start frame = end frame. Wins over everything below. */
+  /** Home hero: a rendered loop. Wins over the SVG and the 3D scene. */
   heroLoop?: VideoSlot;
   /**
-   * The procedural three.js truck (winter/truck-scene.ts). Off since Nov 13:
-   * the owner asked for a classier truck, and the illustrated vintage pickup
-   * (truck-art.ts) reads that way; the blocky 3D model didn't. Flip to true
-   * to bring it back — nothing else changes.
+   * The procedural three.js truck (winter/truck-scene.ts). Off while a
+   * hero loop is set — the loop is the same truck, and loading both fights
+   * the poster LCP. Flip to true only when heroLoop is empty.
    */
   hero3D: boolean;
-} = { hero3D: false };
+} = {
+  hero3D: false,
+  heroLoop: {
+    mp4: "/anim/hero-16-9.mp4",
+    webm: "/anim/hero-16-9.webm",
+    poster: "/anim/hero-16-9-poster.webp",
+    narrow: {
+      mp4: "/anim/hero-9-16.mp4",
+      webm: "/anim/hero-9-16.webm",
+      poster: "/anim/hero-9-16-poster.webp",
+    },
+  },
+};

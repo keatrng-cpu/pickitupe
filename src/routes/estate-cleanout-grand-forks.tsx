@@ -3,7 +3,7 @@ import { ArrowRight, Camera, ClipboardCheck, Home, MessageSquareText, Phone, Spa
 import { Block, type Faq } from "@/components/service-page";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { StickyDock } from "@/components/sticky-dock";
-import { BeforeAfter } from "@/components/winter/before-after";
+import { BeforeAfter, ClearoutClip } from "@/components/winter/before-after";
 import { Snowfall } from "@/components/winter/snowfall";
 import { TruckSvg } from "@/components/winter/truck-svg";
 import { ESTATE_TIERS, REFUSED } from "@/lib/pricebook";
@@ -179,7 +179,12 @@ function EstatePage() {
         </section>
 
         <section className="mx-auto max-w-3xl px-4 py-8">
-          <BeforeAfter />
+          <BeforeAfter
+            before={{ src: "/anim/estate-before.webp", alt: "Room before the clear-out" }}
+            after={{ src: "/anim/estate-after.webp", alt: "The same room after the clear-out" }}
+            caption="Reference clear-out. The walkthrough sets the price, not this picture."
+          />
+          <ClearoutClip />
         </section>
 
         <article className="service-body mx-auto max-w-6xl px-4 py-6">

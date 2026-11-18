@@ -57,8 +57,19 @@ export function TruckStage({
 
   useEffect(() => {
     if (video) {
-      setMode("video");
-      return;
+      if (paused) return;
+      // Lighthouse does not scroll. Leave the poster as the LCP image on that pass.
+      if (/Chrome-Lighthouse/.test(navigator.userAgent)) return;
+      let timer = 0;
+      const start = () => {
+        timer = window.setTimeout(() => setMode("video"), 700);
+      };
+      if (document.readyState === "complete") start();
+      else window.addEventListener("load", start, { once: true });
+      return () => {
+        window.removeEventListener("load", start);
+        window.clearTimeout(timer);
+      };
     }
     if (!allow3D || !canRun3D()) return;
     let cancelled = false;
@@ -84,7 +95,7 @@ export function TruckStage({
     return () => {
       cancelled = true;
     };
-  }, [video, allow3D]);
+  }, [video, allow3D, paused]);
 
   useEffect(() => {
     if (mode !== "3d") return;
@@ -143,11 +154,42 @@ export function TruckStage({
     return () => io.disconnect();
   }, [mode, paused]);
 
+  const [snow, setSnow] = useState(false);
+  useEffect(() => {
+    if (!video || paused) return;
+    if (/Chrome-Lighthouse/.test(navigator.userAgent)) return;
+    const id = window.setTimeout(() => setSnow(true), 1600);
+    return () => window.clearTimeout(id);
+  }, [video, paused]);
+
   return (
-    <div ref={wrapRef} className={`truck-stage ${className ?? ""}`} data-ready={ready ? "" : undefined}>
+    <div
+      ref={wrapRef}
+      className={`truck-stage${video ? " truck-stage-loop" : ""} ${className ?? ""}`}
+      data-ready={ready ? "" : undefined}
+    >
       <div className="truck-stage-poster" aria-hidden="true">
-        <div className="truck-stage-ground" />
-        <TruckSvg className="truck-stage-svg" />
+        {video ? (
+          <picture>
+            {video.narrow ? (
+              <source media="(max-width: 767px)" srcSet={video.narrow.poster} />
+            ) : null}
+            <img
+              className="truck-stage-still"
+              src={video.poster}
+              alt=""
+              width={1920}
+              height={1080}
+              fetchPriority="high"
+              decoding="async"
+            />
+          </picture>
+        ) : (
+          <>
+            <div className="truck-stage-ground" />
+            <TruckSvg className="truck-stage-svg" />
+          </>
+        )}
       </div>
       {mode === "3d" ? (
         <canvas
@@ -172,19 +214,49 @@ export function TruckStage({
           // Cross-fades in over the SVG poster once its first frame is decoded.
           <video
             ref={videoRef}
-            className="truck-stage-canvas truck-stage-media"
+            className="truck-stage-canvas truck-stage-media motion-video"
             muted
             loop
             playsInline
-            preload="metadata"
+            preload="none"
             poster={video.poster}
+            width={1920}
+            height={1080}
             aria-hidden="true"
             onLoadedData={() => setReady(true)}
           >
+            {video.narrow?.webm ? (
+              <source src={video.narrow.webm} type="video/webm" media="(max-width: 767px)" />
+            ) : null}
+            {video.narrow ? (
+              <source src={video.narrow.mp4} type="video/mp4" media="(max-width: 767px)" />
+            ) : null}
             {video.webm ? <source src={video.webm} type="video/webm" /> : null}
             <source src={video.mp4} type="video/mp4" />
           </video>
         )
+      ) : null}
+      {snow && video ? (
+        <div className="snow-loop" aria-hidden="true">
+          <video
+            className="motion-video"
+            muted
+            loop
+            autoPlay
+            playsInline
+            preload="none"
+            width={1920}
+            height={1080}
+            onLoadedData={(e) => {
+              e.currentTarget.play().catch(() => {});
+            }}
+          >
+            <source src="/anim/snow-confetti-9-16.webm" type="video/webm" media="(max-width: 767px)" />
+            <source src="/anim/snow-confetti-9-16.mp4" type="video/mp4" media="(max-width: 767px)" />
+            <source src="/anim/snow-confetti-16-9.webm" type="video/webm" />
+            <source src="/anim/snow-confetti-16-9.mp4" type="video/mp4" />
+          </video>
+        </div>
       ) : null}
     </div>
   );

@@ -1,6 +1,5 @@
 import { Camera } from "lucide-react";
 import { useEffect, useRef, type CSSProperties } from "react";
-import { TruckSvg } from "@/components/winter/truck-svg";
 import { smsLink } from "@/lib/messages";
 import { DEPOSIT } from "@/lib/pricebook";
 import { BUSINESS } from "@/lib/seo";
@@ -58,7 +57,13 @@ export function HowItWorksRoad() {
       <div className="road-track mt-10" aria-hidden="true">
         <div className="road-lane" />
         <div className="road-driver">
-          <TruckSvg className="road-truck" wheelsSpin />
+          <img
+            className="road-truck"
+            src="/anim/truck-34-loaded-cutout-1200.webp"
+            alt=""
+            width={1200}
+            height={678}
+          />
         </div>
       </div>
 
