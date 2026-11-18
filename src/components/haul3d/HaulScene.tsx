@@ -1,12 +1,11 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { ContactShadows, Environment, Sparkles } from '@react-three/drei';
 import { stage } from './stage';
-import { Boundary, MODEL_IDS, cssColor, detectHD, modelUrl, seat, useConfiguredGLTF, weather, webgl2, type ModelKey } from './shared';
-
-// Post-processing ships only to the HD tier: phones never download it.
-const Effects = lazy(() => import('./Effects'));
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import { Boundary, cssColor, detectHD, modelUrl, seat, weather, webgl2, type ModelKey } from './shared';
 
 /** Pile layout. `sets` = pricebook size indexes (0 bags … 5 two trips) where the item is in the pile. */
 interface Item { m: ModelKey; pos: [number, number, number]; rot: [number, number, number]; sets?: number[]; tool?: 'always' | 'gone' }
@@ -104,21 +103,6 @@ function Room({ hd, onWindow }: { hd: boolean; onWindow: (m: THREE.Mesh) => void
     diff.colorSpace = THREE.SRGBColorSpace;
     for (const t of [diff, rough, nor]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(7, 2.6); t.anisotropy = Math.min(8, gl.capabilities.getMaxAnisotropy()); }
   }, [diff, rough, nor, gl]);
-  const [lamp] = useConfiguredGLTF([modelUrl('lamp', hd)]);
-  const lampObj = useMemo(() => {
-    const o = lamp.scene.clone(true);
-    o.traverse((c) => {
-      const mesh = c as THREE.Mesh;
-      if (!mesh.isMesh) return;
-      mesh.castShadow = false;
-      const mats = (Array.isArray(mesh.material) ? mesh.material : [mesh.material]) as THREE.MeshStandardMaterial[];
-      for (const m of mats) {
-        if (m.name.endsWith('_glass')) { m.emissive = new THREE.Color('#ffcf94'); m.emissiveIntensity = 6; m.toneMapped = true; }
-        else if (m.emissiveMap) { m.emissive = new THREE.Color('#ffd7a3'); m.emissiveIntensity = 2.5; }
-      }
-    });
-    return o;
-  }, [lamp]);
 
   const windowRef = useRef<THREE.Mesh>(null!);
   useEffect(() => { if (windowRef.current) onWindow(windowRef.current); }, [onWindow]);
@@ -136,37 +120,90 @@ function Room({ hd, onWindow }: { hd: boolean; onWindow: (m: THREE.Mesh) => void
       </mesh>
       {/* Window frame mullion */}
       <mesh position={[WINDOW.x, WINDOW.y, WALL_Z + 0.02]}><boxGeometry args={[0.04, WINDOW.h, 0.03]} /><meshStandardMaterial color="#2a2c2a" roughness={0.8} /></mesh>
-      <primitive object={lampObj} position={[LAMP.x, LAMP.y, LAMP.z]} />
+      <group position={[LAMP.x, LAMP.y - 0.7, LAMP.z]}>
+        <mesh position={[0, 0.55, 0]}><cylinderGeometry args={[0.012, 0.012, 0.9, 6]} /><meshStandardMaterial color="#2a2a28" roughness={0.6} /></mesh>
+        <mesh position={[0, 0.05, 0]}><coneGeometry args={[0.22, 0.18, 12, 1, true]} /><meshStandardMaterial color="#1c1a16" roughness={0.7} side={THREE.DoubleSide} /></mesh>
+        <mesh position={[0, 0.02, 0]}><sphereGeometry args={[0.05, 10, 8]} /><meshBasicMaterial color="#ffcf94" toneMapped={false} /></mesh>
+      </group>
     </>
   );
 }
 
-function Pile({ hd }: { hd: boolean }) {
-  const keys = Object.keys(MODEL_IDS).filter((k) => k !== 'lamp') as ModelKey[];
-  const gltfs = useConfiguredGLTF(keys.map((k) => modelUrl(k, hd)));
+function yieldThread() {
+  const sched = (globalThis as { scheduler?: { yield?: () => Promise<void> } }).scheduler;
+  if (sched?.yield) return sched.yield();
+  return new Promise<void>((resolve) => setTimeout(resolve, 0));
+}
 
-  const nodes = useMemo(() => {
-    const byKey = Object.fromEntries(keys.map((k, i) => [k, gltfs[i].scene])) as Record<ModelKey, THREE.Group>;
-    return ITEMS.map((it, i) => {
-      const obj = byKey[it.m].clone(true);
-      obj.traverse((o) => {
-        const mesh = o as THREE.Mesh;
-        if (!mesh.isMesh) return;
-        mesh.castShadow = true; mesh.receiveShadow = true;
-        weather(mesh);
-        const m = mesh.material as THREE.MeshStandardMaterial;
-        if (m.map) { m.map.colorSpace = THREE.SRGBColorSpace; m.map.anisotropy = hd ? 8 : 4; }
-      });
-      const fit = FIT[it.m] ?? 1;
-      obj.scale.setScalar(fit);
-      obj.rotation.set(...it.rot);
-      obj.position.set(it.pos[0], it.pos[1], it.pos[2]);
-      seat(obj, it.pos[1]);
-      return { it, obj, a: 0, i, baseY: obj.position.y, fit };
-    });
-  }, [gltfs, hd]);
+type PileNode = { it: Item; obj: THREE.Object3D; a: number; i: number; baseY: number; fit: number };
 
+function Pile({ hd, start }: { hd: boolean; start: boolean }) {
   const pileGroup = useRef<THREE.Group>(null!);
+  const nodes = useRef<PileNode[]>([]);
+  const gl = useThree((s) => s.gl);
+
+  useEffect(() => {
+    if (!start) return;
+    let dead = false;
+    const draco = new DRACOLoader().setDecoderPath('/draco/');
+    const loader = new GLTFLoader();
+    loader.setDRACOLoader(draco);
+    const order: ModelKey[] = ['dolly', 'bag', 'box', 'tv', 'tyre', 'broom', 'sofa', 'cabinet'];
+    (async () => {
+      await draco.preload();
+      await yieldThread();
+      for (const key of order) {
+        if (dead) return;
+        const gltf = await loader.loadAsync(modelUrl(key, hd));
+        if (dead) return;
+        const src = gltf.scene;
+        const textures: THREE.Texture[] = [];
+        const seen = new Set<THREE.Material>();
+        src.traverse((o) => {
+          const mesh = o as THREE.Mesh;
+          if (!mesh.isMesh) return;
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          const mats = (Array.isArray(mesh.material) ? mesh.material : [mesh.material]) as THREE.MeshStandardMaterial[];
+          for (const m of mats) {
+            if (!m || seen.has(m)) continue;
+            seen.add(m);
+            if (m.map) {
+              m.map.colorSpace = THREE.SRGBColorSpace;
+              m.map.anisotropy = 4;
+              textures.push(m.map);
+            }
+            // Empty slots still compile extra shader variants.
+            if (!m.roughnessMap) m.roughnessMap = null;
+            if (!m.normalMap) m.normalMap = null;
+            if (!m.aoMap) m.aoMap = null;
+            if (!m.metalnessMap) m.metalnessMap = null;
+            if (!m.emissiveMap) m.emissiveMap = null;
+          }
+          weather(mesh);
+        });
+        for (const tex of textures) {
+          if (dead) return;
+          gl.initTexture(tex);
+          await yieldThread();
+        }
+        for (const [i, it] of ITEMS.entries()) {
+          if (it.m !== key) continue;
+          const obj = src.clone(true);
+          const fit = FIT[it.m] ?? 1;
+          obj.scale.setScalar(fit);
+          obj.rotation.set(...it.rot);
+          obj.position.set(it.pos[0], it.pos[1], it.pos[2]);
+          seat(obj, it.pos[1]);
+          pileGroup.current.add(obj);
+          nodes.current.push({ it, obj, a: 0, i, baseY: obj.position.y, fit });
+        }
+        await yieldThread();
+      }
+      console.info("props-done");
+    })();
+    return () => { dead = true; draco.dispose(); };
+  }, [start, hd, gl]);
   const st = useRef({ sp: 0, yaw: 0, target: new THREE.Vector3(0, 0.45, 0) });
   const tmp = useMemo(() => ({ c: new THREE.Vector3(), look: new THREE.Vector3() }), []);
 
@@ -176,10 +213,11 @@ function Pile({ hd }: { hd: boolean }) {
     const reduced = stage.reduced;
     dt = Math.min(dt, 1 / 20);
 
-    const n = nodes.length;
+    const list = nodes.current;
+    const n = ITEMS.length;
     let wsum = 0, carried = 0;
     tmp.c.set(0, 0, 0);
-    for (const node of nodes) {
+    for (const node of list) {
       const { it, obj } = node;
       const order = (node.i * 7) % n; // carry-out order: shuffled, not left-to-right
       const inPile = !!it.sets?.includes(stage.size);
@@ -241,14 +279,10 @@ function Pile({ hd }: { hd: boolean }) {
     else if (gl.shadowMap.autoUpdate) { gl.shadowMap.needsUpdate = true; gl.shadowMap.autoUpdate = false; }
   });
 
-  return (
-    <group ref={pileGroup}>
-      {nodes.map((n, i) => <primitive key={i} object={n.obj} />)}
-    </group>
-  );
+  return <group ref={pileGroup} />;
 }
 
-function Lights({ hd }: { hd: boolean }) {
+function Lights({ hd, shadows }: { hd: boolean; shadows: boolean }) {
   const lamp = useRef<THREE.SpotLight>(null!);
   const win = useRef<THREE.SpotLight>(null!);
   const wash = useRef<THREE.SpotLight>(null!);
@@ -257,13 +291,13 @@ function Lights({ hd }: { hd: boolean }) {
     lamp.current.target.position.set(0, 0, 0.1); lamp.current.target.updateMatrixWorld();
     win.current.target.position.set(0.4, 0, 0.6); win.current.target.updateMatrixWorld();
   }, []);
-  const map = hd ? 1024 : 512;
+  const map = 512;
   return (
     <>
       <hemisphereLight args={['#d5e2f2', '#2a2420', 0.55]} />
       {/* Bare-bulb shop lamp: key light + soft shadow caster, positioned at the lamp model's bulb. */}
       <spotLight ref={lamp} position={[LAMP.x, LAMP.y - 1.3, LAMP.z]} angle={1.05} penumbra={1} intensity={34} decay={2} color="#ffe0b8"
-        castShadow shadow-mapSize-width={map} shadow-mapSize-height={map} shadow-bias={-0.00025} shadow-normalBias={0.025} shadow-radius={hd ? 6 : 3}
+        castShadow={shadows} shadow-mapSize-width={map} shadow-mapSize-height={map} shadow-bias={-0.00025} shadow-normalBias={0.025} shadow-radius={hd ? 6 : 3}
         shadow-camera-near={0.4} shadow-camera-far={7.5} shadow-camera-fov={46} />
       <pointLight position={[LAMP.x, LAMP.y - 1.45, LAMP.z]} intensity={1.2} distance={3.5} decay={2} color="#ffcf9a" />
       {/* Wall wash: a warm spill grazing the block wall so the room reads as a room, not a void. */}
@@ -290,11 +324,34 @@ function Boot({ onReady }: { onReady: () => void }) {
   const camera = useThree((s) => s.camera);
   useEffect(() => {
     let dead = false;
-    const id = requestAnimationFrame(() => {
-      const compile = gl.compileAsync?.(scene, camera);
-      Promise.resolve(compile).then(() => { if (!dead) onReady(); });
-    });
-    return () => { dead = true; cancelAnimationFrame(id); };
+    const rt = new THREE.WebGLRenderTarget(8, 8);
+    (async () => {
+      const textures: THREE.Texture[] = [];
+      scene.traverse((o) => {
+        const mesh = o as THREE.Mesh;
+        if (!mesh.isMesh || !mesh.material) return;
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        for (const m of mats) {
+          for (const key of ['map', 'roughnessMap', 'normalMap', 'aoMap'] as const) {
+            const tex = (m as THREE.MeshStandardMaterial)[key];
+            if (tex) textures.push(tex);
+          }
+        }
+      });
+      for (const tex of textures) {
+        if (dead) return;
+        gl.initTexture(tex);
+        await yieldThread();
+      }
+      if (dead) return;
+      // Offscreen target so compileAsync does not present, and KHR_parallel_shader_compile can run.
+      gl.setRenderTarget(rt);
+      await gl.compileAsync(scene, camera);
+      gl.setRenderTarget(null);
+      rt.dispose();
+      if (!dead) onReady();
+    })();
+    return () => { dead = true; rt.dispose(); };
   }, [gl, scene, camera, onReady]);
   return null;
 }
@@ -306,25 +363,19 @@ export default function HaulScene() {
   const idle = useRef(0);
   const park = useCallback(() => setLoop((cur) => (cur === 'demand' ? cur : 'demand')), []);
   const [ready, setReady] = useState(false);
-  const [post, setPost] = useState(false);
+  const [shadows, setShadows] = useState(false);
   const [sun, setSun] = useState<THREE.Mesh | null>(null);
   const markReady = useCallback(() => setReady(true), []);
   const onWindow = useCallback((m: THREE.Mesh) => setSun(m), []);
   const [supported] = useState(webgl2);
   const hd = useMemo(detectHD, []);
   const bg = useMemo(() => cssColor('--bg-stage'), []);
+  void sun;
   useEffect(() => {
-    if (!ready || !hd) return;
-    let handle = 0;
-    let timer = 0;
-    const go = () => setPost(true);
-    if (typeof window.requestIdleCallback === "function") handle = window.requestIdleCallback(go, { timeout: 1800 });
-    else timer = window.setTimeout(go, 600);
-    return () => {
-      if (handle) window.cancelIdleCallback(handle);
-      if (timer) window.clearTimeout(timer);
-    };
-  }, [ready, hd]);
+    if (!ready) return;
+    const t = window.setTimeout(() => setShadows(true), 1200);
+    return () => window.clearTimeout(t);
+  }, [ready]);
 
   useEffect(() => {
     const wake = () => { idle.current = 0; setLoop('always'); };
@@ -378,15 +429,12 @@ export default function HaulScene() {
               <color attach="background" args={[bg]} />
               <fog attach="fog" args={[bg, 11, 22]} />
               <Suspense fallback={null}>
-                <Lights hd={hd} />
+                <Lights hd={hd} shadows={shadows} />
                 <Room hd={hd} onWindow={onWindow} />
                 <Floor />
-                <ContactShadows position={[0, 0.012, -0.15]} opacity={hd ? 0.42 : 0.34} scale={11} blur={2.2} far={3.2} resolution={hd ? 512 : 256} frames={1} />
-                <Pile hd={hd} />
+                <Pile hd={hd} start={ready} />
                 <Boot onReady={markReady} />
-                {ready ? <Environment files="/env/garage_1k.hdr" environmentIntensity={0.72} /> : null}
-                <Sparkles count={hd ? 140 : 45} scale={[7, 3.4, 6]} position={[-0.6, 1.8, -0.6]} size={hd ? 1.8 : 1.4} speed={0.16} opacity={0.45} color="#ffe2bd" noise={0.7} />
-                {hd && post && sun ? <Suspense fallback={null}><Effects sun={sun} /></Suspense> : null}
+                {ready ? <Sparkles count={24} scale={[7, 3.4, 6]} position={[-0.6, 1.8, -0.6]} size={1.2} speed={0.12} opacity={0.28} color="#ffe2bd" noise={0.5} /> : null}
               </Suspense>
             </Canvas>
           </div>
