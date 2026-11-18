@@ -1,7 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
-import { ContactShadows, Environment, MeshReflectorMaterial, Sparkles } from '@react-three/drei';
+import { ContactShadows, Environment, Sparkles } from '@react-three/drei';
 import { stage } from './stage';
 import { Boundary, MODEL_IDS, cssColor, detectHD, modelUrl, seat, useConfiguredGLTF, weather, webgl2, type ModelKey } from './shared';
 
@@ -59,11 +59,26 @@ const KEYS = [
   { p: 1.0, ang: 0.5, r: 8.2, h: 4.2 },
 ];
 
-function Floor({ hd }: { hd: boolean }) {
+function useMaps(urls: string[]) {
+  const bitmaps = useLoader(THREE.ImageBitmapLoader, urls, (loader) => {
+    loader.setOptions({ imageOrientation: "flipY" });
+  });
+  return useMemo(() => {
+    const list = (Array.isArray(bitmaps) ? bitmaps : [bitmaps]) as ImageBitmap[];
+    return list.map((bmp, i) => {
+      const tex = new THREE.Texture(bmp);
+      tex.flipY = false;
+      tex.needsUpdate = true;
+      if (i === 0) tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    });
+  }, [bitmaps]);
+}
+
+function Floor() {
   const gl = useThree((s) => s.gl);
-  const sfx = hd ? '_2k' : '';
-  const [diff, rough, nor, ao] = useLoader(THREE.TextureLoader, [
-    `/env/floor_diff${sfx}.webp`, `/env/floor_rough${sfx}.webp`, `/env/floor_nor${sfx}.webp`, hd ? '/env/floor_ao_2k.webp' : '/env/floor_ao.webp',
+  const [diff, rough, nor, ao] = useMaps([
+    "/env/floor_diff.webp", "/env/floor_rough.webp", "/env/floor_nor.webp", "/env/floor_ao.webp",
   ]);
   useMemo(() => {
     diff.colorSpace = THREE.SRGBColorSpace;
@@ -77,24 +92,14 @@ function Floor({ hd }: { hd: boolean }) {
   return (
     <mesh rotation-x={-Math.PI / 2} position={[0, 0, -0.2]} receiveShadow>
       <planeGeometry args={[16, 12]} />
-      {hd ? (
-        // Sealed basement concrete: blurred, roughness-modulated reflections of the pile and the lamp.
-        <MeshReflectorMaterial
-          map={diff} roughnessMap={rough} normalMap={nor} normalScale={new THREE.Vector2(0.9, 0.9)}
-          aoMap={ao} aoMapIntensity={1.1} roughness={1} metalness={0} envMapIntensity={0.5}
-          resolution={1024} blur={[420, 140]} mixBlur={1.4} mixStrength={1.6} mixContrast={1.1}
-          depthScale={0.9} minDepthThreshold={0.35} maxDepthThreshold={1.3} mirror={0}
-        />
-      ) : (
-        <meshStandardMaterial map={diff} roughnessMap={rough} normalMap={nor} aoMap={ao} aoMapIntensity={1} roughness={1} envMapIntensity={0.55} />
-      )}
+      <meshStandardMaterial map={diff} roughnessMap={rough} normalMap={nor} aoMap={ao} aoMapIntensity={1} roughness={1} envMapIntensity={0.55} />
     </mesh>
   );
 }
 
 function Room({ hd, onWindow }: { hd: boolean; onWindow: (m: THREE.Mesh) => void }) {
   const gl = useThree((s) => s.gl);
-  const [diff, rough, nor] = useLoader(THREE.TextureLoader, ['/env/wall_diff.webp', '/env/wall_rough.webp', '/env/wall_nor.webp']);
+  const [diff, rough, nor] = useMaps(["/env/wall_diff.webp", "/env/wall_rough.webp", "/env/wall_nor.webp"]);
   useMemo(() => {
     diff.colorSpace = THREE.SRGBColorSpace;
     for (const t of [diff, rough, nor]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(7, 2.6); t.anisotropy = Math.min(8, gl.capabilities.getMaxAnisotropy()); }
@@ -136,7 +141,7 @@ function Room({ hd, onWindow }: { hd: boolean; onWindow: (m: THREE.Mesh) => void
   );
 }
 
-function Pile({ onReady, hd }: { onReady: () => void; hd: boolean }) {
+function Pile({ hd }: { hd: boolean }) {
   const keys = Object.keys(MODEL_IDS).filter((k) => k !== 'lamp') as ModelKey[];
   const gltfs = useConfiguredGLTF(keys.map((k) => modelUrl(k, hd)));
 
@@ -160,12 +165,6 @@ function Pile({ onReady, hd }: { onReady: () => void; hd: boolean }) {
       return { it, obj, a: 0, i, baseY: obj.position.y, fit };
     });
   }, [gltfs, hd]);
-
-  useEffect(() => {
-    let b = 0;
-    const a = requestAnimationFrame(() => { b = requestAnimationFrame(onReady); });
-    return () => { cancelAnimationFrame(a); cancelAnimationFrame(b); };
-  }, [onReady]);
 
   const pileGroup = useRef<THREE.Group>(null!);
   const st = useRef({ sp: 0, yaw: 0, target: new THREE.Vector3(0, 0.45, 0) });
@@ -237,6 +236,9 @@ function Pile({ onReady, hd }: { onReady: () => void; hd: boolean }) {
       if (s.sp > 0.05) { s.yaw = Math.atan2(Math.sin(s.yaw), Math.cos(s.yaw)); s.yaw += -s.yaw * (1 - Math.exp(-dt * 2)); }
     }
     pileGroup.current.rotation.y = s.yaw;
+    const moving = stage.progress > 0.002 || stage.gone > 0.002 || input.dragging;
+    if (moving) gl.shadowMap.autoUpdate = true;
+    else if (gl.shadowMap.autoUpdate) { gl.shadowMap.needsUpdate = true; gl.shadowMap.autoUpdate = false; }
   });
 
   return (
@@ -255,11 +257,10 @@ function Lights({ hd }: { hd: boolean }) {
     lamp.current.target.position.set(0, 0, 0.1); lamp.current.target.updateMatrixWorld();
     win.current.target.position.set(0.4, 0, 0.6); win.current.target.updateMatrixWorld();
   }, []);
-  const map = hd ? 2048 : 512;
+  const map = hd ? 1024 : 512;
   return (
     <>
       <hemisphereLight args={['#d5e2f2', '#2a2420', 0.55]} />
-      <Environment files="/env/garage_1k.hdr" environmentIntensity={0.72} />
       {/* Bare-bulb shop lamp: key light + soft shadow caster, positioned at the lamp model's bulb. */}
       <spotLight ref={lamp} position={[LAMP.x, LAMP.y - 1.3, LAMP.z]} angle={1.05} penumbra={1} intensity={34} decay={2} color="#ffe0b8"
         castShadow shadow-mapSize-width={map} shadow-mapSize-height={map} shadow-bias={-0.00025} shadow-normalBias={0.025} shadow-radius={hd ? 6 : 3}
@@ -273,14 +274,28 @@ function Lights({ hd }: { hd: boolean }) {
   );
 }
 
-/** Phones park the loop once the hero is sitting still, and wake it on scroll. */
-function PhoneIdle({ hd, idle, onPark }: { hd: boolean; idle: { current: number }; onPark: () => void }) {
+/** Park the loop once the hero is sitting still. Scroll wakes it. */
+function IdleLoop({ idle, onPark }: { idle: { current: number }; onPark: () => void }) {
   useFrame((_, dt) => {
-    if (hd) return;
-    const calm = stage.progress < 0.002 && !input.dragging;
+    const calm = stage.progress < 0.002 && stage.gone < 0.002 && !input.dragging;
     idle.current = calm ? idle.current + dt : 0;
-    if (calm && idle.current > 0.8) onPark();
+    if (calm && idle.current > 0.6) onPark();
   });
+  return null;
+}
+
+function Boot({ onReady }: { onReady: () => void }) {
+  const gl = useThree((s) => s.gl);
+  const scene = useThree((s) => s.scene);
+  const camera = useThree((s) => s.camera);
+  useEffect(() => {
+    let dead = false;
+    const id = requestAnimationFrame(() => {
+      const compile = gl.compileAsync?.(scene, camera);
+      Promise.resolve(compile).then(() => { if (!dead) onReady(); });
+    });
+    return () => { dead = true; cancelAnimationFrame(id); };
+  }, [gl, scene, camera, onReady]);
   return null;
 }
 
@@ -291,19 +306,31 @@ export default function HaulScene() {
   const idle = useRef(0);
   const park = useCallback(() => setLoop((cur) => (cur === 'demand' ? cur : 'demand')), []);
   const [ready, setReady] = useState(false);
+  const [post, setPost] = useState(false);
   const [sun, setSun] = useState<THREE.Mesh | null>(null);
   const markReady = useCallback(() => setReady(true), []);
   const onWindow = useCallback((m: THREE.Mesh) => setSun(m), []);
   const [supported] = useState(webgl2);
   const hd = useMemo(detectHD, []);
   const bg = useMemo(() => cssColor('--bg-stage'), []);
+  useEffect(() => {
+    if (!ready || !hd) return;
+    let handle = 0;
+    let timer = 0;
+    const go = () => setPost(true);
+    if (typeof window.requestIdleCallback === "function") handle = window.requestIdleCallback(go, { timeout: 1800 });
+    else timer = window.setTimeout(go, 600);
+    return () => {
+      if (handle) window.cancelIdleCallback(handle);
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [ready, hd]);
 
   useEffect(() => {
-    if (hd) return;
     const wake = () => { idle.current = 0; setLoop('always'); };
     window.addEventListener('scroll', wake, { passive: true });
     return () => window.removeEventListener('scroll', wake);
-  }, [hd]);
+  }, []);
 
   useEffect(() => {
     const el = document.getElementById('stage') ?? wrap.current!;
@@ -345,19 +372,21 @@ export default function HaulScene() {
               frameloop={visible ? (hd ? 'always' : loop) : 'never'}
               dpr={hd ? [1, 1.5] : 1}
               gl={{ alpha: false, antialias: !hd, powerPreference: 'high-performance', toneMapping: THREE.AgXToneMapping, toneMappingExposure: hd ? 1.28 : 1.18 }}
-              camera={{ fov: 44, near: 0.1, far: 80, position: [6, 3.4, 6] }}
+              camera={{ fov: 44, near: 0.1, far: 80, position: [Math.sin(0.62) * 8.6, 3.4, Math.cos(0.62) * 8.6] }}
             >
-              <PhoneIdle hd={hd} idle={idle} onPark={park} />
+              <IdleLoop idle={idle} onPark={park} />
               <color attach="background" args={[bg]} />
               <fog attach="fog" args={[bg, 11, 22]} />
               <Suspense fallback={null}>
                 <Lights hd={hd} />
                 <Room hd={hd} onWindow={onWindow} />
-                <Floor hd={hd} />
+                <Floor />
                 <ContactShadows position={[0, 0.012, -0.15]} opacity={hd ? 0.42 : 0.34} scale={11} blur={2.2} far={3.2} resolution={hd ? 512 : 256} frames={1} />
-                <Pile onReady={markReady} hd={hd} />
+                <Pile hd={hd} />
+                <Boot onReady={markReady} />
+                {ready ? <Environment files="/env/garage_1k.hdr" environmentIntensity={0.72} /> : null}
                 <Sparkles count={hd ? 140 : 45} scale={[7, 3.4, 6]} position={[-0.6, 1.8, -0.6]} size={hd ? 1.8 : 1.4} speed={0.16} opacity={0.45} color="#ffe2bd" noise={0.7} />
-                {hd && <Suspense fallback={null}><Effects sun={sun} /></Suspense>}
+                {hd && post && sun ? <Suspense fallback={null}><Effects sun={sun} /></Suspense> : null}
               </Suspense>
             </Canvas>
           </div>

@@ -91,7 +91,17 @@ export function HaulStage({ after }: { after?: ReactNode }) {
     // iOS Safari kills the tab when this scene creates a WebGL context. Phones get stills instead.
     const phone = window.matchMedia("(max-width: 1024px) and (pointer: coarse), (max-width: 767px)").matches;
     setLite(phone);
-    if (!phone) setAllow3d(true);
+    if (phone) return;
+    // First paint stays the poster. The canvas starts when the browser is idle so input is not blocked.
+    let idle = 0;
+    let timer = 0;
+    const go = () => setAllow3d(true);
+    if (typeof window.requestIdleCallback === "function") idle = window.requestIdleCallback(go, { timeout: 1200 });
+    else timer = window.setTimeout(go, 400);
+    return () => {
+      if (idle) window.cancelIdleCallback(idle);
+      if (timer) window.clearTimeout(timer);
+    };
   }, [mounted]);
 
   useEffect(() => {
@@ -108,7 +118,6 @@ export function HaulStage({ after }: { after?: ReactNode }) {
     if (reduced) return;
     let stop = false;
     let lenis: { destroy: () => void; raf: (t: number) => void } | null = null;
-    let trigger: { kill: () => void } | null = null;
     const root = document.documentElement;
     root.classList.add("js-stage");
     const steps = [...document.querySelectorAll<HTMLElement>(".stage-step")];
@@ -161,11 +170,9 @@ export function HaulStage({ after }: { after?: ReactNode }) {
     fromWindow();
     const fine = window.matchMedia("(pointer: fine)").matches;
     if (fine) (async () => {
-      const [{ default: Lenis }, gsapMod] = await Promise.all([import("lenis"), import("gsap"), import("gsap/ScrollTrigger")]);
+      const [{ default: Lenis }, gsapMod] = await Promise.all([import("lenis"), import("gsap")]);
       if (stop) return;
       const gsap = gsapMod.gsap;
-      const { ScrollTrigger } = await import("gsap/ScrollTrigger");
-      gsap.registerPlugin(ScrollTrigger);
       const scroller = new Lenis({
         lerp: 0.085,
         smoothWheel: true,
@@ -175,20 +182,13 @@ export function HaulStage({ after }: { after?: ReactNode }) {
       });
       lenis = scroller;
       (window as Window & { __lenis?: typeof scroller }).__lenis = scroller;
-      scroller.on("scroll", ScrollTrigger.update);
+      scroller.on("scroll", fromWindow);
       const tick = (t: number) => scroller.raf(t * 1000);
       gsap.ticker.add(tick);
       gsap.ticker.lagSmoothing(0);
-      trigger = ScrollTrigger.create({
-        trigger: "#haul-stage",
-        start: "top top",
-        end: "bottom bottom",
-        onUpdate: () => fromWindow(),
-      });
     })();
     return () => {
       stop = true;
-      trigger?.kill();
       lenis?.destroy();
       window.removeEventListener("scroll", fromWindow);
       root.classList.remove("js-stage");
@@ -206,7 +206,7 @@ export function HaulStage({ after }: { after?: ReactNode }) {
           <picture className="pointer-events-none absolute inset-0 block h-full w-full">
             <source media="(max-width: 767px)" srcSet="/haul3d/still-full.webp" />
             <img
-              className="stage-still h-full w-full object-cover"
+              className="stage-still h-full w-full object-cover object-center"
               src="/haul3d/poster.webp"
               alt=""
               width={1280}
